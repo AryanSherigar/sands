@@ -3,9 +3,7 @@
 !.env.example
 secrets/
 
-brag-output/
-brag-output-landscape/
-video-studio/
+
 
 graphify-out/
 # Python
@@ -92,20 +90,14 @@ tmp/
 *.sqlite3
 *.db
 
-# Local uploads
-apps/core-api/uploads/
 
 # Git Worktrees & Superpowers
 .worktrees/
 .superpowers/
 .claude/
-apps/memory/eval/reports/*.service.log
 
-# Video Studio
-video-studio/node_modules/
-video-studio/out/
-video-studio/.remotion/
-video-studio/audio/cache/
+
+
 
 
 # Competitor research reports (kept local, not in history)
