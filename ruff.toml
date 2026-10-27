@@ -1,0 +1,59 @@
+# Shared by all four Python services. None of the service pyproject.toml files
+# declare [tool.ruff], so this file resolves for every Python file in the repo.
+# NOTE: the rule set is pinned explicitly rather than left at ruff's defaults,
+# which change between ruff releases and silently change what "clean" means.
+
+line-length = 88
+target-version = "py310"
+
+exclude = [
+    ".venv",
+    "**/.venv",
+    "**/node_modules",
+    "**/__pycache__",
+]
+
+[lint]
+select = [
+    "E",
+    "F",
+    "I",
+    "B",
+    "SIM",
+    "UP",
+    "BLE",
+    "C901",
+    "PLR0912",
+    "PLR0915",
+    "RUF",
+]
+# `ruff format` owns line width; it deliberately leaves long strings, URLs and
+# comments intact, so E501 would only ever flag lines the formatter refuses to
+# break.
+ignore = ["E501"]
+
+[lint.flake8-bugbear]
+# FastAPI's dependency markers are meant to be evaluated in argument defaults.
+extend-immutable-calls = [
+    "fastapi.Depends",
+    "fastapi.Query",
+    "fastapi.Path",
+    "fastapi.Header",
+    "fastapi.Body",
+    "fastapi.Cookie",
+    "fastapi.File",
+    "fastapi.Form",
+    "fastapi.Security",
+]
+
+[lint.mccabe]
+max-complexity = 10
+
+[lint.pylint]
+max-statements = 30
+max-branches = 12
+
+[lint.per-file-ignores]
+"apps/core-api/app/db/migrations/**" = ["ALL"]
+"**/tests/**" = ["PLR0912", "PLR0915", "C901", "BLE"]
+"**/scripts/**" = ["PLR0912", "PLR0915", "C901", "BLE"]
