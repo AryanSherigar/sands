@@ -1,0 +1,28 @@
+[project]
+name = "strategy-contracts"
+version = "0.1.0"
+description = "Shared strategy-mode contracts: scenario, map, scene package and commitment terms"
+requires-python = ">=3.10"
+dependencies = [
+    "pydantic>=2.6.4",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.5",
+]
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["strategy_contracts*"]
+
+[tool.setuptools.package-data]
+strategy_contracts = ["examples/*.json"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
