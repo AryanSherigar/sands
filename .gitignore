@@ -96,10 +96,3 @@ tmp/
 .superpowers/
 .claude/
 
-
-
-
-
-# Competitor research reports (kept local, not in history)
-docs/reports/sillytavern-analysis.md
-docs/reports/yumina-analysis.md
