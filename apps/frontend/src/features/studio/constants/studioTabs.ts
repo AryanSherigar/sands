@@ -1,0 +1,9 @@
+export const GUIDE_TAB_ID = "guide";
+export const PLAYTEST_TAB_ID = "playtest";
+export const CARD_TAB_PREFIX = "card:";
+export const FEATURE_TAB_PREFIX = "feature:";
+export const STUDIO_TABS_STORAGE_PREFIX = "sands.studio.tabs.";
+export const GUIDE_TAB_LABEL = "Guide";
+export const PLAYTEST_TAB_LABEL = "Playtest";
+export const MISSING_TAB_LABEL = "Missing";
+export const FIRST_GUIDE_STEP = 1;

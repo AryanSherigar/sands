@@ -1,0 +1,2 @@
+export const DEFAULT_SILENCE_DURATION_MS = 800;
+export const MAX_SILENCE_DURATION_MS = 5000;

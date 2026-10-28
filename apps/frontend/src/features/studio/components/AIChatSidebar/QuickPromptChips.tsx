@@ -1,0 +1,74 @@
+import React from "react";
+
+export interface QuickPromptChipsProps {
+  activeSection: string;
+  onSelectPrompt: (prompt: string) => void;
+  disabled?: boolean;
+}
+
+const FALLBACK_PROMPTS = [
+  "Suggest 3 catchy scenario titles",
+  "Draft a compelling 2-sentence logline",
+  "Recommend genre tags for my world",
+];
+
+const MASTER_SECTION_PROMPTS: Record<string, string[]> = {
+  entities: [
+    "Suggest a cast of 3 key characters",
+    "Add a villain faction with 3 members",
+    "Suggest tracked attributes for my protagonist",
+  ],
+  facts: [
+    "Suggest facts connecting my existing entities",
+    "Add a secret fact only the narrator should know",
+    "Check my facts for contradictions",
+  ],
+  state: [
+    "Suggest tracked values for this scenario",
+    "Add a reputation/standing value",
+    "Suggest starting values for my tracked fields",
+  ],
+  setup: [
+    "Draft a narrator persona for this scenario",
+    "Write an opening scene for master mode",
+    "Suggest a compelling logline",
+  ],
+  conditions: [
+    "Suggest an active rule using my tracked values",
+    "Add a rule that reacts to low health",
+    "Check my active rules for gaps",
+  ],
+  invariants: [
+    "Suggest a constraint the narrator must never break",
+    "Add a world-consistency rule",
+  ],
+  endings: [
+    "Suggest a win condition for this scenario",
+    "Suggest a lose condition for this scenario",
+    "Draft a secret ending",
+  ],
+};
+
+export const QuickPromptChips: React.FC<QuickPromptChipsProps> = ({
+  activeSection,
+  onSelectPrompt,
+  disabled = false,
+}) => {
+  const prompts = MASTER_SECTION_PROMPTS[activeSection] || FALLBACK_PROMPTS;
+
+  return (
+    <div className="flex gap-1.5 overflow-x-auto py-1 px-3 no-scrollbar">
+      {prompts.map((prompt) => (
+        <button
+          key={prompt}
+          type="button"
+          disabled={disabled}
+          onClick={() => onSelectPrompt(prompt)}
+          className="rounded-md shrink-0 text-[11px] font-mono px-2 py-1 bg-surface hover:bg-surface-overlay text-content-muted hover:text-content border border-border-subtle hover:border-border-subtle transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          + {prompt}
+        </button>
+      ))}
+    </div>
+  );
+};

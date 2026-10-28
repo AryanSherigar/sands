@@ -1,0 +1,25 @@
+.inkBorder {
+  border: 1px solid rgba(58, 49, 40, 0.18);
+}
+
+.inkBorderLight {
+  border: 1px solid rgba(58, 49, 40, 0.1);
+}
+
+.inkShadow {
+  box-shadow: 0 4px 20px -2px rgba(46, 38, 30, 0.12), 0 1px 4px rgba(46, 38, 30, 0.06);
+}
+
+.inkShadowLg {
+  box-shadow: 0 10px 30px -4px rgba(46, 38, 30, 0.22), 0 4px 8px rgba(46, 38, 30, 0.08);
+}
+
+.verticalWritingMode {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+}
+
+.parchmentPanel {
+  background-color: rgba(247, 240, 220, 0.95);
+  backdrop-filter: blur(12px);
+}

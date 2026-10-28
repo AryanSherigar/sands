@@ -1,0 +1,3 @@
+export const WORLDMAKER_ACHIEVEMENT_KEY = "worldmaker";
+export const ACHIEVEMENT_CHECK_ATTEMPTS = 4;
+export const ACHIEVEMENT_CHECK_INTERVAL_MS = 1000;

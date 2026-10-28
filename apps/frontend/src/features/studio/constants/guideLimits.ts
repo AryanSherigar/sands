@@ -1,0 +1,10 @@
+export const LOGLINE_MAX_LENGTH = 150;
+export const TITLE_MAX_LENGTH = 64;
+export const PREMISE_WORD_GUIDE = "Aim for 50–150 words";
+export const ALWAYS_REMEMBER_SOFT_LIMIT = 10;
+export const ALWAYS_REMEMBER_MAX_LINES = 30;
+export const ALWAYS_REMEMBER_MAX_LINE_LENGTH = 300;
+export const SCENARIO_AUTOSAVE_DEBOUNCE_MS = 500;
+export const MAX_MOOD_TAGS = 12;
+export const MAX_MOOD_TAG_LENGTH = 40;
+export const ALWAYS_REMEMBER_KEY = "alwaysRemember";

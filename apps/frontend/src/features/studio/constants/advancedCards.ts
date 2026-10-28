@@ -1,0 +1,11 @@
+export const ROW_AUTOSAVE_DEBOUNCE_MS = 500;
+export const MISSING_VALUE_BLOCK_MESSAGE = "Fix the missing value to save the condition. Your other changes still save.";
+export const ADD_WHAT_HAPPENS_MESSAGE = "Add what happens";
+export const MOVE_UP_LABEL = "Move up";
+export const MOVE_DOWN_LABEL = "Move down";
+export const DUPLICATE_LABEL = "Duplicate";
+export const DELETE_LABEL = "Delete";
+export const TEST_ENDING_LABEL = "Test this ending";
+export const TEST_RULE_LABEL = "Test this rule";
+export const COPY_SUFFIX = "copy";
+export const ALWAYS_REMEMBER_SECTION_ID = "always-remember";
