@@ -2,11 +2,10 @@
 
 from collections.abc import AsyncGenerator
 
-from psycopg import AsyncConnection
-from psycopg_pool import AsyncConnectionPool, PoolTimeout
-
 from app.config import get_settings
 from app.exceptions.db_exceptions import DatabaseUnavailableError
+from psycopg import AsyncConnection
+from psycopg_pool import AsyncConnectionPool, PoolTimeout
 
 _pool: AsyncConnectionPool | None = None
 

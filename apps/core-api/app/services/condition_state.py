@@ -1,0 +1,174 @@
+"""Read-only evaluation of scenario_conditions against live playthrough state.
+
+Mirrors turn-resolution-service's app/turn/expression_evaluator.py::evaluate
+and app/turn/state_paths.py::get_field_value grammar exactly, so a condition
+Core API reports as "active" here means the same thing TRS's condition
+evaluator means during a turn. Core API and TRS are separate deployables with
+no shared package, so this is an intentional mirror of that grammar, not
+in-codebase schema/logic duplication — see docs/specs/master-mode-demo-
+scenario.md for the expression shape this evaluates.
+"""
+
+import uuid
+
+from app.services.state_visibility import is_hidden_path
+
+_COMPARISON_OPS = {
+    "==": lambda a, b: a == b,
+    "!=": lambda a, b: a != b,
+    "<": lambda a, b: _safe_num(a) < _safe_num(b),
+    "<=": lambda a, b: _safe_num(a) <= _safe_num(b),
+    ">": lambda a, b: _safe_num(a) > _safe_num(b),
+    ">=": lambda a, b: _safe_num(a) >= _safe_num(b),
+    "in": lambda a, b: a in b if isinstance(b, (list, tuple, set)) else False,
+    "contains": lambda a, b: (
+        b in a if isinstance(a, (list, tuple, set, str)) else False
+    ),
+    "matches": lambda a, b: isinstance(a, str) and isinstance(b, str) and b in a,
+}
+
+
+_CONNECTIVES = ("AND", "OR", "NOT")
+
+
+def list_active_condition_labels(
+    scenario_conditions: list[object],
+    state: dict[str, object],
+    state_schema: dict[str, object] | None = None,
+) -> list[str]:
+    """Every scenario_condition whose condition_expression is currently true,
+    for the play screen's persistent status-badge row. Read-only — never
+    applies a condition's state_mutation (that is TRS's Effect C, turn-time
+    only). With a schema, a condition that reads a hidden field is left out: its
+    label would tell the player what the hidden field holds."""
+    labels: list[str] = []
+    fired = state.get("_fired_conditions")
+    fired_ids = {str(item) for item in fired} if isinstance(fired, list) else set()
+    for condition in scenario_conditions:
+        if not isinstance(condition, dict):
+            continue
+        if condition.get("is_one_shot") and _condition_id(condition) in fired_ids:
+            continue
+        if not _evaluate(condition.get("condition_expression"), state):
+            continue
+        if _reads_hidden_field(condition, state_schema):
+            continue
+        label = condition.get("label")
+        if label:
+            labels.append(str(label))
+    return labels
+
+
+def _referenced_paths(expression: object) -> set[str]:
+    if not isinstance(expression, dict):
+        return set()
+    paths = {str(expression[key]) for key in ("field", "ref") if key in expression}
+    for connective in _CONNECTIVES:
+        paths |= _referenced_paths(expression.get(connective))
+    return paths
+
+
+def _reads_hidden_field(
+    condition: dict[str, object], state_schema: dict[str, object] | None
+) -> bool:
+    if not state_schema:
+        return False
+    paths = _referenced_paths(condition.get("condition_expression"))
+    return any(is_hidden_path(state_schema, path) for path in paths)
+
+
+def _condition_id(condition: dict[str, object]) -> str:
+    return str(condition.get("condition_id") or condition.get("label") or "")
+
+
+def _evaluate(expression: object, state: dict[str, object]) -> bool:
+    if not isinstance(expression, dict) or not expression:
+        return False
+
+    result: bool | None = None
+    if "field" in expression:
+        result = _evaluate_leaf(expression, state)
+
+    connectives = [c for c in _CONNECTIVES if c in expression]
+    if len(connectives) > 1:
+        raise ValueError(
+            f"An expression node may contain at most one connective, found: {connectives}"
+        )
+
+    if connectives:
+        return _evaluate_connective(connectives[0], expression, state, result)
+
+    return bool(result) if result is not None else False
+
+
+def _evaluate_connective(
+    connective: str,
+    expression: dict[str, object],
+    state: dict[str, object],
+    result: bool | None,
+) -> bool:
+    sub_expr = expression[connective]
+    # NOTE: Left as a bare TypeError rather than a friendlier domain
+    # exception. This evaluator only ever runs against expressions that
+    # already passed validate_expression_field_references at authoring time
+    # (app/services/expression_validation.py), which rejects list-form and
+    # other non-dict connective values before persistence. A non-dict
+    # sub_expr reaching here would mean already-invalid data got persisted
+    # some other way -- a bug worth a loud crash, not a swallowed error.
+    if not isinstance(sub_expr, dict):
+        raise TypeError(f"Connective '{connective}' must be an expression object")
+
+    if connective == "AND":
+        sub = _evaluate(sub_expr, state)
+        return (result and sub) if result is not None else sub
+    if connective == "OR":
+        sub = _evaluate(sub_expr, state)
+        return (result or sub) if result is not None else sub
+
+    sub = not _evaluate(sub_expr, state)
+    return (result and sub) if result is not None else sub
+
+
+def _evaluate_leaf(expression: dict[str, object], state: dict[str, object]) -> bool:
+    field_path = str(expression["field"])
+    comparator = _COMPARISON_OPS.get(str(expression.get("op", "==")))
+    if comparator is None:
+        return False
+    actual = _get_field_value(state, field_path)
+    if "ref" in expression:
+        expected = _get_field_value(state, str(expression["ref"]))
+    else:
+        expected = expression.get("value")
+    try:
+        return bool(comparator(actual, expected))
+    except TypeError:
+        return False
+
+
+def _get_field_value(state: dict[str, object], path: str) -> object:
+    root, *rest = path.split(".")
+    node: object = (
+        state.get("entities", {}).get(root, {})
+        if _is_entity_id(root)
+        else state.get(root)
+    )
+    for key in rest:
+        if not isinstance(node, dict):
+            return None
+        node = node.get(key)
+    return node
+
+
+def _is_entity_id(segment: str) -> bool:
+    try:
+        uuid.UUID(segment)
+    except ValueError:
+        return False
+    return True
+
+
+def _safe_num(value: object) -> float:
+    try:
+        return float(value)  # type: ignore[arg-type]
+    except (TypeError, ValueError):
+        return float("nan")

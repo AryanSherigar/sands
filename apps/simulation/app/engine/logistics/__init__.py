@@ -1,0 +1,1 @@
+"""Pure campaign logistics rules."""

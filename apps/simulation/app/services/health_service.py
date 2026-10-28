@@ -4,12 +4,11 @@ from typing import Annotated
 
 import psycopg
 import structlog
-from fastapi import Depends
-from psycopg import AsyncConnection
-
 from app.db.pool import get_connection
 from app.models.health import HEALTH_STATUS_ERROR, HEALTH_STATUS_OK, HealthResponse
 from app.repositories import health_repo
+from fastapi import Depends
+from psycopg import AsyncConnection
 
 logger = structlog.get_logger()
 

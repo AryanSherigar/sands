@@ -1,0 +1,446 @@
+{
+  "ambitions": [
+    {
+      "condition": {
+        "kind": "comparison",
+        "metric": "region_count",
+        "operator": "gte",
+        "subject_id": "house_ashford",
+        "value": 4
+      },
+      "id": "ambition_expand",
+      "name": "Expand the realm"
+    },
+    {
+      "condition": {
+        "kind": "comparison",
+        "metric": "stability",
+        "operator": "gte",
+        "subject_id": "house_carrow",
+        "value": 80
+      },
+      "id": "ambition_peace",
+      "name": "A stable peace"
+    },
+    {
+      "condition": {
+        "kind": "comparison",
+        "metric": "owns_region",
+        "operator": "eq",
+        "subject_id": "brennmoor",
+        "value": 1
+      },
+      "id": "ambition_revenge",
+      "name": "Reclaim Brennmoor"
+    }
+  ],
+  "commanders": [
+    {
+      "faction_id": "house_carrow",
+      "id": "cmd_brand",
+      "name": "Captain Brand",
+      "trait_ids": [
+        "stubborn"
+      ]
+    }
+  ],
+  "custom_traits": [],
+  "endings": [],
+  "events": [],
+  "factions": [
+    {
+      "capital_region_id": "ashford",
+      "color": "#8b2e2e",
+      "id": "house_ashford",
+      "is_playable": false,
+      "leader_id": "mira",
+      "manpower": 400,
+      "name": "House Ashford",
+      "stability": 60,
+      "treasury": 120
+    },
+    {
+      "capital_region_id": "carrow_vale",
+      "color": "#2e5b8b",
+      "id": "house_carrow",
+      "is_playable": true,
+      "leader_id": "valdren",
+      "manpower": 350,
+      "name": "House Carrow",
+      "stability": 65,
+      "treasury": 100
+    },
+    {
+      "capital_region_id": "dunwick",
+      "color": "#3f6b3a",
+      "id": "house_dunwick",
+      "is_playable": false,
+      "leader_id": "harl",
+      "manpower": 300,
+      "name": "House Dunwick",
+      "stability": 55,
+      "treasury": 90
+    }
+  ],
+  "faiths": [
+    {
+      "id": "old_faith",
+      "name": "The Old Faith"
+    }
+  ],
+  "governors": [
+    {
+      "id": "gov_oswin",
+      "name": "Lord Oswin",
+      "region_id": "brennmoor",
+      "trait_ids": [
+        "pragmatic"
+      ]
+    }
+  ],
+  "is_using_default_endings": true,
+  "leaders": [
+    {
+      "age": 41,
+      "ambition_ids": [
+        "ambition_expand"
+      ],
+      "faction_id": "house_ashford",
+      "history": "Took the Ashford seat after her brother fell at the Brennmoor ford.",
+      "id": "mira",
+      "name": "Mira of Ashford",
+      "trait_ids": [
+        "cunning",
+        "proud"
+      ]
+    },
+    {
+      "age": 38,
+      "ambition_ids": [
+        "ambition_peace"
+      ],
+      "faction_id": "house_carrow",
+      "history": "Spent his youth in the hill garrisons and distrusts easy glory.",
+      "id": "valdren",
+      "name": "Valdren Carrow",
+      "trait_ids": [
+        "honorable",
+        "cautious"
+      ]
+    },
+    {
+      "age": 52,
+      "ambition_ids": [
+        "ambition_revenge"
+      ],
+      "faction_id": "house_dunwick",
+      "history": "Lost Brennmoor to Ashford in his father's time and has not forgotten.",
+      "id": "harl",
+      "name": "Harl of Dunwick",
+      "trait_ids": [
+        "treacherous",
+        "wrathful"
+      ]
+    }
+  ],
+  "map": {
+    "height": 200,
+    "image_url": null,
+    "regions": [
+      {
+        "id": "ashford",
+        "label_point": {
+          "x": 50,
+          "y": 50
+        },
+        "name": "Ashford",
+        "neighbor_ids": [
+          "brennmoor",
+          "carrow_vale"
+        ],
+        "outline": "M0 0 L100 0 L100 100 L0 100 Z",
+        "source_color": null,
+        "source_ref": null,
+        "terrain": "plain"
+      },
+      {
+        "id": "brennmoor",
+        "label_point": {
+          "x": 150,
+          "y": 50
+        },
+        "name": "Brennmoor",
+        "neighbor_ids": [
+          "ashford",
+          "dunwick"
+        ],
+        "outline": "M100 0 L200 0 L200 100 L100 100 Z",
+        "source_color": null,
+        "source_ref": null,
+        "terrain": "marsh"
+      },
+      {
+        "id": "dunwick",
+        "label_point": {
+          "x": 250,
+          "y": 50
+        },
+        "name": "Dunwick",
+        "neighbor_ids": [
+          "brennmoor",
+          "carrow_vale",
+          "fenwatch"
+        ],
+        "outline": "M200 0 L300 0 L300 100 L200 100 Z",
+        "source_color": null,
+        "source_ref": null,
+        "terrain": "forest"
+      },
+      {
+        "id": "carrow_vale",
+        "label_point": {
+          "x": 50,
+          "y": 150
+        },
+        "name": "Carrow Vale",
+        "neighbor_ids": [
+          "ashford",
+          "dunwick",
+          "elmstead"
+        ],
+        "outline": "M0 100 L100 100 L100 200 L0 200 Z",
+        "source_color": null,
+        "source_ref": null,
+        "terrain": "hills"
+      },
+      {
+        "id": "elmstead",
+        "label_point": {
+          "x": 150,
+          "y": 150
+        },
+        "name": "Elmstead",
+        "neighbor_ids": [
+          "carrow_vale",
+          "fenwatch"
+        ],
+        "outline": "M100 100 L200 100 L200 200 L100 200 Z",
+        "source_color": null,
+        "source_ref": null,
+        "terrain": "coast"
+      },
+      {
+        "id": "fenwatch",
+        "label_point": {
+          "x": 250,
+          "y": 150
+        },
+        "name": "Fenwatch",
+        "neighbor_ids": [
+          "dunwick",
+          "elmstead"
+        ],
+        "outline": "M200 100 L300 100 L300 200 L200 200 Z",
+        "source_color": null,
+        "source_ref": null,
+        "terrain": "mountain"
+      }
+    ],
+    "roads": [
+      {
+        "region_a": "ashford",
+        "region_b": "carrow_vale"
+      },
+      {
+        "region_a": "carrow_vale",
+        "region_b": "elmstead"
+      }
+    ],
+    "schema_version": 1,
+    "source": "manual",
+    "width": 300
+  },
+  "schema_version": 1,
+  "starting": {
+    "armies": [
+      {
+        "commander_id": null,
+        "id": "army_ashford_1",
+        "location_id": "ashford",
+        "morale": 70,
+        "owner_id": "house_ashford",
+        "troops": {
+          "cavalry": 80,
+          "infantry": 300
+        }
+      },
+      {
+        "commander_id": "cmd_brand",
+        "id": "army_carrow_1",
+        "location_id": "carrow_vale",
+        "morale": 70,
+        "owner_id": "house_carrow",
+        "troops": {
+          "archers_siege": 60,
+          "infantry": 260
+        }
+      },
+      {
+        "commander_id": null,
+        "id": "army_dunwick_1",
+        "location_id": "dunwick",
+        "morale": 70,
+        "owner_id": "house_dunwick",
+        "troops": {
+          "cavalry": 50,
+          "infantry": 240
+        }
+      }
+    ],
+    "claims": [
+      {
+        "faction_id": "house_dunwick",
+        "region_id": "brennmoor"
+      }
+    ],
+    "grudges": [
+      {
+        "holder_id": "harl",
+        "opinion": -40,
+        "reason": "Ashford holds Brennmoor, taken from his father.",
+        "target_id": "mira"
+      }
+    ],
+    "regions": [
+      {
+        "faith_id": "old_faith",
+        "garrison": 60,
+        "governor_id": null,
+        "improvement_kinds": [
+          "farms_and_market"
+        ],
+        "manpower": 120,
+        "owner_id": "house_ashford",
+        "population": 900,
+        "region_id": "ashford",
+        "unrest": 10,
+        "wealth": 70
+      },
+      {
+        "faith_id": "old_faith",
+        "garrison": 60,
+        "governor_id": "gov_oswin",
+        "improvement_kinds": [],
+        "manpower": 70,
+        "owner_id": "house_ashford",
+        "population": 500,
+        "region_id": "brennmoor",
+        "unrest": 10,
+        "wealth": 35
+      },
+      {
+        "faith_id": "old_faith",
+        "garrison": 60,
+        "governor_id": null,
+        "improvement_kinds": [
+          "fort"
+        ],
+        "manpower": 110,
+        "owner_id": "house_carrow",
+        "population": 800,
+        "region_id": "carrow_vale",
+        "unrest": 10,
+        "wealth": 60
+      },
+      {
+        "faith_id": "old_faith",
+        "garrison": 60,
+        "governor_id": null,
+        "improvement_kinds": [],
+        "manpower": 80,
+        "owner_id": "house_carrow",
+        "population": 600,
+        "region_id": "elmstead",
+        "unrest": 10,
+        "wealth": 55
+      },
+      {
+        "faith_id": "old_faith",
+        "garrison": 60,
+        "governor_id": null,
+        "improvement_kinds": [],
+        "manpower": 100,
+        "owner_id": "house_dunwick",
+        "population": 700,
+        "region_id": "dunwick",
+        "unrest": 10,
+        "wealth": 50
+      },
+      {
+        "faith_id": "old_faith",
+        "garrison": 60,
+        "governor_id": null,
+        "improvement_kinds": [],
+        "manpower": 60,
+        "owner_id": "house_dunwick",
+        "population": 400,
+        "region_id": "fenwatch",
+        "unrest": 10,
+        "wealth": 30
+      }
+    ],
+    "relations": [
+      {
+        "faction_a": "house_ashford",
+        "faction_b": "house_dunwick",
+        "status": "peace"
+      }
+    ]
+  },
+  "theme": {
+    "archers_siege_name": "Archers & Siege",
+    "cavalry_name": "Cavalry",
+    "currency_name": "Gold",
+    "faith_name": "Faith",
+    "infantry_name": "Infantry",
+    "region_noun": "Region",
+    "ruler_title": "Ruler",
+    "temple_name": "Temple"
+  },
+  "toggles": {
+    "is_events_enabled": true,
+    "is_fog_enabled": true,
+    "is_loans_enabled": true,
+    "is_orders_budget_enabled": true,
+    "is_outrage_enabled": true,
+    "is_prisoners_enabled": true,
+    "is_religion_enabled": true,
+    "is_succession_enabled": true
+  },
+  "tuning": {
+    "end_year": 1030,
+    "event_frequency_percent": 50,
+    "order_costs": {
+      "attack": 1,
+      "besiege": 1,
+      "build_improvement": 2,
+      "diplomatic_play": 2,
+      "disband_army": 1,
+      "handle_prisoner": 1,
+      "merge_armies": 1,
+      "move_army": 1,
+      "propose_agreement": 1,
+      "raise_army": 2,
+      "send_envoy": 1,
+      "set_pay": 1,
+      "set_tax_rate": 1,
+      "split_army": 1,
+      "take_loan": 1
+    },
+    "orders_mode": "budget",
+    "orders_per_turn": 6,
+    "start_month": 3,
+    "start_year": 1000,
+    "summary_significance_threshold": 10
+  }
+}

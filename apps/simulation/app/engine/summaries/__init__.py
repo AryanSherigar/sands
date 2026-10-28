@@ -1,0 +1,1 @@
+"""Deterministic summary trigger rules."""

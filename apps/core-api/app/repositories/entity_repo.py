@@ -1,0 +1,67 @@
+"""Entity data repository for direct database operations."""
+
+import uuid
+
+from app.db.models.entity import Entity
+from sqlalchemy import func, select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+
+class EntityRepo:
+    """Repository managing direct SQLAlchemy queries for Entity."""
+
+    def __init__(self, session: AsyncSession) -> None:
+        self.session = session
+
+    async def create(self, entity: Entity) -> Entity:
+        """Persist a new Entity."""
+        self.session.add(entity)
+        await self.session.flush()
+        return entity
+
+    async def create_all(self, entities: list[Entity]) -> list[Entity]:
+        """Bulk-persist entities in a single flush (e.g. scenario duplication)."""
+        self.session.add_all(entities)
+        await self.session.flush()
+        return entities
+
+    async def get_by_id(self, entity_id: uuid.UUID) -> Entity | None:
+        """Retrieve an entity by its primary key ID."""
+        stmt = select(Entity).where(Entity.entity_id == entity_id)
+        result = await self.session.execute(stmt)
+        return result.scalars().first()
+
+    async def list_by_scenario(self, scenario_id: uuid.UUID) -> list[Entity]:
+        """Retrieve all entities belonging to a scenario."""
+        stmt = select(Entity).where(Entity.scenario_id == scenario_id)
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())
+
+    async def count_by_type(self, scenario_id: uuid.UUID, entity_type: str) -> int:
+        """Count entities of a given type within a scenario (pre-delete check)."""
+        stmt = (
+            select(func.count())
+            .select_from(Entity)
+            .where(Entity.scenario_id == scenario_id, Entity.entity_type == entity_type)
+        )
+        result = await self.session.execute(stmt)
+        return result.scalar_one()
+
+    async def update(self, entity: Entity) -> Entity:
+        """Flush changes to an existing entity."""
+        await self.session.flush()
+        await self.session.refresh(entity)
+        return entity
+
+    async def delete(self, entity: Entity) -> None:
+        """Permanently delete an entity. Cascades to referencing facts (DB-level)."""
+        await self.session.delete(entity)
+        await self.session.flush()
+
+    async def get_player_entity(self, scenario_id: uuid.UUID) -> Entity | None:
+        """Retrieve the designated player character entity for a scenario, if any."""
+        stmt = select(Entity).where(
+            Entity.scenario_id == scenario_id, Entity.is_player.is_(True)
+        )
+        result = await self.session.execute(stmt)
+        return result.scalars().first()
