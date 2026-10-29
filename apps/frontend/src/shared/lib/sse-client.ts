@@ -45,6 +45,10 @@ const DEFAULT_RETRY_CONFIG: SSERetryConfig = {
   backoffMultiplier: 1.5,
 };
 
+export class FantasyActionRefusedError extends Error {
+  override name = "FantasyActionRefusedError";
+}
+
 function computeNextBackoff(
   currentDelay: number,
   config: SSERetryConfig,
@@ -229,6 +233,17 @@ async function buildServiceUnavailableError(response: Response): Promise<Error> 
 }
 
 async function buildResponseError(response: Response): Promise<Error> {
+  if (response.status === 409) {
+    try {
+      const body: unknown = await response.json();
+      if (body && typeof body === "object" && "code" in body && body.code === "fantasy_action_refused" && "detail" in body && typeof body.detail === "string") {
+        return new FantasyActionRefusedError(body.detail);
+      }
+    } catch {
+      // Other conflicts use the generic transport error.
+    }
+    return new Error(`SSE request failed: ${response.status}`);
+  }
   if (response.status === HTTP_SERVICE_UNAVAILABLE) {
     return buildServiceUnavailableError(response);
   }
