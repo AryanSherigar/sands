@@ -71,18 +71,21 @@ CURRENT_INTERNAL_RULESET = 2
 UPRISING_LIFECYCLE_RULESET = 2
 CURRENT_LOGISTICS_RULESET = 1
 CURRENT_SUMMARY_RULESET = 2
-CURRENT_EVENTS_RULESET = 1
+CURRENT_EVENTS_RULESET = 2
+DISASTER_EVENTS_RULESET = 2
 CURRENT_DIPLOMACY_RULESET = 1
 CURRENT_PRESSURE_RULESET = 1
 CURRENT_PEACE_RULESET = 1
 CURRENT_ALLIANCE_RULESET = 1
 CURRENT_VASSAL_RULESET = 1
 CURRENT_COALITION_RULESET = 1
-CURRENT_OUTRAGE_RULESET = 1
+HELD_PRISONER_EXECUTION_RULESET = 2
+CURRENT_OUTRAGE_RULESET = 2
 CURRENT_AI_RULESET = 2
 CURRENT_ENDINGS_RULESET = 2
 CURRENT_OVERTURE_RULESET = 1
-CURRENT_SUCCESSION_RULESET = 1
+OPINION_CARRY_RULESET = 2
+CURRENT_SUCCESSION_RULESET = 2
 
 LEGACY_OMISSIONS: tuple[tuple[str, int, tuple[str, ...]], ...] = (
     ("battle_control_ruleset", 1, ("battle_control_ruleset",)),
@@ -145,6 +148,7 @@ class CounterKind(str, Enum):
     BATTLE = "battle"
     LEADER = "leader"
     COMMANDER = "commander"
+    SUBSIDY = "subsidy"
 
 
 class WorldState(WorldModel):
@@ -154,18 +158,18 @@ class WorldState(WorldModel):
     internal_ruleset: int = Field(default=0, ge=0, le=2)
     logistics_ruleset: int = Field(default=0, ge=0, le=1)
     summary_ruleset: int = Field(default=0, ge=0, le=2)
-    events_ruleset: int = Field(default=0, ge=0, le=1)
+    events_ruleset: int = Field(default=0, ge=0, le=2)
     diplomacy_ruleset: int = Field(default=0, ge=0, le=1)
     pressure_ruleset: int = Field(default=0, ge=0, le=1)
     peace_ruleset: int = Field(default=0, ge=0, le=1)
     alliance_ruleset: int = Field(default=0, ge=0, le=1)
     vassal_ruleset: int = Field(default=0, ge=0, le=1)
     coalition_ruleset: int = Field(default=0, ge=0, le=1)
-    outrage_ruleset: int = Field(default=0, ge=0, le=1)
+    outrage_ruleset: int = Field(default=0, ge=0, le=2)
     ai_ruleset: int = Field(default=0, ge=0, le=2)
     endings_ruleset: int = Field(default=0, ge=0, le=2)
     overture_ruleset: int = Field(default=0, ge=0, le=1)
-    succession_ruleset: int = Field(default=0, ge=0, le=1)
+    succession_ruleset: int = Field(default=0, ge=0, le=2)
     playthrough_id: UUID
     clock: TurnClock
     rng: RngState
