@@ -44,6 +44,7 @@ from app.models.world_peace import PeaceState
 from app.models.world_player import PlayerProfile, PlayerRuler
 from app.models.world_pressure import PressureState
 from app.models.world_region import RegionState
+from app.models.world_succession import SuccessionWorldState
 from app.models.world_vassal import VassalWorldState
 from app.models.world_visibility import MapScoutReport
 from pydantic import (
@@ -81,6 +82,7 @@ CURRENT_OUTRAGE_RULESET = 1
 CURRENT_AI_RULESET = 2
 CURRENT_ENDINGS_RULESET = 2
 CURRENT_OVERTURE_RULESET = 1
+CURRENT_SUCCESSION_RULESET = 1
 
 LEGACY_OMISSIONS: tuple[tuple[str, int, tuple[str, ...]], ...] = (
     ("battle_control_ruleset", 1, ("battle_control_ruleset",)),
@@ -119,6 +121,7 @@ LEGACY_OMISSIONS: tuple[tuple[str, int, tuple[str, ...]], ...] = (
         1,
         ("overture_ruleset", "overture_cooldowns", "overture_renewals"),
     ),
+    ("succession_ruleset", 1, ("succession_ruleset", "succession")),
 )
 
 
@@ -162,6 +165,7 @@ class WorldState(WorldModel):
     ai_ruleset: int = Field(default=0, ge=0, le=2)
     endings_ruleset: int = Field(default=0, ge=0, le=2)
     overture_ruleset: int = Field(default=0, ge=0, le=1)
+    succession_ruleset: int = Field(default=0, ge=0, le=1)
     playthrough_id: UUID
     clock: TurnClock
     rng: RngState
@@ -218,6 +222,7 @@ class WorldState(WorldModel):
     vassal: VassalWorldState = Field(default_factory=VassalWorldState)
     coalition: CoalitionWorldState = Field(default_factory=CoalitionWorldState)
     endings: EndingsWorldState = Field(default_factory=EndingsWorldState)
+    succession: SuccessionWorldState = Field(default_factory=SuccessionWorldState)
 
     @model_serializer(mode="wrap")
     def preserve_legacy_control(
