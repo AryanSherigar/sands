@@ -32,6 +32,7 @@ def _apply_armies(world: WorldState, delta: BattleDelta) -> None:
     )
     for identity in delta.removed_army_ids:
         world.armies.pop(identity, None)
+        world.supply_failure_turns.pop(identity, None)
     world.commanders.update(
         {
             identity: commander.model_copy(deep=True)
