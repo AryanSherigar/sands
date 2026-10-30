@@ -1,12 +1,25 @@
 import { LEVY_INFANTRY_PRESET } from "../constants/strategy.constants";
 import type {
+  AnswerCallOrder,
+  AnswerDemandOrder,
   AnswerEventOrder,
   AttackOrder,
+  CallNegotiationOrder,
+  DeclareDefaultOrder,
+  DeclareWarOrder,
+  DemandReply,
   HaltArmyOrder,
   MoveArmyOrder,
+  PayLevel,
   RaiseArmyOrder,
   RegionView,
   ResolveUprisingOrder,
+  SendEnvoyOrder,
+  SetPayOrder,
+  SetTaxRateOrder,
+  SuePeaceOrder,
+  TakeLoanOrder,
+  TaxRate,
   UprisingResponseId,
 } from "../types/simulation.types";
 import type { SituationSource } from "../types/situation.types";
@@ -77,4 +90,92 @@ export function buildSituationAnswer(
     return buildResolveUprisingOrder(factionId, targetId, choiceId as UprisingResponseId);
   }
   return buildAnswerEventOrder(factionId, targetId, choiceId);
+}
+
+export function buildSetTaxRateOrder(
+  factionId: string,
+  taxRate: TaxRate,
+): SetTaxRateOrder {
+  return { kind: "set_tax_rate", faction_id: factionId, tax_rate: taxRate };
+}
+
+export function buildTakeLoanOrder(
+  factionId: string,
+  amount: number,
+): TakeLoanOrder {
+  return { kind: "take_loan", faction_id: factionId, amount };
+}
+
+export function buildDeclareDefaultOrder(factionId: string): DeclareDefaultOrder {
+  return { kind: "declare_default", faction_id: factionId };
+}
+
+export function buildSetPayOrder(
+  factionId: string,
+  armyId: string,
+  payLevel: PayLevel,
+): SetPayOrder {
+  return {
+    kind: "set_pay",
+    faction_id: factionId,
+    army_id: armyId,
+    pay_level: payLevel,
+  };
+}
+
+export function buildDeclareWarOrder(
+  factionId: string,
+  targetFactionId: string,
+  groundId?: string | null,
+): DeclareWarOrder {
+  return {
+    kind: "declare_war",
+    faction_id: factionId,
+    target_faction_id: targetFactionId,
+    ground_id: groundId ?? null,
+  };
+}
+
+export function buildSuePeaceOrder(factionId: string, warId: string): SuePeaceOrder {
+  return { kind: "sue_peace", faction_id: factionId, war_id: warId };
+}
+
+export function buildCallNegotiationOrder(
+  factionId: string,
+  targetFactionId: string,
+): CallNegotiationOrder {
+  return { kind: "call_negotiation", faction_id: factionId, target_faction_id: targetFactionId };
+}
+
+export function buildSendEnvoyOrder(
+  factionId: string,
+  targetFactionId: string,
+): SendEnvoyOrder {
+  return { kind: "send_envoy", faction_id: factionId, target_faction_id: targetFactionId };
+}
+
+export function buildAnswerCallOrder(
+  factionId: string,
+  callId: string,
+  isJoining: boolean,
+): AnswerCallOrder {
+  return {
+    kind: "answer_call",
+    faction_id: factionId,
+    call_id: callId,
+    is_joining: isJoining,
+  };
+}
+
+export function buildAnswerDemandOrder(
+  factionId: string,
+  demandId: string,
+  reply: DemandReply,
+): AnswerDemandOrder {
+  return {
+    kind: "answer_demand",
+    faction_id: factionId,
+    demand_id: demandId,
+    reply,
+  };
 }

@@ -7,6 +7,7 @@ export interface IntRange {
 
 export type TroopType = "infantry" | "cavalry" | "archers_siege";
 export type TaxRate = "low" | "normal" | "high";
+export type PayLevel = "full" | "reduced";
 export type RouteStyle = "fastest" | "safest" | "roads";
 export type ImprovementKind =
   | "farms_and_market"
@@ -32,6 +33,7 @@ export interface RegionDetail {
   improvements: ImprovementState[];
   governor_id?: string | null;
   claimant_ids: string[];
+  occupation?: Record<string, unknown> | null;
   conversion_turns_remaining: number;
 }
 
@@ -49,6 +51,7 @@ export interface ArmyView {
   army_id: string;
   owner_id: string;
   location_id: string;
+  pay_level?: PayLevel;
   commander_name?: string | null;
   size_estimate?: IntRange | null;
   troops?: Partial<Record<TroopType, number>> | null;
@@ -61,6 +64,7 @@ export interface RivalView {
   relation: string;
   treasury_range: IntRange;
   manpower_range: IntRange;
+  avatar_url?: string | null;
 }
 
 export interface LoanState {
@@ -91,6 +95,10 @@ export interface RulerView {
   name: string;
   epithet?: string | null;
   portrait_url?: string | null;
+  trait_ids?: string[];
+  ambition_ids?: string[];
+  backstory?: string;
+  stress?: number;
 }
 
 export interface MoveArmyOrder {
@@ -141,6 +149,18 @@ export interface TakeLoanOrder {
   amount: number;
 }
 
+export interface DeclareDefaultOrder {
+  kind: "declare_default";
+  faction_id: string;
+}
+
+export interface SetPayOrder {
+  kind: "set_pay";
+  faction_id: string;
+  army_id: string;
+  pay_level: PayLevel;
+}
+
 export interface BuildImprovementOrder {
   kind: "build_improvement";
   faction_id: string;
@@ -168,6 +188,47 @@ export interface ResolveUprisingOrder {
   response: UprisingResponseId;
 }
 
+export interface DeclareWarOrder {
+  kind: "declare_war";
+  faction_id: string;
+  target_faction_id: string;
+  ground_id?: string | null;
+}
+
+export interface SuePeaceOrder {
+  kind: "sue_peace";
+  faction_id: string;
+  war_id: string;
+}
+
+export interface CallNegotiationOrder {
+  kind: "call_negotiation";
+  faction_id: string;
+  target_faction_id: string;
+}
+
+export interface SendEnvoyOrder {
+  kind: "send_envoy";
+  faction_id: string;
+  target_faction_id: string;
+}
+
+export interface AnswerCallOrder {
+  kind: "answer_call";
+  faction_id: string;
+  call_id: string;
+  is_joining: boolean;
+}
+
+export type DemandReply = "accept" | "counter" | "refuse" | "refuse_strongly" | "rebel";
+
+export interface AnswerDemandOrder {
+  kind: "answer_demand";
+  faction_id: string;
+  demand_id: string;
+  reply: DemandReply;
+}
+
 export type StrategyOrder =
   | AnswerEventOrder
   | ResolveUprisingOrder
@@ -178,7 +239,15 @@ export type StrategyOrder =
   | DisbandArmyOrder
   | SetTaxRateOrder
   | TakeLoanOrder
-  | BuildImprovementOrder;
+  | DeclareDefaultOrder
+  | SetPayOrder
+  | BuildImprovementOrder
+  | DeclareWarOrder
+  | SuePeaceOrder
+  | CallNegotiationOrder
+  | SendEnvoyOrder
+  | AnswerCallOrder
+  | AnswerDemandOrder;
 
 export interface BattleControlCommand {
   kind: "take_command" | "delegate_battle";
@@ -291,11 +360,131 @@ export interface EventMemoryView {
 }
 
 export type EndingKind = "victory" | "defeat" | "graded";
+export type EndingGrade = "triumph" | "honorable" | "pyrrhic" | "bitter" | "ruin";
 
-export interface EndingView {
+export interface EndingState {
   ending_id: string;
-  kind: EndingKind;
+  kind: string;
   turn: number;
+  grade?: EndingGrade;
+  inputs?: Record<string, number>;
+}
+
+export type EndingView = EndingState;
+
+export interface AllianceView {
+  id: string;
+  partner_id: string;
+  alliance_type: "defensive" | "full";
+  ends_turn?: number;
+  is_separate_peace_banned: boolean;
+}
+
+export interface VassalageView {
+  id: string;
+  overlord_id: string;
+  vassal_id: string;
+  tribute_share_percent: number;
+  levy_share_percent: number;
+  is_foreign_policy_controlled: boolean;
+  has_garrison_rights: boolean;
+  ends_turn?: number;
+}
+
+export type PeaceTier = "short" | "medium" | "generation" | "perpetual";
+
+export interface CoalitionView {
+  id: string;
+  target_id: string;
+  member_ids: string[];
+  expires_turn: number;
+}
+
+export interface WarView {
+  id: string;
+  attacker_id: string;
+  defender_id: string;
+  participant_ids?: string[];
+}
+
+export interface TruceView {
+  faction_a: string;
+  faction_b: string;
+  tier?: PeaceTier | null;
+  expires_turn?: number | null;
+  is_fragile: boolean;
+  guarantor_ids: string[];
+}
+
+export interface HostageView {
+  id: string;
+  giver_id: string;
+  holder_id: string;
+  leader_id: string;
+  release_turn: number;
+  is_at_mercy: boolean;
+}
+
+export interface CallView {
+  id: string;
+  caller_id: string;
+  war_id: string;
+  side: "attacker" | "defender";
+  is_defensive: boolean;
+  deadline_turn: number;
+}
+
+export interface PendingDemandView {
+  id: string;
+  overlord_id: string;
+  kind: "gold" | "manpower" | "hostage" | "territory";
+  amount: number;
+  granted: number;
+  deadline_turn: number;
+}
+
+export type ThreatBand =
+  | "negligible"
+  | "elevated"
+  | "severe"
+  | "critical"
+  | "very_low"
+  | "low"
+  | "medium"
+  | "high"
+  | "very_high";
+
+export interface OwnThreatView {
+  band: ThreatBand;
+  factors: Record<string, number>;
+}
+
+export interface MediationOfferView {
+  id: string;
+  mediator_id: string;
+  war_id: string;
+  expires_turn: number;
+}
+
+export interface SubsidyView {
+  id: string;
+  payer_id: string;
+  receiver_id: string;
+  war_id: string;
+  amount_per_turn: number;
+  turns_left: number;
+}
+
+export interface MobilizationView {
+  turns_left: number;
+}
+
+export interface PendingBattle {
+  battle_id: string;
+  region_id: string;
+  attacker_faction_id: string;
+  defender_faction_id: string;
+  [key: string]: unknown;
 }
 
 export interface UprisingResponseView {
@@ -350,8 +539,23 @@ export interface CampaignWorldView {
   uprisings?: UprisingView[];
   event_memories?: EventMemoryView[];
   pending_scene?: SceneRef | null;
-  ending?: EndingView | null;
+  ending?: EndingState | null;
   summary_availability?: SummaryAvailability;
+  pending_battles?: PendingBattle[];
+  rumors?: unknown[];
+  truces?: TruceView[];
+  wars?: WarView[];
+  own_hostages?: HostageView[];
+  open_mediations?: MediationOfferView[];
+  subsidies?: SubsidyView[];
+  mobilization?: MobilizationView | null;
+  alliances?: AllianceView[];
+  pending_calls?: CallView[];
+  vassalages?: VassalageView[];
+  coalitions?: CoalitionView[];
+  pending_demands?: PendingDemandView[];
+  own_pressure?: Record<string, unknown> | null;
+  own_threat?: OwnThreatView | null;
 }
 
 export type OrderFlag = "over_budget" | "impossible" | "not_your_army";

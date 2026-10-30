@@ -1,5 +1,6 @@
 export interface StrategyDrawerTabsProps {
-  activeTab: "factions" | "chronicle" | null;
+  activeTab: "factions" | "chronicle" | "treasury" | null;
   rivalsCount: number;
-  onSelectTab: (tab: "factions" | "chronicle" | null) => void;
+  obligationsCount?: number;
+  onSelectTab: (tab: "factions" | "chronicle" | "treasury" | null) => void;
 }
