@@ -7,11 +7,10 @@ see app/models/alpha_event_props.py.
 import uuid
 from datetime import datetime
 
+from app.db.base import Base
 from sqlalchemy import TIMESTAMP, CheckConstraint, ForeignKey, Index, Text, text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
-
-from app.db.base import Base
 
 EVENT_SOURCE_CLIENT = "client"
 EVENT_SOURCE_SERVER = "server"

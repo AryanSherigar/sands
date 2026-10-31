@@ -2,11 +2,10 @@
 
 import uuid
 
+from app.db.base import Base, CreatedAtMixin
 from sqlalchemy import CheckConstraint, ForeignKey, Index, Text, text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
-
-from app.db.base import Base, CreatedAtMixin
 
 SURVEY_KIND_INTAKE = "intake"
 SURVEY_KIND_POST_RUN = "post_run"

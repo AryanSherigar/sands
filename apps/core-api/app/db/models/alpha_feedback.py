@@ -2,11 +2,10 @@
 
 import uuid
 
+from app.db.base import Base, CreatedAtMixin
 from sqlalchemy import CheckConstraint, ForeignKey, Integer, Text, text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
-
-from app.db.base import Base, CreatedAtMixin
 
 FEEDBACK_CATEGORIES = ("bug", "confusing", "scary", "other")
 FEEDBACK_BODY_MAX_CHARS = 2000

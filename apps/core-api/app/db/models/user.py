@@ -3,11 +3,10 @@
 import uuid
 from datetime import datetime
 
+from app.db.base import Base, CreatedAtMixin
 from sqlalchemy import DateTime, String, Text, text
 from sqlalchemy.dialects.postgresql import ARRAY, UUID
 from sqlalchemy.orm import Mapped, mapped_column
-
-from app.db.base import Base, CreatedAtMixin
 
 
 class User(Base, CreatedAtMixin):

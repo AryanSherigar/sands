@@ -2,11 +2,10 @@
 
 import uuid
 
+from app.db.base import Base, CreatedAtMixin
 from sqlalchemy import ForeignKey, Text, UniqueConstraint, text
 from sqlalchemy.dialects.postgresql import ARRAY, UUID
 from sqlalchemy.orm import Mapped, mapped_column
-
-from app.db.base import Base, CreatedAtMixin
 
 FLAG_REASONS = (
     "broke_rule",
