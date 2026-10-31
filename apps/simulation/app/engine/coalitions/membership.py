@@ -3,6 +3,7 @@ from app.engine.coalitions.registry import is_member_against
 from app.engine.movement.map_index import MapIndex
 from app.engine.opinion import opinion_of
 from app.engine.trait_axes import axis_totals
+from app.models.world_coalition import pair_key
 from app.models.world_state import WorldState
 from strategy_contracts.coalition import CoalitionTuning
 from strategy_contracts.ids import FactionId
@@ -40,6 +41,9 @@ def is_eligible_member(
 ) -> bool:
     member = world.factions[member_id]
     if member_id == target_id or member.is_destroyed or member.leader_id is None:
+        return False
+    lockout = world.coalition.rejoin_lockouts.get(pair_key(target_id, member_id), 0)
+    if lockout > world.clock.turn:
         return False
     return not is_member_against(world, member_id, target_id)
 

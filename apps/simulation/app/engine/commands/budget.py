@@ -7,7 +7,16 @@ from app.models.world_state import WorldState
 from strategy_contracts.enums import OrderKind
 from strategy_contracts.scenario import StrategyScenario
 
-FREE_BATTLE_COMMANDS = frozenset(("take_command", "delegate_battle"))
+FREE_BATTLE_COMMANDS = frozenset(
+    (
+        "take_command",
+        "delegate_battle",
+        "set_plan",
+        "commit_reserves",
+        "withdraw",
+        "surrender",
+    )
+)
 
 
 def command_cost(

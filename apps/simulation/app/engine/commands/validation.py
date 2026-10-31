@@ -17,6 +17,7 @@ from app.engine.movement.reasons import RejectReason
 from app.engine.movement.route_options import RoutePreferences
 from app.engine.movement.route_planning import plan_march
 from app.engine.movement.state import MovementRun
+from app.engine.sieges.orders import validate_besiege
 from app.engine.visibility.scouting import validate_map_scout_target
 from app.exceptions.base import SimulationServiceError
 from app.exceptions.command_exceptions import CommandError
@@ -34,6 +35,7 @@ from app.models.battle_command import (
 from app.models.orders import (
     AnswerEventOrder,
     AttackOrder,
+    BesiegeOrder,
     MapScoutOrder,
     MoveArmyOrder,
     QueuedOrder,
@@ -223,5 +225,7 @@ def validate_empire_command(
         )
     elif isinstance(command, MoveArmyOrder | AttackOrder):
         _validate_route(world, command, scenario)
+    elif isinstance(command, BesiegeOrder):
+        validate_besiege(world, command)
     elif command.kind != "halt_army":
         _validate_economy(world, command, scenario, pending)

@@ -1,6 +1,7 @@
 from collections.abc import Callable
 from uuid import UUID
 
+from app.engine.letters.closing import close_letter
 from app.engine.negotiation import close_negotiation
 from app.exceptions.command_exceptions import CampaignProgressError
 from app.models.world_events import EventLogEntry
@@ -37,6 +38,7 @@ def _close_negotiation_scene(
 SCENE_CLOSERS: dict[SceneType, SceneCloser] = {
     SceneType.NEGOTIATION: _close_negotiation_scene,
     SceneType.PEACE: _close_negotiation_scene,
+    SceneType.LETTER: close_letter,
 }
 
 

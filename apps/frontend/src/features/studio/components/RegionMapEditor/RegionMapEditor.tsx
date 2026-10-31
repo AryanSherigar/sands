@@ -48,6 +48,7 @@ export const RegionMapEditor: React.FC<RegionMapEditorProps> = ({
   pictureUrl,
   pictureSize,
   initialDocument,
+  startFile = null,
   onFinish,
 }) => {
   const raster = useMemo(
@@ -63,6 +64,7 @@ export const RegionMapEditor: React.FC<RegionMapEditorProps> = ({
   const [warnings, setWarnings] = useState<TraceWarning[]>([]);
   const [focusSignal, setFocusSignal] = useState(0);
   const sourceImageRef = useRef<PixelImage | null>(null);
+  const hasTracedStartFileRef = useRef(false);
   const seedsRef = useRef<[number, number, number][]>([]);
   const viewport = useViewport(raster);
   const { trace, setDraftMap } = useRegionTrace(store.labelMap, { source, imageUrl: pictureUrl }, retrace);
@@ -116,6 +118,15 @@ export const RegionMapEditor: React.FC<RegionMapEditorProps> = ({
     setSource("color_image");
     store.loadFromTrace(outcome.labelMap);
   };
+
+  const chooseColorImageRef = useRef(handleColorImageChosen);
+  chooseColorImageRef.current = handleColorImageChosen;
+
+  useEffect(() => {
+    if (!startFile || hasTracedStartFileRef.current) return;
+    hasTracedStartFileRef.current = true;
+    void chooseColorImageRef.current(startFile);
+  }, [startFile]);
 
   const handleTraceByHand = (): void => {
     setSource("manual");

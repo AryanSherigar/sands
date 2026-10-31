@@ -1,24 +1,34 @@
 from app.engine.alliances.answers import apply_answer, resolve_calls
 from app.engine.alliances.denounce import denounce_alliance, expire_alliances
+from app.engine.coalitions.appease import apply_appease
 from app.engine.coalitions.phase import tick_coalitions
 from app.engine.commands.ledger import due_commands
 from app.engine.diplomacy.envoy import open_envoy
+from app.engine.diplomacy.espionage import bribe_envoy
 from app.engine.diplomacy.events import diplomacy_event
 from app.engine.diplomacy.fabrication import start_forgery, tick_forgeries
 from app.engine.diplomacy.grounds import expire_grounds
 from app.engine.diplomacy.mediation import apply_mediation
+from app.engine.diplomacy.npc_peace import apply_sue_peace
 from app.engine.diplomacy.plays import open_play, resolve_due_plays
-from app.engine.diplomacy.prisoners import handle_prisoner
+from app.engine.diplomacy.prisoners import execute_held_prisoners, handle_prisoner
 from app.engine.diplomacy.validation import validate_diplomacy_order
 from app.engine.diplomacy.war_declaration import declare_war
 from app.engine.diplomacy.war_score import tally_war_scores
 from app.engine.outrage.ledger import tick_outrage
+from app.engine.outrage.mobilize import apply_mobilize
 from app.engine.peace.breach import tick_breach
 from app.engine.peace.hostages import release_due_hostages
 from app.engine.peace.truces import expire_truces
 from app.engine.phases import PhaseContext, PhaseResult
 from app.engine.pressure.counters import update_stalemate
 from app.engine.pressure.phase import tick_pressure
+from app.engine.pressure.subsidies import (
+    apply_cut_subsidy,
+    apply_subsidize,
+    pay_subsidies,
+)
+from app.engine.succession.phase import tick_succession
 from app.engine.vassals.commands import (
     VASSAL_REFUNDED_REASONS,
     VassalOrder,
@@ -30,14 +40,20 @@ from app.exceptions.command_exceptions import CommandError
 from app.models.battle_command import AcceptedCommand, CommandStatus
 from app.models.orders import (
     AnswerCallOrder,
+    AppeaseCoalitionOrder,
+    BribeEnvoyOrder,
     CallNegotiationOrder,
+    CutSubsidyOrder,
     DeclareWarOrder,
     DenounceAllianceOrder,
     DiplomaticPlayOrder,
     FabricateClaimOrder,
     HandlePrisonerOrder,
     MediateOrder,
+    MobilizeOrder,
     SendEnvoyOrder,
+    SubsidizeOrder,
+    SuePeaceOrder,
 )
 from app.models.world_events import EventLogEntry, PhaseName
 from app.models.world_state import WorldState
@@ -59,6 +75,18 @@ REFUNDED_REASONS = frozenset(
         "call_expired",
         "unknown_alliance",
         "not_member",
+        "pressure_disabled",
+        "receiver_unavailable",
+        "receiver_not_in_war",
+        "payer_is_enemy",
+        "bad_amount",
+        "bad_duration",
+        "subsidy_exists",
+        "unknown_subsidy",
+        "not_payer",
+        "outrage_disabled",
+        "not_at_war",
+        "already_mobilized",
     )
 )
 
@@ -76,6 +104,48 @@ def _mark_applied(world: WorldState, command: AcceptedCommand) -> None:
     command.applied_wave = world.progress.completed_waves
 
 
+def _apply_resource_order(
+    world: WorldState,
+    order: SubsidizeOrder | CutSubsidyOrder | MobilizeOrder,
+    context: PhaseContext,
+) -> list[EventLogEntry]:
+    if isinstance(order, SubsidizeOrder):
+        return apply_subsidize(world, context.scenario, order)
+    if isinstance(order, MobilizeOrder):
+        return apply_mobilize(world, context.scenario, order)
+    return apply_cut_subsidy(world, order)
+
+
+def _apply_peace_order(
+    world: WorldState,
+    order: MediateOrder | SuePeaceOrder,
+    context: PhaseContext,
+) -> list[EventLogEntry]:
+    if isinstance(order, MediateOrder):
+        return apply_mediation(world, context.scenario, order)
+    return apply_sue_peace(world, context.scenario, order)
+
+
+def _apply_pact_order(
+    world: WorldState,
+    order: DenounceAllianceOrder | AppeaseCoalitionOrder,
+    context: PhaseContext,
+) -> list[EventLogEntry]:
+    if isinstance(order, DenounceAllianceOrder):
+        return denounce_alliance(world, context.scenario, order)
+    return apply_appease(world, context.scenario, order)
+
+
+def _apply_covert_order(
+    world: WorldState,
+    order: HandlePrisonerOrder | BribeEnvoyOrder,
+    context: PhaseContext,
+) -> list[EventLogEntry]:
+    if isinstance(order, BribeEnvoyOrder):
+        return bribe_envoy(world, context.scenario, order)
+    return handle_prisoner(world, context.scenario, order)
+
+
 def _apply_core_order(
     world: WorldState, command: AcceptedCommand, context: PhaseContext
 ) -> list[EventLogEntry]:
@@ -85,15 +155,17 @@ def _apply_core_order(
     elif isinstance(command.command, DiplomaticPlayOrder | CallNegotiationOrder):
         events = open_play(world, context.scenario, command.command)
     elif isinstance(command.command, SendEnvoyOrder):
-        events = [open_envoy(world, command.command)]
-    elif isinstance(command.command, MediateOrder):
-        events = apply_mediation(world, context.scenario, command.command)
-    elif isinstance(command.command, HandlePrisonerOrder):
-        events = handle_prisoner(world, context.scenario, command.command)
+        events = [open_envoy(world, command.command, context.scenario, context.rng)]
+    elif isinstance(command.command, MediateOrder | SuePeaceOrder):
+        events = _apply_peace_order(world, command.command, context)
+    elif isinstance(command.command, SubsidizeOrder | CutSubsidyOrder | MobilizeOrder):
+        events = _apply_resource_order(world, command.command, context)
+    elif isinstance(command.command, HandlePrisonerOrder | BribeEnvoyOrder):
+        events = _apply_covert_order(world, command.command, context)
     elif isinstance(command.command, AnswerCallOrder):
         events = apply_answer(world, context.scenario, command.command)
-    elif isinstance(command.command, DenounceAllianceOrder):
-        events = denounce_alliance(world, context.scenario, command.command)
+    elif isinstance(command.command, DenounceAllianceOrder | AppeaseCoalitionOrder):
+        events = _apply_pact_order(world, command.command, context)
     elif isinstance(command.command, FabricateClaimOrder):
         events = [start_forgery(world, context.scenario, command.command)]
     return events
@@ -173,6 +245,7 @@ class TimePhase:
         }
         events += tally_war_scores(world, context.scenario)
         if world.pressure_ruleset:
+            events += pay_subsidies(world)
             update_stalemate(world, scores_before)
             events += tick_pressure(world, context.scenario, context.rng)
         if world.peace_ruleset:
@@ -182,4 +255,9 @@ class TimePhase:
             event.model_copy(update={"phase": PhaseName.TIME})
             for event in tick_outrage(world, context.scenario)
         ]
+        events += [
+            event.model_copy(update={"phase": PhaseName.TIME})
+            for event in execute_held_prisoners(world, context.scenario)
+        ]
+        events += tick_succession(world, context.scenario, context.rng)
         return PhaseResult(world, events)

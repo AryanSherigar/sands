@@ -6,30 +6,58 @@ import {
   DEFAULT_FACTION_TREASURY,
   DEFAULT_LEADER_AGE,
   DEFAULT_LEADER_TRAIT_IDS,
+  DEFAULT_START_MONTH,
+  DEFAULT_START_YEAR,
   FACTION_COLORS,
-  STRATEGY_ID_FALLBACK_PREFIX,
-  STRATEGY_ID_SLUG_LENGTH,
+  STUDIO_DEFAULT_END_YEAR,
 } from "../constants/strategyAuthoring";
 import type {
   StrategyAmbition,
+  StrategyArmy,
+  StrategyClaim,
+  StrategyCommander,
   StrategyFaction,
   StrategyFields,
+  StrategyGrudge,
   StrategyLeader,
   StrategyRegionSetup,
+  StrategyRelation,
+  StrategyTiming,
 } from "../types/strategyDocument.types";
+import { makeUniqueId } from "./strategyIds";
+import { addArmy, addPeaceWithAll, withEconomyDefaults } from "./strategyStart";
+
+export { makeUniqueId };
 
 type RawDocument = Record<string, unknown>;
 
+const ZERO_ECONOMY = { population: 0, wealth: 0, manpower: 0, unrest: 0, garrison: 0 };
+
 const asArray = <T,>(value: unknown): T[] => (Array.isArray(value) ? (value as T[]) : []);
+
+const readTiming = (raw: RawDocument): StrategyTiming => {
+  const tuning = (raw.tuning ?? {}) as Partial<StrategyTiming>;
+  return {
+    start_year: tuning.start_year ?? DEFAULT_START_YEAR,
+    start_month: tuning.start_month ?? DEFAULT_START_MONTH,
+    end_year: tuning.end_year ?? STUDIO_DEFAULT_END_YEAR,
+  };
+};
 
 // NOTE: the server validates the full document; this only reads the slices Studio edits.
 export const readStrategyFields = (raw: RawDocument): StrategyFields => {
-  const starting = (raw.starting ?? {}) as { regions?: unknown };
+  const starting = (raw.starting ?? {}) as Record<string, unknown>;
   return {
     factions: asArray<StrategyFaction>(raw.factions),
     leaders: asArray<StrategyLeader>(raw.leaders),
     ambitions: asArray<StrategyAmbition>(raw.ambitions),
-    regions: asArray<StrategyRegionSetup>(starting.regions),
+    regions: asArray<StrategyRegionSetup>(starting.regions).map((item) => ({ ...ZERO_ECONOMY, ...item })),
+    armies: asArray<StrategyArmy>(starting.armies),
+    commanders: asArray<StrategyCommander>(raw.commanders),
+    relations: asArray<StrategyRelation>(starting.relations),
+    claims: asArray<StrategyClaim>(starting.claims),
+    grudges: asArray<StrategyGrudge>(starting.grudges),
+    timing: readTiming(raw),
   };
 };
 
@@ -38,22 +66,17 @@ export const applyStrategyFields = (raw: RawDocument, fields: StrategyFields): R
   factions: fields.factions,
   leaders: fields.leaders,
   ambitions: fields.ambitions,
-  starting: { ...((raw.starting ?? {}) as RawDocument), regions: fields.regions },
+  commanders: fields.commanders,
+  starting: {
+    ...((raw.starting ?? {}) as RawDocument),
+    regions: fields.regions,
+    armies: fields.armies,
+    relations: fields.relations,
+    claims: fields.claims,
+    grudges: fields.grudges,
+  },
+  tuning: { ...((raw.tuning ?? {}) as RawDocument), ...fields.timing },
 });
-
-export const makeUniqueId = (name: string, takenIds: readonly string[]): string => {
-  const slug = name
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "_")
-    .replace(/^_+|_+$/g, "")
-    .slice(0, STRATEGY_ID_SLUG_LENGTH);
-  const base = /^[a-z]/.test(slug) && slug.length >= 2 ? slug : `${STRATEGY_ID_FALLBACK_PREFIX}${slug}`;
-  let candidate = base;
-  for (let suffix = 2; takenIds.includes(candidate); suffix += 1) {
-    candidate = `${base}_${suffix}`;
-  }
-  return candidate;
-};
 
 const buildAmbition = (presetId: string, factionId: string): StrategyAmbition => {
   const preset = AMBITION_PRESETS.find((item) => item.id === presetId) ?? AMBITION_PRESETS[0];
@@ -95,22 +118,34 @@ export const addFaction = (fields: StrategyFields, name: string): StrategyFields
     history: "",
     age: DEFAULT_LEADER_AGE,
   };
-  return {
-    ...fields,
-    factions: [...fields.factions, faction],
-    leaders: [...fields.leaders, leader],
-    ambitions: [...fields.ambitions, ambition],
-  };
+  return addPeaceWithAll(
+    {
+      ...fields,
+      factions: [...fields.factions, faction],
+      leaders: [...fields.leaders, leader],
+      ambitions: [...fields.ambitions, ambition],
+    },
+    factionId,
+  );
 };
 
-export const removeFaction = (fields: StrategyFields, factionId: string): StrategyFields => ({
-  factions: fields.factions.filter((item) => item.id !== factionId),
-  leaders: fields.leaders.filter((item) => item.faction_id !== factionId),
-  ambitions: fields.ambitions.filter((item) => item.condition.subject_id !== factionId),
-  regions: fields.regions.map((item) =>
-    item.owner_id === factionId ? { ...item, owner_id: null } : item,
-  ),
-});
+export const removeFaction = (fields: StrategyFields, factionId: string): StrategyFields => {
+  const leaderIds = fields.leaders.filter((item) => item.faction_id === factionId).map((item) => item.id);
+  return {
+    ...fields,
+    factions: fields.factions.filter((item) => item.id !== factionId),
+    leaders: fields.leaders.filter((item) => item.faction_id !== factionId),
+    ambitions: fields.ambitions.filter((item) => item.condition.subject_id !== factionId),
+    regions: fields.regions.map((item) => (item.owner_id === factionId ? { ...item, owner_id: null } : item)),
+    armies: fields.armies.filter((item) => item.owner_id !== factionId),
+    commanders: fields.commanders.filter((item) => item.faction_id !== factionId),
+    relations: fields.relations.filter((item) => item.faction_a !== factionId && item.faction_b !== factionId),
+    claims: fields.claims.filter((item) => item.faction_id !== factionId),
+    grudges: fields.grudges.filter(
+      (item) => !leaderIds.includes(item.holder_id) && !leaderIds.includes(item.target_id),
+    ),
+  };
+};
 
 export const updateFaction = (
   fields: StrategyFields,
@@ -149,6 +184,13 @@ export const getAmbitionPresetId = (fields: StrategyFields, leader: StrategyLead
   return preset?.id ?? "";
 };
 
+const withOwnedRegion = (fields: StrategyFields, regionId: string, ownerId: string): StrategyFields => {
+  const owned = fields.regions.map((item) => (item.region_id === regionId ? withEconomyDefaults(item) : item));
+  const hasArmy = fields.armies.some((item) => item.owner_id === ownerId);
+  const seeded = { ...fields, regions: owned };
+  return hasArmy ? seeded : addArmy(seeded, ownerId, regionId);
+};
+
 export const setRegionOwner = (
   fields: StrategyFields,
   regionId: string,
@@ -157,8 +199,9 @@ export const setRegionOwner = (
   const isKnown = fields.regions.some((item) => item.region_id === regionId);
   const regions = isKnown
     ? fields.regions.map((item) => (item.region_id === regionId ? { ...item, owner_id: ownerId } : item))
-    : [...fields.regions, { region_id: regionId, owner_id: ownerId }];
-  return { ...fields, regions };
+    : [...fields.regions, { ...ZERO_ECONOMY, region_id: regionId, owner_id: ownerId }];
+  const updated = { ...fields, regions };
+  return ownerId === null ? updated : withOwnedRegion(updated, regionId, ownerId);
 };
 
 export const getRegionOwner = (fields: StrategyFields, regionId: string): string | null =>

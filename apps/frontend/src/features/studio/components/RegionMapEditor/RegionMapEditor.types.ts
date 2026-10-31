@@ -9,6 +9,7 @@ export interface RegionMapEditorProps {
   pictureUrl: string;
   pictureSize: { width: number; height: number };
   initialDocument: MapDocument | null;
+  startFile?: File | null;
   onFinish: (result: RegionMapResult) => void;
 }
 

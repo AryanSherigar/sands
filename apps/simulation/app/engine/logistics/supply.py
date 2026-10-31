@@ -113,7 +113,7 @@ def _reachable_regions(
         for identity, region in world.regions.items()
         if region.owner_id in _supply_owners(world, faction_id)
         and region.occupation is None
-    }
+    } | _contested_regions(world, faction_id)
     pending = [capital_id]
     visited: set[str] = set()
     while pending:
@@ -125,6 +125,20 @@ def _reachable_regions(
             sorted(index.neighbors.get(current, frozenset()) - visited, reverse=True)
         )
     return visited
+
+
+def _contested_regions(world: WorldState, faction_id: str) -> set[str]:
+    # NOTE: a besieged or held region counts as supplied ground for its besieger,
+    # otherwise forced withdrawal after two isolated turns ends every siege early.
+    besieged = {
+        siege.region_id for siege in world.sieges if siege.besieger_id == faction_id
+    }
+    held = {
+        identity
+        for identity, region in world.regions.items()
+        if region.occupation is not None and region.occupation.occupier_id == faction_id
+    }
+    return besieged | held
 
 
 def _supply_owners(world: WorldState, faction_id: str) -> set[str]:

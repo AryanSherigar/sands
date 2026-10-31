@@ -44,6 +44,7 @@ from app.models.world_peace import PeaceState
 from app.models.world_player import PlayerProfile, PlayerRuler
 from app.models.world_pressure import PressureState
 from app.models.world_region import RegionState
+from app.models.world_siege import SiegeState
 from app.models.world_succession import SuccessionWorldState
 from app.models.world_vassal import VassalWorldState
 from app.models.world_visibility import MapScoutReport
@@ -54,6 +55,7 @@ from pydantic import (
     model_serializer,
     model_validator,
 )
+from strategy_contracts.events import EventNarrativeBriefing
 from strategy_contracts.ids import (
     ArmyId,
     CommanderId,
@@ -86,6 +88,8 @@ CURRENT_ENDINGS_RULESET = 2
 CURRENT_OVERTURE_RULESET = 1
 OPINION_CARRY_RULESET = 2
 CURRENT_SUCCESSION_RULESET = 2
+CURRENT_TREATY_RULESET = 1
+CURRENT_SIEGE_RULESET = 1
 
 LEGACY_OMISSIONS: tuple[tuple[str, int, tuple[str, ...]], ...] = (
     ("battle_control_ruleset", 1, ("battle_control_ruleset",)),
@@ -125,6 +129,8 @@ LEGACY_OMISSIONS: tuple[tuple[str, int, tuple[str, ...]], ...] = (
         ("overture_ruleset", "overture_cooldowns", "overture_renewals"),
     ),
     ("succession_ruleset", 1, ("succession_ruleset", "succession")),
+    ("treaty_ruleset", 1, ("treaty_ruleset",)),
+    ("siege_ruleset", 1, ("siege_ruleset", "sieges")),
 )
 
 
@@ -170,6 +176,8 @@ class WorldState(WorldModel):
     endings_ruleset: int = Field(default=0, ge=0, le=2)
     overture_ruleset: int = Field(default=0, ge=0, le=1)
     succession_ruleset: int = Field(default=0, ge=0, le=2)
+    treaty_ruleset: int = Field(default=0, ge=0, le=1)
+    siege_ruleset: int = Field(default=0, ge=0, le=1)
     playthrough_id: UUID
     clock: TurnClock
     rng: RngState
@@ -192,6 +200,7 @@ class WorldState(WorldModel):
     player_profile: PlayerProfile = Field(default_factory=PlayerProfile)
     ruler: PlayerRuler
     pending_events: list[PendingEvent] = Field(default_factory=list)
+    pending_event_deliveries: list[EventNarrativeBriefing] = Field(default_factory=list)
     event_memories: list[EventMemory] = Field(default_factory=list)
     battles: list[BattleState] = Field(
         default_factory=list,
@@ -217,6 +226,7 @@ class WorldState(WorldModel):
     ending: EndingState | None = None
     stability_collapse_turns: int = Field(default=0, ge=0)
     negotiation_cooldowns: dict[str, int] = Field(default_factory=dict)
+    letter_cooldowns: dict[FactionId, int] = Field(default_factory=dict)
     overture_cooldowns: dict[FactionId, int] = Field(default_factory=dict)
     overture_renewals: list[str] = Field(default_factory=list)
     aims: dict[FactionId, AimState] = Field(default_factory=dict)
@@ -227,6 +237,7 @@ class WorldState(WorldModel):
     coalition: CoalitionWorldState = Field(default_factory=CoalitionWorldState)
     endings: EndingsWorldState = Field(default_factory=EndingsWorldState)
     succession: SuccessionWorldState = Field(default_factory=SuccessionWorldState)
+    sieges: list[SiegeState] = Field(default_factory=list)
 
     @model_serializer(mode="wrap")
     def preserve_legacy_control(
@@ -235,6 +246,8 @@ class WorldState(WorldModel):
         document = handler(self)
         if not document.get("negotiation_cooldowns"):
             document.pop("negotiation_cooldowns", None)
+        if not document.get("letter_cooldowns"):
+            document.pop("letter_cooldowns", None)
         for ruleset, minimum, keys in LEGACY_OMISSIONS:
             if getattr(self, ruleset) < minimum:
                 for key in keys:

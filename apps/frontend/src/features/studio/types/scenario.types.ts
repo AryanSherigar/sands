@@ -54,6 +54,7 @@ type ScenarioPlayerMode = "written" | "player_created";
 
 interface ScenarioRules {
   text?: string;
+  [key: string]: unknown;
 }
 
 export interface ScenarioCreate {

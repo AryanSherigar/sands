@@ -9,10 +9,12 @@ from app.engine.movement.order_intake import apply_orders
 from app.engine.movement.road_meetings import resolve_road_meetings
 from app.engine.movement.state import MovementRun
 from app.engine.phases import PhaseContext, PhaseResult
+from app.engine.sieges.orders import apply_besiege
+from app.engine.sieges.phase import SiegePhase
 from app.engine.visibility.scouting import resolve_map_scout
 from app.exceptions.base import SimulationServiceError
 from app.models.battle_command import AcceptedCommand, CommandStatus
-from app.models.orders import MapScoutOrder
+from app.models.orders import BesiegeOrder, MapScoutOrder
 from app.models.world_events import EventLogEntry, PhaseName
 from app.models.world_state import WorldState
 
@@ -113,3 +115,20 @@ class CampaignMovementPhase:
         advance_all(run)
         resolve_road_meetings(run)
         return PhaseResult(world, run.events)
+
+
+class CampaignSiegePhase:
+    name = PhaseName.SIEGES
+
+    def run(self, world: WorldState, context: PhaseContext) -> PhaseResult:
+        events: list[EventLogEntry] = []
+        for command in due_commands(world, self.name):
+            if not _validate_due(world, command, context):
+                continue
+            if isinstance(command.command, BesiegeOrder):
+                applied = apply_besiege(world, command.command)
+                events.extend(applied)
+                _mark_application(world, command, applied)
+        result = SiegePhase().run(world, context)
+        result.events = events + result.events
+        return result

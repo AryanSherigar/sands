@@ -1,23 +1,33 @@
 from collections.abc import Callable
 
 from app.engine.ai.candidates import Candidate
+from app.engine.ai.generators.alliance import denounce_candidates
+from app.engine.ai.generators.court import envoy_candidates
 from app.engine.ai.generators.diplomacy import (
     demand_candidates,
     forgery_candidates,
+    peace_candidates,
     talks_candidates,
     war_candidates,
 )
 from app.engine.ai.generators.economy import tax_rate_candidates
+from app.engine.ai.generators.espionage import bribe_candidates
 from app.engine.ai.generators.feint import feint_candidates
 from app.engine.ai.generators.levy import levy_candidates
 from app.engine.ai.generators.movement import movement_candidates
 from app.engine.ai.generators.order import uprising_candidates
+from app.engine.ai.generators.pressure import (
+    appease_candidates,
+    mobilize_candidates,
+)
 from app.engine.ai.generators.recon import scout_candidates
+from app.engine.ai.generators.subsidy import subsidy_candidates
 from app.engine.ai.generators.treasury import (
     disband_candidates,
     loan_candidates,
     pay_candidates,
 )
+from app.engine.ai.generators.vassal import vassal_candidates
 from app.engine.commands.check import check_command
 from app.models.world_state import WorldState
 from strategy_contracts.ids import FactionId
@@ -41,6 +51,14 @@ GENERATORS: tuple[CandidateGenerator, ...] = (
     demand_candidates,
     talks_candidates,
     forgery_candidates,
+    peace_candidates,
+    mobilize_candidates,
+    appease_candidates,
+    envoy_candidates,
+    bribe_candidates,
+    subsidy_candidates,
+    vassal_candidates,
+    denounce_candidates,
 )
 
 

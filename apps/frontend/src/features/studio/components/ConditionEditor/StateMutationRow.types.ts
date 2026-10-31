@@ -4,6 +4,7 @@ export interface StateMutationRowProps {
   index: number;
   total: number;
   mutation: StateMutation;
+  characters?: { id: string; name: string }[];
   onChange: (index: number, mutation: StateMutation) => void;
   onMove: (index: number, offset: number) => void;
   onRemove: (index: number) => void;

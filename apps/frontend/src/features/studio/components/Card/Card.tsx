@@ -1,5 +1,6 @@
-import React, { useId, useMemo } from "react";
+import React, { useId, useMemo, useState } from "react";
 import { Input } from "@/shared/components/ui/Input";
+import { Button } from "@/shared/components/ui/Button";
 import { SaveStatusIndicator } from "../SaveStatusIndicator/SaveStatusIndicator";
 import { CARD_DEFAULT_NAME_LABEL } from "../../constants/card";
 import { CARD_KIND_LABELS } from "../../constants/cardKinds";
@@ -20,6 +21,7 @@ import { CardMenu } from "./CardMenu";
 import { CardValues } from "./CardValues";
 import { DeleteCardDialog } from "./DeleteCardDialog";
 import { TriggerChips } from "./TriggerChips";
+import { AvatarCreatorModal } from "../AvatarCreator/AvatarCreatorModal";
 
 const NO_QUESTIONS: NonNullable<CardProps["questions"]> = [];
 
@@ -33,6 +35,7 @@ export const Card: React.FC<CardProps> = ({
   onAddToAlwaysRemember,
 }) => {
   const nameFieldId = useId();
+  const [isAvatarOpen, setAvatarOpen] = useState(false);
   const { createEntityAsync, updateEntityAsync, deleteEntityAsync } =
     useEntities(scenarioId);
   const isAdvanced = useIsAdvancedMode();
@@ -121,6 +124,19 @@ export const Card: React.FC<CardProps> = ({
         onRemovePick={pickLinks.handleRemovePick}
         onAddToAlwaysRemember={onAddToAlwaysRemember}
       />
+      {entity.entity_type === "character" && <>
+        <Button type="button" variant="secondary" size="sm" onClick={() => setAvatarOpen(true)}>
+          {entity.avatar_url ? "Edit animated portrait" : "Add animated portrait"}
+        </Button>
+        {isAvatarOpen && <AvatarCreatorModal
+          isOpen
+          onClose={() => setAvatarOpen(false)}
+          characterName={displayName}
+          characterLabel={displayName}
+          currentAvatarUrl={entity.avatar_url}
+          onSave={async (avatarUrl) => { await updateEntityAsync({ entityId, payload: { avatar_url: avatarUrl } }); }}
+        />}
+      </>}
       <FeatureAnchor featureId="triggers">
         <TriggerChips
           name={draft.name}

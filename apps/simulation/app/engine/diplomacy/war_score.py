@@ -4,6 +4,7 @@ from app.engine.pressure.wars import side_of
 from app.models.world_battle import BattleOutcome, BattleState, BattleStatus
 from app.models.world_diplomacy import WarSide, WarState
 from app.models.world_events import EventLogEntry, PhaseName
+from app.models.world_region import RegionState
 from app.models.world_state import WorldState
 from strategy_contracts.diplomacy import DiplomacyTuning, ScoreSource
 from strategy_contracts.ids import FactionId
@@ -23,7 +24,7 @@ def goal_slots(side_score: int, tuning: DiplomacyTuning) -> int:
     )
 
 
-def _winner_and_loser(battle: BattleState) -> tuple[FactionId, FactionId] | None:
+def winner_and_loser(battle: BattleState) -> tuple[FactionId, FactionId] | None:
     attacker, defender = (
         battle.attacker_lead_faction_id,
         battle.defender_lead_faction_id,
@@ -65,7 +66,7 @@ def _battle_points(
 
 def _score_battles(world: WorldState, war: WarState, tuning: DiplomacyTuning) -> None:
     for battle in sorted(world.battles, key=lambda item: item.id):
-        outcome = _winner_and_loser(battle)
+        outcome = winner_and_loser(battle)
         if outcome is None or not _is_scorable(war, battle):
             continue
         winner, loser = outcome
@@ -75,6 +76,33 @@ def _score_battles(world: WorldState, war: WarState, tuning: DiplomacyTuning) ->
         else:
             war.battle_points_defender += points
         war.scored_battle_ids.append(battle.id)
+
+
+def _occupier_side(war: WarState, region: RegionState) -> WarSide | None:
+    if region.occupation is None or region.owner_id is None:
+        return None
+    occupier_side = side_of(war, region.occupation.occupier_id)
+    if occupier_side is None or occupier_side == side_of(war, region.owner_id):
+        return None
+    if side_of(war, region.owner_id) is None:
+        return None
+    return occupier_side
+
+
+def _score_occupations(
+    world: WorldState, war: WarState, tuning: DiplomacyTuning
+) -> None:
+    points = tuning.score_weights[ScoreSource.REGION_OCCUPIED]
+    for region_id in sorted(world.regions):
+        region = world.regions[region_id]
+        side = _occupier_side(war, region)
+        if side is None or region_id in war.scored_region_ids:
+            continue
+        if side is WarSide.ATTACKER:
+            war.occupation_points_attacker += points
+        else:
+            war.occupation_points_defender += points
+        war.scored_region_ids.append(region_id)
 
 
 def _prisoner_points(
@@ -107,8 +135,20 @@ def _totals(
         world.peace.ransom_points.get(f"{war.id}:{war.defender_id}", 0),
     )
     return (
-        min(cap, war.battle_points_attacker + war.prisoner_points_attacker + chips[0]),
-        min(cap, war.battle_points_defender + war.prisoner_points_defender + chips[1]),
+        min(
+            cap,
+            war.battle_points_attacker
+            + war.prisoner_points_attacker
+            + war.occupation_points_attacker
+            + chips[0],
+        ),
+        min(
+            cap,
+            war.battle_points_defender
+            + war.prisoner_points_defender
+            + war.occupation_points_defender
+            + chips[1],
+        ),
     )
 
 
@@ -120,6 +160,7 @@ def tally_war_scores(
     for war in world.wars:
         before = (war.war_score_attacker, war.war_score_defender)
         _score_battles(world, war, tuning)
+        _score_occupations(world, war, tuning)
         war.war_score_attacker, war.war_score_defender = _totals(world, war, tuning)
         if before != (war.war_score_attacker, war.war_score_defender):
             events.append(

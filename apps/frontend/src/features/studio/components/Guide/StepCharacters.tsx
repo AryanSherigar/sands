@@ -8,6 +8,8 @@ import { getGuideStep } from "../../lib/guideSteps";
 import { CHARACTER_QUESTION_GROUPS } from "../../constants/guideQuestions";
 import { Card } from "../Card/Card";
 import { GuideStepLayout } from "./GuideStepLayout";
+import { ScenePortraitSetup } from "./ScenePortraitSetup";
+import { SimplePortraitSchedule } from "./SimplePortraitSchedule";
 
 export const StepCharacters: React.FC = () => {
   const { scenarioId, addCard } = useGuide();
@@ -32,6 +34,8 @@ export const StepCharacters: React.FC = () => {
         <Button type="button" variant="secondary" onClick={() => addCard("character")}>
           + Add character
         </Button>
+        <ScenePortraitSetup characters={cards.characters} />
+        <SimplePortraitSchedule characters={cards.characters} />
       </div>
     </GuideStepLayout>
   );

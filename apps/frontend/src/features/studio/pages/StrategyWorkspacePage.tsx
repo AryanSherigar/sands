@@ -1,12 +1,14 @@
-import React from "react";
+import React, { useState } from "react";
 import { StrategyFactionsSection } from "../components/StrategyWorkspace/StrategyFactionsSection";
 import { StrategyMapSection } from "../components/StrategyWorkspace/StrategyMapSection";
 import { StrategyPublishSection } from "../components/StrategyWorkspace/StrategyPublishSection";
+import { StrategyStartSituation } from "../components/StrategyWorkspace/StrategyStartSituation";
 import { StrategyStartSection } from "../components/StrategyWorkspace/StrategyStartSection";
 import { StrategyTitleField } from "../components/StrategyWorkspace/StrategyTitleField";
 import { useStrategyCheck } from "../hooks/useStrategyCheck";
 import { useStrategyFields } from "../hooks/useStrategyFields";
 import { useStrategyMap } from "../hooks/useStrategyMap";
+import type { StartPanelId } from "../lib/strategyPanels";
 import type { ScenarioResponse } from "../types/scenario.types";
 
 const SAVE_LABELS = { saved: "All changes saved", saving: "Saving…", failed: "Couldn't save. Keep editing to retry." };
@@ -20,6 +22,7 @@ export const StrategyWorkspacePage: React.FC<StrategyWorkspacePageProps> = ({ sc
   const { data: map, isLoading: isMapLoading } = useStrategyMap(scenario.scenario_id);
   const check = useStrategyCheck(scenario.scenario_id, scenario.content_edited_at);
   const regions = map?.regions ?? [];
+  const [openPanel, setOpenPanel] = useState<StartPanelId | null>(null);
 
   return (
     <main className="mx-auto max-w-3xl space-y-6 p-6 font-sans text-content">
@@ -31,11 +34,19 @@ export const StrategyWorkspacePage: React.FC<StrategyWorkspacePageProps> = ({ sc
       <StrategyMapSection scenarioId={scenario.scenario_id} />
       <StrategyFactionsSection fields={fields} regions={regions} onEdit={edit} />
       <StrategyStartSection fields={fields} regions={regions} onEdit={edit} />
+      <StrategyStartSituation
+        fields={fields}
+        regions={regions}
+        openPanel={openPanel}
+        onOpenPanel={setOpenPanel}
+        onEdit={edit}
+      />
       <StrategyPublishSection
         scenario={scenario}
         report={check.data}
         isMapMissing={!isMapLoading && regions.length === 0}
         onFlush={flush}
+        onOpenPanel={setOpenPanel}
       />
     </main>
   );

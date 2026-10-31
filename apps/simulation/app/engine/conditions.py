@@ -3,6 +3,7 @@ from collections.abc import Callable
 from app.engine.negotiation import player_faction_id
 from app.engine.subjects import Subject, related_entity_id
 from app.exceptions.condition_exceptions import UnsupportedMetricError
+from app.models.world_clock import current_month
 from app.models.world_faction import FactionState
 from app.models.world_state import WorldState
 from strategy_contracts.conditions import (
@@ -46,6 +47,7 @@ def _count_regions_in_unrest(
 
 FACTION_READERS: dict[ConditionMetric, FactionReader] = {
     ConditionMetric.TURN: lambda world, _, __: world.clock.turn,
+    ConditionMetric.MONTH: lambda world, _, __: current_month(world.clock),
     ConditionMetric.TREASURY: lambda _, faction, __: faction.treasury,
     ConditionMetric.STABILITY: lambda _, faction, __: faction.stability,
     ConditionMetric.WAR_EXHAUSTION: lambda _, faction, __: faction.war_exhaustion,

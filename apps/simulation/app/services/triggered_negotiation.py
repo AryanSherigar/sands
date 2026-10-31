@@ -3,6 +3,7 @@ from uuid import UUID
 from app.models.world_events import PendingNegotiation
 from app.models.world_state import WorldState
 from app.repositories import scene_exchange_repo, scene_repo
+from app.services.letter_scene import build_letter_package
 from app.services.negotiation_scene import (
     build_negotiation_package,
     build_peace_package,
@@ -31,6 +32,12 @@ async def persist_triggered_scene(
     """Store the scene for an offer the turn rollover armed; a replayed insert is a no-op."""
     pending = world.progress.pending_negotiation
     scene_id = world.progress.pending_scene_id
+    if scene_id is not None and world.progress.pending_letter is not None:
+        package = build_letter_package(
+            world, scenario, scene_id, world.progress.pending_letter
+        )
+        await scene_repo.insert_scene(connection, package)
+        return
     if pending is None or scene_id is None:
         return
     package = _build_package(world, scenario, scene_id, pending)

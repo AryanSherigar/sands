@@ -17,6 +17,8 @@ from app.engine.peace.parties import (
 from app.engine.peace.pricing import can_afford
 from app.engine.pressure.strain import compute_strain
 from app.engine.pressure.wars import find_war, side_of, side_score
+from app.engine.sieges.peace import lift_pair_sieges
+from app.engine.treaty.registry import term_parties
 from app.engine.vassals.independence import settle_independence
 from app.exceptions.command_exceptions import CampaignProgressError
 from app.models.world_diplomacy import (
@@ -25,7 +27,7 @@ from app.models.world_diplomacy import (
     WarSide,
     WarState,
 )
-from app.models.world_events import EventLogEntry
+from app.models.world_events import EventLogEntry, PhaseName
 from app.models.world_state import CounterKind, WorldState
 from strategy_contracts.enums import RelationStatus
 from strategy_contracts.ids import FactionId
@@ -105,6 +107,21 @@ def _check_hostage(world: WorldState, term: HostageTerm, pair: set[str]) -> None
         raise _reject("invalid_term")
 
 
+def _check_standing_clause(
+    world: WorldState, term: TributeTerm | TradeDealTerm, pair: set[str]
+) -> None:
+    if world.treaty_ruleset < 1:
+        return
+    if term_parties(term) != pair:
+        raise _reject("invalid_term")
+    is_uncovered = (
+        isinstance(term, TributeTerm)
+        and world.factions[term.payer_id].treasury < term.gold_per_turn
+    )
+    if is_uncovered:
+        raise _reject("cannot_pay")
+
+
 def _check_term(world: WorldState, term: Term, pair: set[str]) -> None:
     if isinstance(term, ReleasePrisonersTerm):
         _check_release(world, term, pair)
@@ -114,8 +131,18 @@ def _check_term(world: WorldState, term: Term, pair: set[str]) -> None:
         _check_payment(world, term, pair)
     elif isinstance(term, HostageTerm):
         _check_hostage(world, term, pair)
-    elif not isinstance(term, PeaceTerm | TributeTerm | TradeDealTerm):
+    elif isinstance(term, TributeTerm | TradeDealTerm):
+        _check_standing_clause(world, term, pair)
+    elif not isinstance(term, PeaceTerm):
         raise _reject("invalid_term")
+
+
+def is_term_signable(world: WorldState, term: Term, pair: set[str]) -> bool:
+    try:
+        _check_term(world, term, pair)
+    except CampaignProgressError:
+        return False
+    return True
 
 
 def _check_guarantors(world: WorldState, peace: PeaceTerm) -> None:
@@ -131,6 +158,8 @@ def _validate(
 ) -> PeaceTerm:
     peace = _peace_term(card)
     pair = {peace.faction_a, peace.faction_b}
+    if card.proposer_id not in pair:
+        raise _reject("invalid_term")
     for term in card.terms:
         _check_term(world, term, pair)
     _check_guarantors(world, peace)
@@ -148,7 +177,7 @@ def _is_white_peace_card(
     return is_bare and is_white_peace_eligible(world, scenario, war)
 
 
-def _apply_commitment(world: WorldState, term: Term, scene_id: UUID | str) -> None:
+def apply_commitment(world: WorldState, term: Term, scene_id: UUID | str) -> None:
     world.commitments.append(
         CommitmentState(
             id=f"commitment_{next_counter(world, CounterKind.COMMITMENT)}",
@@ -192,7 +221,7 @@ def _apply_term(
     elif isinstance(term, PayGoldTerm):
         pay_gold(world, term)
     elif isinstance(term, TributeTerm | TradeDealTerm):
-        _apply_commitment(world, term, scene_id)
+        apply_commitment(world, term, scene_id)
 
 
 def _is_fragile(scenario: StrategyScenario, peace: PeaceTerm) -> bool:
@@ -296,6 +325,7 @@ def sign_peace(
     for term in card.terms:
         _apply_term(world, scenario, term, scene_id, truces[pairs.index(principal)])
     _restore_peace_relations(world, pairs)
+    events += lift_pair_sieges(world, pairs, PhaseName.DIPLOMACY)
     if all(pair in pairs for pair in remaining_pairs(world, war)):
         _end_war(world, war)
         events += settle_independence(world, war)

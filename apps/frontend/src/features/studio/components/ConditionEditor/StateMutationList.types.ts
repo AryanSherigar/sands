@@ -5,4 +5,5 @@ export interface StateMutationListProps {
   onChange: (mutations: StateMutation[]) => void;
   legend?: string;
   maxItems?: number;
+  characters?: { id: string; name: string }[];
 }

@@ -3,6 +3,7 @@ from app.engine.events.tiers import tier_level
 from app.engine.subjects import Subject
 from app.models.world_event_memory import EventMemory
 from app.models.world_state import WorldState
+from strategy_contracts.conditions import ConditionScope
 from strategy_contracts.events import EventDefinition
 from strategy_contracts.scenario import StrategyScenario
 
@@ -13,14 +14,23 @@ def decay_memories(
     """Calm turns step a remembered tier down one level; scars fade every turn."""
     kept: list[EventMemory] = []
     for memory in world.event_memories:
-        template = find_template(scenario, memory.template_id)
+        template = find_template(world, scenario, memory.template_id)
         if template is None:
             continue
-        _decay_tier(world, template, memory, faction_id)
+        _decay_tier(world, template, memory, _owner_of(template, memory, faction_id))
         memory.scar = max(0, memory.scar - template.scar.decay_per_turn)
         if memory.last_tier or memory.scar:
             kept.append(memory)
     world.event_memories = kept
+
+
+def _owner_of(
+    template: EventDefinition, memory: EventMemory, player_faction_id: str
+) -> str:
+    """A faction-subject memory belongs to that faction, so NPC memories are judged on their own realm."""
+    if template.subject_kind is ConditionScope.FACTION:
+        return memory.subject_id
+    return player_faction_id
 
 
 def _decay_tier(

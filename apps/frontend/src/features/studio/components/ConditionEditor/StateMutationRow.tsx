@@ -10,6 +10,7 @@ export const StateMutationRow: React.FC<StateMutationRowProps> = ({
   index,
   total,
   mutation,
+  characters,
   onChange,
   onMove,
   onRemove,
@@ -18,7 +19,12 @@ export const StateMutationRow: React.FC<StateMutationRowProps> = ({
 
   const handlePathChange = (
     event: React.ChangeEvent<HTMLInputElement>,
-  ): void => onChange(index, { ...mutation, path: event.target.value });
+  ): void => {
+    const path = event.target.value;
+    onChange(index, path === "scene_character_ids" && characters
+      ? { ...mutation, path, op: "set", value: [] }
+      : { ...mutation, path });
+  };
 
   const handleOpChange = (event: React.ChangeEvent<HTMLSelectElement>): void =>
     onChange(index, { ...mutation, op: event.target.value as StateMutationOp });
@@ -42,17 +48,26 @@ export const StateMutationRow: React.FC<StateMutationRowProps> = ({
       <div className="w-36 shrink-0">
         <Select
           aria-label={`Mutation ${position} operation`}
-          options={MUTATION_OP_OPTIONS}
+          options={mutation.path === "scene_character_ids" && characters ? MUTATION_OP_OPTIONS.filter((option) => option.value === "set") : MUTATION_OP_OPTIONS}
           value={mutation.op}
           onChange={handleOpChange}
         />
       </div>
-      <Input
+      {mutation.path === "scene_character_ids" && characters ? <fieldset className="min-w-0 flex-1">
+        <legend className="text-xs text-content-muted">Characters in scene (up to two)</legend>
+        {characters.map((character) => {
+          const chosen = Array.isArray(mutation.value) ? mutation.value.filter((item): item is string => typeof item === "string") : [];
+          return <label key={character.id} className="flex items-center gap-2 text-sm text-content">
+            <input type="checkbox" checked={chosen.includes(character.id)} disabled={!chosen.includes(character.id) && chosen.length >= 2} onChange={(event) => onChange(index, { ...mutation, op: "set", value: event.target.checked ? [...chosen, character.id] : chosen.filter((id) => id !== character.id) })} />
+            {character.name}
+          </label>;
+        })}
+      </fieldset> : <Input
         value={String(mutation.value)}
         onChange={handleValueChange}
         placeholder="value"
         aria-label={`Mutation ${position} value`}
-      />
+      />}
       <Button
         type="button"
         variant="secondary"

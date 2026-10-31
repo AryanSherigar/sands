@@ -4,6 +4,7 @@ from uuid import UUID
 
 from app.engine.campaign_completion import complete_campaign
 from app.engine.hashing import world_hash
+from app.engine.letters.arming import arm_letter
 from app.engine.negotiation_triggers import arm_triggered_negotiation
 from app.engine.ordering import canonicalize_lists
 from app.engine.phases import (
@@ -13,9 +14,11 @@ from app.engine.phases import (
     PhaseResult,
     ScenePause,
 )
+from app.engine.promises.watch import scan_sworn_promises
 from app.engine.rng import derive_rng
 from app.engine.stances.apply import apply_due_stances
 from app.engine.summaries.triggers import evaluate_summary_triggers
+from app.engine.treaty.conditional_scan import scan_conditional_clauses
 from app.exceptions.world_exceptions import MissingPhaseError, PhaseEventMismatchError
 from app.models.orders import QueuedOrder
 from app.models.stance import StanceChoice
@@ -83,7 +86,12 @@ def _run_phase(
     return phase.run(world.model_copy(deep=True), context)
 
 
-def _finalize_phase(result: PhaseResult, name: PhaseName) -> list[EventLogEntry]:
+def _finalize_phase(
+    result: PhaseResult, name: PhaseName, scenario: StrategyScenario
+) -> list[EventLogEntry]:
+    if result.world.treaty_ruleset >= 1:
+        result.events += scan_conditional_clauses(result.world, scenario, name)
+    result.events += scan_sworn_promises(result.world, scenario, result.events, name)
     canonicalize_lists(result.world)
     return _stamp_events(result.world, name, result.events)
 
@@ -132,6 +140,7 @@ def _complete_turn(
     apply_due_stances(world, recorded_stances)
     world.progress = TurnProgress()
     arm_triggered_negotiation(world, scenario)
+    arm_letter(world, scenario)
     return TurnResult(world, events, TurnStatus.RESOLVED, None, world_hash(world))
 
 
@@ -158,7 +167,7 @@ def run_turn(
         result = _run_phase(phases[name], name, working, context_fields)
         if result.pause is not None:
             return _pause_turn(working, events, name, result.pause)
-        stamped = _finalize_phase(result, name)
+        stamped = _finalize_phase(result, name, scenario)
         if result.world.summary_ruleset == 2:
             evaluate_summary_triggers(result.world, scenario, stamped, working)
         events += stamped

@@ -1,7 +1,6 @@
 from collections.abc import Sequence
 
-from app.engine.commands.application import CommandAcceptance, accept_command
-from app.models.battle_command import AcceptedCommand, BattleCommand, Command
+from app.models.battle_command import AcceptedCommand, BattleCommand
 from app.models.world_army import ArmyState
 from app.models.world_battle import StandingPlan
 from app.models.world_state import WorldState
@@ -88,23 +87,3 @@ def exchange(
     from app.engine.battles.exchange import resolve_exchange
 
     return resolve_exchange(world, BATTLE_ID, scenario, commands, {})
-
-
-def accept(
-    world: WorldState,
-    scenario: StrategyScenario,
-    payload: Command,
-    identity: str = "cmd",
-    faction: str = ATTACKER,
-) -> CommandAcceptance:
-    return accept_command(
-        world,
-        scenario,
-        payload,
-        command_id=identity,
-        operation_id=identity,
-        actor_id="owner",
-        faction_id=faction,
-        expected_turn=world.clock.turn,
-        expected_wave=world.progress.completed_waves + 1,
-    )

@@ -23,12 +23,14 @@ from app.services.negotiation_service import (
     exchanges_remaining,
     pending_proposal,
 )
+from app.services.scene_grudges import validated_citations
 from app.services.scene_kinds import SceneInterpretation, interpret_scene_decision
 from psycopg import AsyncConnection
 from strategy_contracts.scene import (
     SceneOutcome,
     ScenePackage,
     SceneStatus,
+    SceneType,
     SubmissionStatus,
     TermsCardOutcome,
 )
@@ -43,6 +45,7 @@ REASON_SCENE_ENDED = "scene_ended"
 REASON_OUT_OF_ORDER = "out_of_order"
 REASON_EXCHANGE_CAP = "exchange_cap"
 MAX_SCENE_FAILURES = 3
+LETTER_BODY_SEQUENCE = 1
 
 
 def _result(
@@ -155,6 +158,30 @@ class SceneExchangeService:
                 return early
             return await self._record(scene, exchanges, submission, acting_user_id)
 
+    async def store_letter_body(
+        self, scene_id: UUID, acting_user_id: UUID, text: str
+    ) -> SceneExchangeResult:
+        """Record the incoming letter as exchange 1 if none exists; a repeat is ignored."""
+        async with self._connection.transaction():
+            scene = await self._owned_scene(scene_id, acting_user_id)
+            if (
+                scene.scene_type is not SceneType.LETTER
+                or scene.status in FINAL_STATUSES
+            ):
+                raise CampaignProgressError("not an open letter", "invalid_lifecycle")
+            exchanges = await scene_exchange_repo.list_exchanges(
+                self._connection, scene_id
+            )
+            if exchanges:
+                return _result(scene, exchanges, SubmissionStatus.DUPLICATE_IGNORED)
+            await scene_exchange_repo.insert_exchange(
+                self._connection, scene_id, LETTER_BODY_SEQUENCE, "", text, None
+            )
+            exchanges = await scene_exchange_repo.list_exchanges(
+                self._connection, scene_id
+            )
+            return _result(scene, exchanges, SubmissionStatus.ACCEPTED)
+
     async def report_failure(
         self, scene_id: UUID, acting_user_id: UUID
     ) -> SceneFailureResult:
@@ -208,6 +235,8 @@ class SceneExchangeService:
             submission.player_text,
             submission.leader_text,
             interpretation.proposal,
+            validated_citations(scene.package, submission.decision.cited_grudge_ids),
+            interpretation.verdict,
         )
         await scene_repo.reset_failed_attempts(self._connection, scene.scene_id)
         remaining = exchanges_remaining(scene, exchanges) - 1
@@ -223,6 +252,8 @@ class SceneExchangeService:
             exchanges_remaining=remaining,
             pending_proposal=None if ending else interpretation.proposal,
             reason=interpretation.reason,
+            verdict=interpretation.verdict,
+            clause_bands=list(interpretation.bands),
         )
 
     async def _load_world(self, playthrough_id: UUID) -> WorldState:

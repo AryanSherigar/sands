@@ -1,14 +1,18 @@
 from app.engine.ai.candidates import Candidate
 from app.engine.ai.knowledge import build_knowledge
+from app.engine.ai.oaths import oath_penalty
 from app.engine.ai.situation import war_enemies
 from app.engine.ai.standing import is_bound, known_power_ratio
 from app.engine.diplomacy.grounds import current_strength, is_usable
+from app.engine.diplomacy.npc_peace import other_belligerent
+from app.engine.pressure.weariness import is_war_weary
 from app.engine.trait_axes import axis_totals
 from app.models.orders import (
     CallNegotiationOrder,
     DeclareWarOrder,
     DiplomaticPlayOrder,
     FabricateClaimOrder,
+    SuePeaceOrder,
 )
 from app.models.world_diplomacy import GroundState
 from app.models.world_state import WorldState
@@ -44,7 +48,7 @@ def _eligible_targets(
     ]
 
 
-def _usable_grounds(
+def usable_grounds(
     world: WorldState,
     scenario: StrategyScenario,
     faction_id: FactionId,
@@ -80,8 +84,11 @@ def war_candidates(
     front_cost = tuning.second_front_penalty * len(war_enemies(world, faction_id))
     candidates: list[Candidate] = []
     for target_id in _eligible_targets(world, faction_id, include_player=True):
-        grounds = _usable_grounds(world, scenario, faction_id, target_id)
+        grounds = usable_grounds(world, scenario, faction_id, target_id)
         if leader is None or not grounds or is_bound(world, faction_id, target_id):
+            continue
+        oath_cost = oath_penalty(world, scenario, faction_id, target_id)
+        if oath_cost is None:
             continue
         strength = current_strength(grounds[0], leader, scenario, world.clock.turn)
         ratio = known_power_ratio(world, scenario, faction_id, target_id)
@@ -90,6 +97,7 @@ def war_candidates(
             + min(strength // tuning.ground_strength_divisor, STRENGTH_POINTS_CAP)
             + _ratio_points(ratio, tuning.ratio_divisor)
             - front_cost
+            - oath_cost
         )
         order = DeclareWarOrder(
             faction_id=faction_id, target_faction_id=target_id, ground_id=grounds[0].id
@@ -118,7 +126,7 @@ def _region_demands(
     knowledge = build_knowledge(world, scenario, faction_id)
     tuning = scenario.tuning.ai
     candidates: list[Candidate] = []
-    for ground in _usable_grounds(world, scenario, faction_id, target_id):
+    for ground in usable_grounds(world, scenario, faction_id, target_id):
         if ground.kind != GroundKind.CLAIM or ground.region_id is None:
             continue
         if knowledge.owners.get(ground.region_id) != target_id:
@@ -206,7 +214,7 @@ def forgery_candidates(
     cunning = axis_totals(leader, scenario)[TraitAxis.CUNNING]
     if target_id is None or cunning <= 0 or target_id in war_enemies(world, faction_id):
         return []
-    if _usable_grounds(world, scenario, faction_id, target_id):
+    if usable_grounds(world, scenario, faction_id, target_id):
         return []
     claimed = {
         ground.region_id
@@ -225,3 +233,22 @@ def forgery_candidates(
     )
     base = scenario.tuning.ai.forgery_bonus + min(cunning, CUNNING_POINTS_CAP)
     return [Candidate(order, ScoreCategory.ATTACK, base)]
+
+
+def peace_candidates(
+    world: WorldState, scenario: StrategyScenario, faction_id: FactionId
+) -> list[Candidate]:
+    if not scenario.toggles.is_ai_peace_enabled:
+        return []
+    if not is_war_weary(world, scenario, faction_id):
+        return []
+    return [
+        Candidate(
+            SuePeaceOrder(faction_id=faction_id, war_id=war.id),
+            ScoreCategory.ALLY,
+            scenario.tuning.ai.peace_bonus,
+        )
+        for war in world.wars
+        if faction_id in (war.attacker_id, war.defender_id)
+        and not world.factions[other_belligerent(war, faction_id)].is_player
+    ]

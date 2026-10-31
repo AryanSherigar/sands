@@ -12,5 +12,10 @@ class TurnClock(WorldModel):
     start_month: int = Field(ge=1, le=12)
 
 
+def current_month(clock: TurnClock) -> int:
+    elapsed_months = clock.start_month - 1 + MONTHS_PER_TURN * clock.turn
+    return elapsed_months % MONTHS_PER_YEAR + 1
+
+
 class RngState(WorldModel):
     seed: int

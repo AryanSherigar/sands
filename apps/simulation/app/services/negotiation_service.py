@@ -27,13 +27,14 @@ from app.services.negotiation_scene import (
     build_negotiation_package,
     build_peace_package,
 )
+from app.services.scene_grudges import voiced_grudges
 from psycopg import AsyncConnection
-from strategy_contracts.scene import SceneStatus, TermsResult
+from strategy_contracts.scene import SceneStatus, SceneType, TermsResult
 from strategy_contracts.scene_exchange import SceneExchangeView
 from strategy_contracts.terms import TermsCard
 
 FINAL_STATUSES = (SceneStatus.RESOLVED, SceneStatus.DEFAULTED)
-EXCHANGE_FIELDS = {"sequence", "player_text", "leader_text", "proposal"}
+EXCHANGE_FIELDS = {"sequence", "player_text", "leader_text", "proposal", "verdict"}
 
 
 def exchange_view(row: SceneExchangeRow) -> SceneExchangeView:
@@ -149,6 +150,9 @@ class NegotiationService:
         locked: LockedCampaign,
     ) -> CampaignTransition:
         exchanges = await scene_exchange_repo.list_exchanges(self._connection, scene_id)
+        scene = await scene_repo.get_scene(self._connection, scene_id)
+        if scene is not None and scene.scene_type is SceneType.LETTER:
+            return await self._decide_letter(guard, scene, is_confirmed, locked)
         if is_confirmed:
             proposal = _require_current_proposal(exchanges, proposal_sequence)
             card = proposal.model_copy(update={"is_confirmed_by_player": True})
@@ -161,6 +165,26 @@ class NegotiationService:
             status = SceneStatus.RESOLVED if has_proposal else SceneStatus.DEFAULTED
         return await close_transition(
             self._connection, guard, scene_id, outcome, status, locked
+        )
+
+    async def _decide_letter(
+        self,
+        guard: OperationGuard,
+        scene: SceneRow,
+        is_confirmed: bool,
+        locked: LockedCampaign,
+    ) -> CampaignTransition:
+        if is_confirmed:
+            raise CampaignProgressError(
+                "a letter has no terms to confirm", "no_proposal", 422
+            )
+        return await close_transition(
+            self._connection,
+            guard,
+            scene.scene_id,
+            scene.package.default_outcome,
+            SceneStatus.DEFAULTED,
+            locked,
         )
 
 
@@ -213,4 +237,5 @@ def _scene_view(scene: SceneRow, exchanges: list[SceneExchangeRow]) -> SceneView
         pending_proposal=pending_proposal(scene, exchanges),
         pending_proposal_sequence=pending_proposal_sequence(scene, exchanges),
         outcome=scene.outcome,
+        voiced_grudges=voiced_grudges(scene.package, exchanges),
     )

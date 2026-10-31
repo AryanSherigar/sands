@@ -37,6 +37,7 @@ def canonicalize_lists(world: WorldState) -> None:
         key=lambda item: (item.vassalage_id, item.action, item.target_faction_id)
     )
     world.vassal.standing.sort(key=lambda item: item.vassalage_id)
+    world.succession.crises.sort(key=lambda item: item.faction_id)
     world.coalition.coalitions.sort(key=lambda item: item.id)
     world.coalition.conquests.sort(key=lambda item: (item.turn, item.faction_id))
     for coalition in world.coalition.coalitions:
@@ -45,8 +46,7 @@ def canonicalize_lists(world: WorldState) -> None:
     world.event_memories.sort(key=lambda item: (item.template_id, item.subject_id))
     world.battles.sort(key=lambda item: item.id)
     world.accepted_commands.sort(key=lambda item: item.id)
-    for battle in world.battles:
-        _canonicalize_battle_lists(battle)
+    _canonicalize_nested_lists(world)
 
 
 def _canonicalize_battle_lists(battle: BattleState) -> None:
@@ -58,3 +58,15 @@ def _canonicalize_battle_lists(battle: BattleState) -> None:
     battle.deferred_command_ids.sort()
     for contingent in battle.contingents.values():
         contingent.army_ids.sort()
+
+
+def _canonicalize_nested_lists(world: WorldState) -> None:
+    for battle in world.battles:
+        _canonicalize_battle_lists(battle)
+    _canonicalize_sieges(world)
+
+
+def _canonicalize_sieges(world: WorldState) -> None:
+    world.sieges.sort(key=lambda item: item.region_id)
+    for siege in world.sieges:
+        siege.army_ids.sort()

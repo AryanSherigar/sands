@@ -2,14 +2,18 @@ from app.engine.alliances.calls import is_callable, is_hostile_pair
 from app.engine.alliances.joining import join_war
 from app.engine.diplomacy.counters import next_counter
 from app.engine.diplomacy.events import diplomacy_event
+from app.engine.economy.armies import next_army_id
+from app.engine.movement.engagement import armies_in_open_battle
 from app.engine.pressure.wars import side_of
 from app.engine.vassals.registry import vassal_term, vassals_of
 from app.models.world_alliance import CallKind, CallToArmsState
+from app.models.world_army import ArmyState
 from app.models.world_diplomacy import CommitmentState, WarState
 from app.models.world_events import EventLogEntry
 from app.models.world_region import RegionState
 from app.models.world_state import CounterKind, WorldState
-from strategy_contracts.ids import FactionId
+from strategy_contracts.enums import TroopType
+from strategy_contracts.ids import FactionId, RegionId
 from strategy_contracts.limits import FULL_SHARE_PERCENT
 from strategy_contracts.scenario import StrategyScenario
 
@@ -62,12 +66,23 @@ def _owned_by(world: WorldState, faction_id: FactionId) -> list[RegionState]:
     ]
 
 
-def _capital_of(world: WorldState, faction_id: FactionId) -> RegionState | None:
+def _capital_id(world: WorldState, faction_id: FactionId) -> RegionId | None:
     capital_id = world.factions[faction_id].capital_region_id
     if capital_id in world.regions and world.regions[capital_id].owner_id == faction_id:
-        return world.regions[capital_id]
-    owned = _owned_by(world, faction_id)
-    return owned[0] if owned else None
+        return capital_id
+    return next(
+        (
+            region_id
+            for region_id, region in sorted(world.regions.items())
+            if region.owner_id == faction_id
+        ),
+        None,
+    )
+
+
+def _capital_of(world: WorldState, faction_id: FactionId) -> RegionState | None:
+    capital_id = _capital_id(world, faction_id)
+    return world.regions[capital_id] if capital_id is not None else None
 
 
 def move_levied_manpower(
@@ -83,6 +98,68 @@ def move_levied_manpower(
         moved += taken
     capital.manpower += moved
     return moved
+
+
+def _eligible_armies(world: WorldState, vassal_id: FactionId) -> list[ArmyState]:
+    engaged = armies_in_open_battle(world)
+    return [
+        army
+        for _, army in sorted(world.armies.items())
+        if army.owner_id == vassal_id and army.march is None and army.id not in engaged
+    ]
+
+
+def _overlord_garrison(
+    world: WorldState,
+    scenario: StrategyScenario,
+    overlord_id: FactionId,
+    capital_id: RegionId,
+) -> ArmyState:
+    existing = next(
+        (
+            army
+            for _, army in sorted(world.armies.items())
+            if army.owner_id == overlord_id
+            and army.location_id == capital_id
+            and army.march is None
+        ),
+        None,
+    )
+    if existing is not None:
+        return existing
+    army = ArmyState(
+        id=next_army_id(world),
+        owner_id=overlord_id,
+        morale=scenario.tuning.economy.raised_army_morale,
+        location_id=capital_id,
+    )
+    world.armies[army.id] = army
+    return army
+
+
+def take_levied_soldiers(
+    world: WorldState,
+    scenario: StrategyScenario,
+    overlord_id: FactionId,
+    vassal_id: FactionId,
+    share_percent: int,
+) -> int:
+    capital_id = _capital_id(world, overlord_id)
+    if capital_id is None:
+        return 0
+    taken: dict[TroopType, int] = {}
+    for army in _eligible_armies(world, vassal_id):
+        for kind, count in sorted(army.troops.items(), key=lambda item: item[0].value):
+            share = count * share_percent // FULL_SHARE_PERCENT
+            army.troops[kind] = count - share
+            taken[kind] = taken.get(kind, 0) + share
+    total = sum(taken.values())
+    if total == 0:
+        return 0
+    garrison = _overlord_garrison(world, scenario, overlord_id, capital_id)
+    for kind, count in taken.items():
+        garrison.troops[kind] = garrison.troops.get(kind, 0) + count
+    return total
 
 
 def apply_levy(

@@ -150,10 +150,17 @@ class PendingSummaryFact(WorldModel):
     significance: WholeNumber = 0
 
 
+class PendingLetter(WorldModel):
+    sender_faction_id: FactionId
+    topic: str
+    cooldown_until_turn: WholeNumber
+
+
 class TurnProgress(WorldModel):
     phase: PhaseName | None = None
     pending_scene_id: UUID | None = None
     pending_negotiation: PendingNegotiation | None = None
+    pending_letter: PendingLetter | None = None
     negotiation_counterpart_id: FactionId | None = None
     completed_waves: int = Field(default=0, ge=0, le=MAX_CAMPAIGN_WAVES)
     is_campaign_active: bool = False
@@ -169,6 +176,7 @@ class TurnProgress(WorldModel):
         document = handler(self)
         defaults = {
             "pending_negotiation": None,
+            "pending_letter": None,
             "negotiation_counterpart_id": None,
             "completed_waves": 0,
             "is_campaign_active": False,

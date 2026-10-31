@@ -1,27 +1,37 @@
 from app.engine.alliances.answers import validate_answer_call
 from app.engine.alliances.denounce import validate_denounce
+from app.engine.coalitions.appease import validate_appease
+from app.engine.diplomacy.espionage import validate_bribe
 from app.engine.diplomacy.grounds import is_usable
 from app.engine.diplomacy.prisoners import (
     find_exchange_counterpart,
     find_prisoner,
     ransom_price,
 )
+from app.engine.outrage.mobilize import validate_mobilize
 from app.engine.peace.hostages import find_hostage
 from app.engine.pressure.forcers import has_open_offer
+from app.engine.pressure.subsidies import validate_cut_subsidy, validate_subsidize
 from app.engine.trait_axes import axis_totals
 from app.engine.vassals.commands import VassalOrder, validate_vassal_order
 from app.engine.vassals.consent import validate_overlord_consent
 from app.exceptions.command_exceptions import CommandError
 from app.models.orders import (
     AnswerCallOrder,
+    AppeaseCoalitionOrder,
+    BribeEnvoyOrder,
     CallNegotiationOrder,
+    CutSubsidyOrder,
     DeclareWarOrder,
     DenounceAllianceOrder,
     DiplomaticPlayOrder,
     FabricateClaimOrder,
     HandlePrisonerOrder,
     MediateOrder,
+    MobilizeOrder,
     SendEnvoyOrder,
+    SubsidizeOrder,
+    SuePeaceOrder,
 )
 from app.models.world_diplomacy import PrisonerState
 from app.models.world_peace import HostageState
@@ -38,10 +48,16 @@ DiplomacyOrder = (
     | CallNegotiationOrder
     | FabricateClaimOrder
     | SendEnvoyOrder
+    | BribeEnvoyOrder
     | HandlePrisonerOrder
     | MediateOrder
+    | SuePeaceOrder
+    | SubsidizeOrder
+    | CutSubsidyOrder
+    | MobilizeOrder
     | AnswerCallOrder
     | DenounceAllianceOrder
+    | AppeaseCoalitionOrder
     | VassalOrder
 )
 HTTP_UNPROCESSABLE = 422
@@ -200,17 +216,57 @@ def validate_mediate_order(world: WorldState, command: MediateOrder) -> None:
         raise _reject("offer_exists")
 
 
+def validate_sue_peace_order(world: WorldState, command: SuePeaceOrder) -> None:
+    if not world.peace_ruleset:
+        raise _reject("peace_disabled")
+    war = next((item for item in world.wars if item.id == command.war_id), None)
+    if war is None:
+        raise _reject("unknown_war")
+    if command.faction_id not in (war.attacker_id, war.defender_id):
+        raise _reject("not_a_belligerent")
+    if has_open_offer(world, war.id):
+        raise _reject("offer_exists")
+
+
+def _validate_peace_order(
+    world: WorldState, command: MediateOrder | SuePeaceOrder
+) -> None:
+    if isinstance(command, MediateOrder):
+        validate_mediate_order(world, command)
+    else:
+        validate_sue_peace_order(world, command)
+
+
+def _validate_covert_order(
+    world: WorldState,
+    command: HandlePrisonerOrder | BribeEnvoyOrder,
+    scenario: StrategyScenario,
+) -> None:
+    if isinstance(command, BribeEnvoyOrder):
+        validate_bribe(world, scenario, command)
+    else:
+        validate_prisoner_order(world, scenario, command)
+
+
 def _validate_standalone_order(
     world: WorldState, command: DiplomacyOrder, scenario: StrategyScenario
 ) -> bool:
-    if isinstance(command, HandlePrisonerOrder):
-        validate_prisoner_order(world, scenario, command)
-    elif isinstance(command, MediateOrder):
-        validate_mediate_order(world, command)
+    if isinstance(command, HandlePrisonerOrder | BribeEnvoyOrder):
+        _validate_covert_order(world, command, scenario)
+    elif isinstance(command, MediateOrder | SuePeaceOrder):
+        _validate_peace_order(world, command)
+    elif isinstance(command, SubsidizeOrder):
+        validate_subsidize(world, scenario, command)
+    elif isinstance(command, CutSubsidyOrder):
+        validate_cut_subsidy(world, command)
+    elif isinstance(command, MobilizeOrder):
+        validate_mobilize(world, scenario, command)
     elif isinstance(command, AnswerCallOrder):
         validate_answer_call(world, command)
     elif isinstance(command, DenounceAllianceOrder):
         validate_denounce(world, command)
+    elif isinstance(command, AppeaseCoalitionOrder):
+        validate_appease(world, scenario, command)
     elif isinstance(command, VassalOrder):
         validate_vassal_order(world, scenario, command)
     else:

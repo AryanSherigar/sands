@@ -1,4 +1,9 @@
-from app.models.api_world_view import HostageView, MediationOfferView, TruceView
+from app.models.api_world_view import (
+    HostageView,
+    MediationOfferView,
+    TruceView,
+    WarView,
+)
 from app.models.world_state import WorldState
 from strategy_contracts.ids import FactionId
 from strategy_contracts.peace import PeaceTier
@@ -18,6 +23,19 @@ def project_truces(world: WorldState, faction_id: FactionId) -> list[TruceView]:
         )
         for truce in sorted(world.truces, key=lambda item: item.id)
         if faction_id in (truce.faction_a, truce.faction_b)
+    ]
+
+
+def project_wars(world: WorldState, faction_id: FactionId) -> list[WarView]:
+    return [
+        WarView(
+            id=war.id,
+            attacker_id=war.attacker_id,
+            defender_id=war.defender_id,
+            participant_ids=list(war.participant_ids),
+        )
+        for war in sorted(world.wars, key=lambda item: item.id)
+        if faction_id in (war.attacker_id, war.defender_id, *war.participant_ids)
     ]
 
 

@@ -1,7 +1,8 @@
 from app.engine.diplomacy.grounds import inherit_grounds
 from app.engine.peace.succession import leader_died
+from app.engine.succession.install import CAUSE_EVENT, kill_ruler
 from app.models.world_character import LeaderState
-from app.models.world_events import EventLogEntry, StateChange
+from app.models.world_events import EventLogEntry, PhaseName, StateChange
 from app.models.world_state import WorldState
 from strategy_contracts.ids import FactionId
 from strategy_contracts.scenario import StrategyScenario
@@ -45,7 +46,7 @@ def _queue_renewals(
     world.overture_renewals.sort()
 
 
-def remove_ruler(
+def _remove_legacy_ruler(
     world: WorldState, scenario: StrategyScenario, faction_id: FactionId
 ) -> list[EventLogEntry]:
     """Kill an NPC ruler: an heir takes over, treaties lapse, and the heir will ask the player to renew."""
@@ -62,6 +63,27 @@ def remove_ruler(
     events = leader_died(world, scenario, leader.id)
     _queue_renewals(world, faction_id, leader.id, player_id)
     return events
+
+
+def _remove_with_succession(
+    world: WorldState, scenario: StrategyScenario, faction_id: FactionId
+) -> list[EventLogEntry]:
+    faction = world.factions[faction_id]
+    old_leader_id = faction.leader_id
+    events = kill_ruler(world, scenario, faction_id, CAUSE_EVENT, PhaseName.EVENTS)
+    if events:
+        player_id = next(key for key, item in world.factions.items() if item.is_player)
+        _queue_renewals(world, faction_id, old_leader_id, player_id)
+    return events
+
+
+def remove_ruler(
+    world: WorldState, scenario: StrategyScenario, faction_id: FactionId
+) -> list[EventLogEntry]:
+    """Kill a ruler through the succession model, or the legacy copy-of-the-ruler heir when it is off."""
+    if world.succession_ruleset:
+        return _remove_with_succession(world, scenario, faction_id)
+    return _remove_legacy_ruler(world, scenario, faction_id)
 
 
 def remove_ruler_change(

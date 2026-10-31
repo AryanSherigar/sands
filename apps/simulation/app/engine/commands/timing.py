@@ -5,6 +5,7 @@ from app.models.world_state import UPRISING_LIFECYCLE_RULESET, WorldState
 
 URGENT_KINDS = frozenset(("set_pay", "take_loan", "declare_default"))
 MOVEMENT_KINDS = frozenset(("move_army", "attack", "halt_army"))
+BESIEGE_KIND = "besiege"
 DIPLOMACY_KINDS = frozenset(
     (
         "declare_war",
@@ -12,10 +13,16 @@ DIPLOMACY_KINDS = frozenset(
         "call_negotiation",
         "fabricate_claim",
         "send_envoy",
+        "bribe_envoy",
         "handle_prisoner",
         "mediate",
+        "sue_peace",
+        "subsidize",
+        "cut_subsidy",
+        "mobilize",
         "answer_call",
         "denounce_alliance",
+        "appease_coalition",
         "demand_from_vassal",
         "answer_demand",
         "grant_consent",
@@ -26,8 +33,12 @@ DIPLOMACY_KINDS = frozenset(
 DIPLOMACY_SLOT_FIELDS = {
     "handle_prisoner": "prisoner_id",
     "mediate": "war_id",
+    "bribe_envoy": "envoy_id",
+    "sue_peace": "war_id",
+    "cut_subsidy": "subsidy_id",
     "answer_call": "call_id",
     "denounce_alliance": "alliance_id",
+    "appease_coalition": "member_id",
     "answer_demand": "demand_id",
     "release_vassal": "vassalage_id",
     "annex_vassal": "vassalage_id",
@@ -91,6 +102,8 @@ def owning_phase(accepted: AcceptedCommand) -> PhaseName:
         return PhaseName.DIPLOMACY
     if accepted.command.kind == ANSWER_EVENT_KIND:
         return PhaseName.EVENTS
+    if accepted.command.kind == BESIEGE_KIND:
+        return PhaseName.SIEGES
     if accepted.command.kind == "resolve_uprising":
         return PhaseName.INTERNAL
     return PhaseName.ECONOMY
@@ -107,6 +120,8 @@ def command_slot(command: Command) -> tuple[str, str]:
         return "instruction", ""
     if command.kind in MOVEMENT_KINDS:
         return "movement", command.army_id
+    if command.kind == "mobilize":
+        return "mobilize", ""
     if command.kind in DIPLOMACY_SLOT_FIELDS:
         return command.kind, getattr(command, DIPLOMACY_SLOT_FIELDS[command.kind])
     if command.kind in DIPLOMACY_KINDS:

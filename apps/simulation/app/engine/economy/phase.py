@@ -2,6 +2,7 @@ from app.engine.economy.orders import apply_economy_orders
 from app.engine.economy.settlement import settle_faction
 from app.engine.economy.state import active_faction_ids, start_run
 from app.engine.phases import PhaseContext, PhaseResult
+from app.engine.treaty.effects import collect_trade_and_tribute
 from app.engine.vassals.tribute import collect_vassal_tribute
 from app.models.world_events import PhaseName
 from app.models.world_state import WorldState
@@ -18,4 +19,5 @@ class EconomyPhase:
             if pause is not None:
                 return PhaseResult(world=run.world, pause=pause)
         collect_vassal_tribute(run)
+        collect_trade_and_tribute(run)
         return PhaseResult(world=run.world, events=run.events)

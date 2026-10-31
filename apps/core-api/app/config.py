@@ -31,7 +31,11 @@ class Settings(BaseSettings):
     scenario_invite_ttl_days: int = 7
     firebase_project_id: str = "ai-dnd-47eb0"
     firebase_credentials_path: str = ""
-    cors_origins: list[str] = ["http://localhost:5173", "http://localhost:3000"]
+    cors_origins: list[str] = [
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://localhost:3000",
+    ]
     environment: str = "development"
     frontend_base_url: str = "http://localhost:5173"
     log_level: str = "INFO"
@@ -47,8 +51,14 @@ class Settings(BaseSettings):
     core_api_public_url: str = "http://localhost:8000"
     local_upload_dir: str = "uploads"
     gemini_api_key: str = ""
-    image_generation_model_name: str = "gemini-3.1-flash-image"
-    image_generation_timeout_seconds: int = 30
+    muse_api_key: str = ""
+    muse_base_url: str = "https://api.meta.ai/v1"
+    muse_image_model_name: str = "muse-image-1.0"
+    muse_image_reasoning_strength: str = "low"
+    muse_text_model_name: str = "muse-spark-1.3"
+    muse_text_reasoning_effort: str = "minimal"
+    text_generation_timeout_seconds: int = 30
+    image_generation_timeout_seconds: int = 90
     lyria_model_name: str = "lyria-002"
     simulation_url: str = "http://localhost:8081"
     simulation_internal_token: str = ""

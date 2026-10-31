@@ -5,6 +5,7 @@ from app.engine.outrage.effects import (
 from app.engine.pressure.strain import compute_strain
 from app.engine.pressure.wars import wars_of
 from app.engine.pressure.will import compute_will
+from app.engine.succession.effects import crisis_stability_loss, crisis_unrest
 from app.models.world_state import WorldState
 from strategy_contracts.ids import FactionId
 from strategy_contracts.scenario import StrategyScenario
@@ -30,13 +31,14 @@ def pressure_stability_loss(
     world: WorldState, scenario: StrategyScenario, faction_id: FactionId
 ) -> int:
     mobilized_loss = mobilization_stability_loss(world, scenario, faction_id)
+    crisis_loss = crisis_stability_loss(world, scenario, faction_id)
     readings = _readings(world, scenario, faction_id)
     if readings is None:
-        return mobilized_loss
+        return mobilized_loss + crisis_loss
     strain, will = readings
     strain_loss = max(0, strain - STRAIN_LOSS_START) // STRAIN_LOSS_DIVISOR
     will_loss = max(0, WILL_LOSS_CEILING - will) // WILL_LOSS_DIVISOR
-    return strain_loss + will_loss + mobilized_loss
+    return strain_loss + will_loss + mobilized_loss + crisis_loss
 
 
 def pressure_unrest(
@@ -44,7 +46,12 @@ def pressure_unrest(
 ) -> int:
     war_loss = pressure_stability_loss(world, scenario, faction_id)
     war_loss -= mobilization_stability_loss(world, scenario, faction_id)
-    return war_loss // UNREST_DIVISOR + mobilization_unrest(world, scenario, faction_id)
+    war_loss -= crisis_stability_loss(world, scenario, faction_id)
+    return (
+        war_loss // UNREST_DIVISOR
+        + mobilization_unrest(world, scenario, faction_id)
+        + crisis_unrest(world, scenario, faction_id)
+    )
 
 
 def acceptance_shift(

@@ -58,7 +58,9 @@ def _supply(world: WorldState, faction_id: FactionId) -> int:
     starving = sum(
         1
         for army_id, turns in world.supply_failure_turns.items()
-        if turns > 0 and world.armies[army_id].owner_id == faction_id
+        if turns > 0
+        and army_id in world.armies
+        and world.armies[army_id].owner_id == faction_id
     )
     return min(SUPPLY_STRAIN_CAP, starving * SUPPLY_STRAIN_PER_ARMY)
 

@@ -213,6 +213,7 @@ def inherit_grounds(
             percent = tuning.heir_insult_percent
         ground.strength = remaining * percent // FULL_PERCENT
         ground.since_turn = turn
+        ground.inherited_from_leader_id = ground.holder_leader_id
         ground.holder_leader_id = new_leader_id
 
 

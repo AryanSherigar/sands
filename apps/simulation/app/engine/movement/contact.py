@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from enum import Enum
 
+from app.engine.treaty.access import has_military_access
 from app.models.world_army import ArmyState
 from app.models.world_state import WorldState
 from strategy_contracts.enums import RelationStatus
@@ -40,6 +41,12 @@ def _armies_in(
     ]
 
 
+def _is_friendly(world: WorldState, mover: FactionId, other: FactionId) -> bool:
+    if relation_status(world, mover, other) is RelationStatus.ALLIANCE:
+        return True
+    return has_military_access(world, mover, other)
+
+
 def _owner_contact(
     world: WorldState, mover: ArmyState, region_id: RegionId
 ) -> ContactKind:
@@ -49,21 +56,27 @@ def _owner_contact(
     status = relation_status(world, mover.owner_id, owner_id)
     if status is RelationStatus.WAR:
         return ContactKind.ENEMY_REGION
-    if status is RelationStatus.ALLIANCE:
+    if _is_friendly(world, mover.owner_id, owner_id):
         return ContactKind.NONE
     return ContactKind.CONFRONTATION
 
 
 def classify_entry(world: WorldState, mover: ArmyState, region_id: RegionId) -> Contact:
+    present = _armies_in(world, region_id, mover)
     statuses = {
         army.id: relation_status(world, mover.owner_id, army.owner_id)
-        for army in _armies_in(world, region_id, mover)
+        for army in present
+    }
+    friendly = {
+        army.id
+        for army in present
+        if _is_friendly(world, mover.owner_id, army.owner_id)
     }
     hostile = tuple(
         army_id for army_id, status in statuses.items() if status is RelationStatus.WAR
     )
     if hostile:
         return Contact(ContactKind.BATTLE, hostile)
-    if any(status is not RelationStatus.ALLIANCE for status in statuses.values()):
+    if any(army_id not in friendly for army_id in statuses):
         return Contact(ContactKind.CONFRONTATION)
     return Contact(_owner_contact(world, mover, region_id))

@@ -3,28 +3,35 @@ from uuid import NAMESPACE_URL, UUID, uuid5
 
 from app.engine.alliances.signing import sign_alliance_card
 from app.engine.coalitions.effects import coalition_shift
+from app.engine.event_numbering import number_events
 from app.engine.negotiation_memory import memory_warmth, record_negotiation_memory
 from app.engine.opinion import opinion_of
 from app.engine.outrage.demands import react_to_demand
 from app.engine.outrage.effects import humiliation_shift
 from app.engine.overtures.consequences import apply_overture_declined
+from app.engine.pacts import (
+    has_active_pact,
+    sign_pact,
+)
 from app.engine.peace.restoration import restore_treaty
 from app.engine.peace.signing import sign_peace
 from app.engine.pressure.effects import acceptance_shift, mediation_shift
 from app.engine.pressure.wars import find_war
+from app.engine.promises.signing import sign_sworn_promise
+from app.engine.promises.watch import scan_sworn_promises
+from app.engine.succession.effects import crisis_acceptance_shift
 from app.engine.trait_axes import axis_totals
+from app.engine.treaty.signing import apply_card
 from app.engine.vassals.consent import has_overlord_consent
 from app.engine.vassals.signing import sign_vassal_card
 from app.exceptions.command_exceptions import CampaignProgressError
 from app.models.world_character import LeaderState
-from app.models.world_diplomacy import CommitmentState, CommitmentStatus
 from app.models.world_events import (
-    EventCause,
     EventLogEntry,
     PendingNegotiation,
     PhaseName,
 )
-from app.models.world_state import CounterKind, WorldState
+from app.models.world_state import WorldState
 from strategy_contracts.ids import FactionId
 from strategy_contracts.negotiation_rules import (
     DEFAULT_BASE_ACCEPT,
@@ -38,6 +45,7 @@ from strategy_contracts.terms import (
     AllianceTerm,
     NonAggressionTerm,
     PeaceTerm,
+    SwornPromiseTerm,
     TermsCard,
     VassalTerm,
 )
@@ -51,7 +59,6 @@ BASE_ACCEPT_THRESHOLD = DEFAULT_BASE_ACCEPT
 HAGGLE_MARGIN = DEFAULT_HAGGLE_MARGIN
 HOSTILE_AXES = (TraitAxis.AGGRESSION, TraitAxis.PRIDE)
 FRIENDLY_AXES = (TraitAxis.CAUTION, TraitAxis.TRUST)
-PACT_AGREED = "non_aggression_agreed"
 
 
 class OfferReaction(str, Enum):
@@ -96,6 +103,7 @@ def acceptance_range(
         - warmth
         - acceptance_shift(world, scenario, counterpart_faction_id)
         - mediation_shift(world, scenario, counterpart_faction_id)
+        - crisis_acceptance_shift(world, scenario, counterpart_faction_id)
         + humiliation_shift(world, scenario, counterpart_faction_id)
         + coalition_shift(world, scenario, proposer_faction_id, counterpart_faction_id)
     )
@@ -126,46 +134,6 @@ def react_to_pact(
     return OfferReaction.REFUSE
 
 
-def active_pacts(world: WorldState) -> list[CommitmentState]:
-    return [
-        commitment
-        for commitment in world.commitments
-        if isinstance(commitment.term, NonAggressionTerm)
-        and commitment.status is CommitmentStatus.ACTIVE
-        and commitment.end_turn is not None
-        and commitment.end_turn > world.clock.turn
-    ]
-
-
-def has_active_pact(world: WorldState, faction_a: str, faction_b: str) -> bool:
-    pair = {faction_a, faction_b}
-    return any(
-        {commitment.term.faction_a, commitment.term.faction_b} == pair
-        for commitment in active_pacts(world)
-    )
-
-
-def _next_counter(world: WorldState, kind: CounterKind) -> int:
-    count = world.counters.get(kind, 0) + 1
-    world.counters[kind] = count
-    return count
-
-
-def _pact_event(world: WorldState, term: NonAggressionTerm) -> EventLogEntry:
-    return EventLogEntry(
-        seq=_next_counter(world, CounterKind.EVENT_SEQ),
-        turn=world.clock.turn,
-        phase=PhaseName.DIPLOMACY,
-        kind=PACT_AGREED,
-        is_major=True,
-        cause=EventCause(
-            summary_key=PACT_AGREED,
-            subject_ids=[term.faction_a, term.faction_b],
-            inputs={"duration_turns": term.duration_turns},
-        ),
-    )
-
-
 def apply_terms_card(
     world: WorldState,
     scenario: StrategyScenario,
@@ -174,6 +142,8 @@ def apply_terms_card(
 ) -> list[EventLogEntry]:
     if not (card.is_confirmed_by_player and card.is_confirmed_by_counterpart):
         raise CampaignProgressError("terms are not confirmed", "unconfirmed_terms", 422)
+    if world.treaty_ruleset >= 1:
+        return apply_card(world, scenario, card, scene_id)
     if any(isinstance(term, PeaceTerm) for term in card.terms):
         return sign_peace(world, scenario, card, scene_id)
     if any(isinstance(term, AllianceTerm) for term in card.terms):
@@ -181,20 +151,14 @@ def apply_terms_card(
     if any(isinstance(term, VassalTerm) for term in card.terms):
         return sign_vassal_card(world, scenario, card, scene_id)
     events: list[EventLogEntry] = []
+    scene_uuid = UUID(str(scene_id))
     for term in card.terms:
-        if not isinstance(term, NonAggressionTerm):
+        if isinstance(term, NonAggressionTerm):
+            events.append(sign_pact(world, term, scene_uuid))
+        elif isinstance(term, SwornPromiseTerm):
+            events += sign_sworn_promise(world, term, scene_uuid)
+        else:
             raise CampaignProgressError("unsupported term", "invalid_term", 422)
-        number = _next_counter(world, CounterKind.COMMITMENT)
-        world.commitments.append(
-            CommitmentState(
-                id=f"commitment_{number}",
-                term=term,
-                start_turn=world.clock.turn,
-                end_turn=world.clock.turn + term.duration_turns,
-                origin_scene_id=UUID(str(scene_id)),
-            )
-        )
-        events.append(_pact_event(world, term))
     return events
 
 
@@ -306,4 +270,5 @@ def close_negotiation(
             card=refused_demand.terms_card,
             tone_grade=refused_demand.tone_grade,
         )
-    return closed, events
+    events += scan_sworn_promises(closed, scenario, events, PhaseName.DIPLOMACY)
+    return closed, number_events(closed, events)

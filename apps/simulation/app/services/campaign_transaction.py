@@ -27,7 +27,9 @@ from app.repositories import (
     world_state_repo,
 )
 from app.services.campaign_state import mutation_response, project_state, request_hash
+from app.services.dispatch_materialization import persist_dispatch_requests
 from app.services.economy_scene import persist_pause
+from app.services.event_materialization import persist_event_deliveries
 from app.services.summary_materialization import persist_summary_requests
 from psycopg import AsyncConnection
 
@@ -254,6 +256,8 @@ async def persist_evidence(
     )
     await event_log_repo.append_events(connection, identity, result.events)
     await persist_summary_requests(connection, result.world, previous)
+    await persist_dispatch_requests(connection, result.world, previous)
+    await persist_event_deliveries(connection, result.world, previous)
     await battle_exchange_repo.append_exchanges(connection, identity, result.receipts)
 
 

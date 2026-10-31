@@ -7,9 +7,12 @@ from app.engine.negotiation_memory import (
     TALKS_REFUSED,
 )
 from app.engine.pressure.wars import find_war, side_score
+from app.engine.succession.opinions import INHERITED_PREFIX
 from app.models.world_character import LeaderState, MemoryState
 from app.models.world_events import PendingNegotiation
 from app.models.world_state import WorldState
+from app.services.peace_brief import build_peace_brief
+from app.services.scene_grudges import build_grudges
 from app.services.scene_package_validation import require_valid_package
 from app.services.trait_notes import trait_notes
 from strategy_contracts.negotiation_rules import PEACE_TERM_KINDS
@@ -29,6 +32,19 @@ from strategy_contracts.scene import (
 )
 from strategy_contracts.terms import TermKind
 
+UNPRICED = 0
+PEACETIME_CLAUSE_KINDS = (
+    TermKind.NON_AGGRESSION,
+    TermKind.TRADE_DEAL,
+    TermKind.MILITARY_ACCESS,
+    TermKind.PAY_GOLD,
+    TermKind.TRIBUTE,
+    TermKind.CEDE_REGION,
+    TermKind.ALLIANCE,
+    TermKind.VASSAL,
+    TermKind.SWORN_PROMISE,
+    TermKind.CONDITIONAL,
+)
 OPINION_WARM = 20
 OPINION_COLD = -20
 MOOD_WARM = "warm"
@@ -39,6 +55,11 @@ MEMORY_TEMPLATES = {
     TALKS_REFUSED: "You refused {subject}'s request for a pact {when}.",
     TALKS_BROKEN_OFF: "You broke off talks with {subject} {when}.",
 }
+INHERITED_MEMORY_TEMPLATES = {
+    PACT_SIGNED: "Your predecessor sealed a non-aggression pact with {subject} {when}.",
+    TALKS_REFUSED: "Your predecessor refused {subject}'s request for a pact {when}.",
+    TALKS_BROKEN_OFF: "Your predecessor broke off talks with {subject} {when}.",
+}
 
 
 def _mood(opinion: int) -> str:
@@ -47,13 +68,6 @@ def _mood(opinion: int) -> str:
     if opinion <= OPINION_COLD:
         return MOOD_HOSTILE
     return MOOD_GUARDED
-
-
-def _grievances(leader: LeaderState, target_id: str | None) -> list[str]:
-    opinion = leader.opinions.get(target_id) if target_id is not None else None
-    if opinion is None:
-        return []
-    return [reason.cause for reason in opinion.reasons if reason.value < 0]
 
 
 def _when(turns_ago: int) -> str:
@@ -66,8 +80,10 @@ def _when(turns_ago: int) -> str:
 
 def _memory_note(world: WorldState, memory: MemoryState) -> str:
     subject = world.leaders.get(memory.subject_id or "")
-    template = MEMORY_TEMPLATES.get(memory.kind, memory.kind)
-    return template.format(
+    is_inherited = memory.kind.startswith(INHERITED_PREFIX)
+    kind = memory.kind.removeprefix(INHERITED_PREFIX)
+    templates = INHERITED_MEMORY_TEMPLATES if is_inherited else MEMORY_TEMPLATES
+    return templates.get(kind, kind).format(
         subject=subject.name if subject else "a rival",
         when=_when(world.clock.turn - memory.turn),
     )
@@ -119,6 +135,28 @@ def _peace_summary(
     return f"{world.ruler.name} sues for peace with {leader.name}."
 
 
+def _realm_id_facts(
+    world: WorldState, player_id: str, counterpart_id: str
+) -> list[SituationFact]:
+    if world.treaty_ruleset < 1:
+        return []
+    return [
+        SituationFact(label="Your realm id", value=counterpart_id),
+        SituationFact(label="The player's realm id", value=player_id),
+    ]
+
+
+def _other_realms_fact(
+    world: WorldState, player_id: str, counterpart_id: str
+) -> SituationFact:
+    others = sorted(
+        faction_id
+        for faction_id, faction in world.factions.items()
+        if faction_id not in (player_id, counterpart_id) and not faction.is_destroyed
+    )
+    return SituationFact(label="Other realms", value=", ".join(others))
+
+
 def build_negotiation_package(
     world: WorldState,
     scenario: StrategyScenario,
@@ -147,24 +185,46 @@ def build_negotiation_package(
                 SituationFact(
                     label="Longest pact",
                     value=f"{rules.max_pact_turns} turns",
-                )
+                ),
+                _other_realms_fact(world, player, counterpart_faction_id),
+                *_realm_id_facts(world, player, counterpart_faction_id),
             ],
         ),
         participants=[_participant(world, leader, scenario, opinion)],
         hidden_limits=HiddenLimits(
-            acceptance=limits, real_grievances=_grievances(leader, player_leader_id)
+            acceptance=limits,
+            grudges=build_grudges(world, scenario, leader, player),
         ),
-        allowed_outcomes=[
-            TermsCardSpec(
-                allowed_term_kinds=list(rules.allowed_term_kinds),
-                price_by_term_kind={TermKind.NON_AGGRESSION: rules.pact_value_per_turn},
-                max_duration_turns=rules.max_pact_turns,
-            )
-        ],
+        allowed_outcomes=[_negotiation_spec(world, scenario)],
         exchange_cap=negotiation.NEGOTIATION_EXCHANGE_CAP,
         default_outcome=TermsCardOutcome(result=TermsResult.REFUSED),
     )
     return require_valid_package(package)
+
+
+def _negotiation_spec(world: WorldState, scenario: StrategyScenario) -> TermsCardSpec:
+    rules = scenario.negotiation
+    prices = {
+        TermKind.NON_AGGRESSION: rules.pact_value_per_turn,
+        TermKind.SWORN_PROMISE: UNPRICED,
+    }
+    kinds = _negotiation_term_kinds(rules.allowed_term_kinds)
+    if world.treaty_ruleset >= 1:
+        tuning = scenario.tuning.treaty
+        prices[TermKind.TRADE_DEAL] = tuning.trade_value_per_turn
+        prices[TermKind.MILITARY_ACCESS] = tuning.access_value_per_turn
+        kinds = list(PEACETIME_CLAUSE_KINDS)
+    return TermsCardSpec(
+        allowed_term_kinds=kinds,
+        price_by_term_kind=prices,
+        max_duration_turns=rules.max_pact_turns,
+    )
+
+
+def _negotiation_term_kinds(configured: list[TermKind]) -> list[TermKind]:
+    if TermKind.SWORN_PROMISE in configured:
+        return list(configured)
+    return [*configured, TermKind.SWORN_PROMISE]
 
 
 def build_peace_package(
@@ -198,7 +258,13 @@ def build_peace_package(
             ],
         ),
         participants=[_participant(world, leader, scenario, opinion)],
-        hidden_limits=HiddenLimits(acceptance=limits),
+        hidden_limits=HiddenLimits(
+            acceptance=limits,
+            grudges=build_grudges(world, scenario, leader, player),
+            peace_brief=build_peace_brief(
+                world, scenario, player, counterpart_faction_id, war
+            ),
+        ),
         allowed_outcomes=[
             TermsCardSpec(
                 allowed_term_kinds=list(PEACE_TERM_KINDS),

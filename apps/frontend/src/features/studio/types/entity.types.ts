@@ -28,6 +28,7 @@ export interface EntityCreate {
   attributes_schema?: Record<string, AttributeFieldSchema>;
   narrator_instruction?: string;
   is_player?: boolean;
+  avatar_url?: string | null;
   lore_document?: LoreDocument | null;
   expected_content_edited_at?: string;
 }
@@ -41,6 +42,7 @@ export interface EntityUpdate {
   attributes_schema?: Record<string, AttributeFieldSchema>;
   narrator_instruction?: string;
   is_player?: boolean;
+  avatar_url?: string | null;
   lore_document?: LoreDocument | null;
   expected_content_edited_at?: string;
 }
@@ -56,6 +58,7 @@ export interface EntityResponse {
   attributes_schema: Record<string, AttributeFieldSchema>;
   narrator_instruction: string | null;
   is_player?: boolean;
+  avatar_url?: string | null;
   fact_count?: number;
   lore_document?: LoreDocument | null;
   scenario_content_edited_at?: string | null;

@@ -14,6 +14,7 @@ export const StateMutationList: React.FC<StateMutationListProps> = ({
   onChange,
   legend = "State mutations",
   maxItems = MAX_MUTATIONS_PER_LIST,
+  characters,
 }) => {
   const isAtLimit = value.length >= maxItems;
 
@@ -39,6 +40,7 @@ export const StateMutationList: React.FC<StateMutationListProps> = ({
               index={index}
               total={value.length}
               mutation={mutation}
+              characters={characters}
               onChange={handleRowChange}
               onMove={handleMove}
               onRemove={handleRemove}

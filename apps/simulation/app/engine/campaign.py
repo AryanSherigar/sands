@@ -6,7 +6,11 @@ from app.engine.ai.planner import plan_ai_orders
 from app.engine.battles.control import has_player_control
 from app.engine.battles.phase import BattlePhase
 from app.engine.battles.waves import advance_wave
-from app.engine.commands.phases import CampaignEconomyPhase, CampaignMovementPhase
+from app.engine.commands.phases import (
+    CampaignEconomyPhase,
+    CampaignMovementPhase,
+    CampaignSiegePhase,
+)
 from app.engine.diplomacy.phase import DiplomacyPhase, TimePhase
 from app.engine.endings import require_game_not_ended
 from app.engine.events import EventsPhase
@@ -35,6 +39,7 @@ SUPPORTED_NOOP_PHASES = frozenset(
         PhaseName.TIME,
         PhaseName.MOVEMENT,
         PhaseName.BATTLES,
+        PhaseName.SIEGES,
         PhaseName.ECONOMY,
         PhaseName.INTERNAL,
         PhaseName.EVENTS,
@@ -59,6 +64,7 @@ def campaign_phases() -> dict[PhaseName, Phase]:
         PhaseName.TIME: TimePhase(),
         PhaseName.MOVEMENT: CampaignMovementPhase(),
         PhaseName.BATTLES: BattlePhase(),
+        PhaseName.SIEGES: CampaignSiegePhase(),
         PhaseName.ECONOMY: CampaignEconomyPhase(),
         PhaseName.INTERNAL: InternalPhase(),
         PhaseName.EVENTS: EventsPhase(),

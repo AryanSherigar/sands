@@ -7,6 +7,7 @@ import {
 export interface ConditionFormProps {
   condition: ConditionResponse | null;
   availableFields: AvailableField[];
+  characters?: { id: string; name: string }[];
   onSubmit: (payload: ConditionCreate) => void;
   onCancel: () => void;
   hasAtmosphere?: boolean;

@@ -44,6 +44,7 @@ const buildInitialState = (
 export const ConditionForm: React.FC<ConditionFormProps> = ({
   condition,
   availableFields,
+  characters,
   onSubmit,
   onCancel,
   hasAtmosphere = false,
@@ -100,6 +101,7 @@ export const ConditionForm: React.FC<ConditionFormProps> = ({
         availableFields={availableFields}
       />
       <StateMutationList
+        characters={characters}
         value={formState.stateMutations}
         onChange={(mutations) =>
           setFormState({ ...formState, stateMutations: mutations })

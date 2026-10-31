@@ -1,5 +1,6 @@
 from app.engine.movement.contact import relation_status
 from app.engine.movement.map_index import MapIndex
+from app.engine.treaty.access import has_military_access
 from app.models.world_state import WorldState
 from strategy_contracts.enums import RelationStatus
 from strategy_contracts.ids import FactionId, RegionId
@@ -59,7 +60,9 @@ def visible_regions(
 def _is_foreign(world: WorldState, faction_id: FactionId, other_id: FactionId) -> bool:
     if other_id == faction_id:
         return False
-    return relation_status(world, faction_id, other_id) is not RelationStatus.ALLIANCE
+    if relation_status(world, faction_id, other_id) is RelationStatus.ALLIANCE:
+        return False
+    return not has_military_access(world, faction_id, other_id)
 
 
 def known_hazards(

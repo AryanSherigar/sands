@@ -186,7 +186,7 @@ def test_zero_points_does_not_block_global_advance() -> None:
 
 
 def test_receipts_record_final_arbitration_for_failed_retreat() -> None:
-    from tests.engine.battles.builders import accept
+    from tests.engine.battles.test_campaign import accept
 
     world, scenario = two_battles(has_backup=False)
     for battle_id, faction_id in (("battle_1", ATTACKER), ("battle_2", DEFENDER)):
@@ -220,7 +220,7 @@ def test_shorter_configured_wave_cap_remains_awaiting_next_campaign() -> None:
 def test_failed_mutual_departure_reconciles_victor_and_event() -> None:
     from app.models.world_battle import BattleOutcome
 
-    from tests.engine.battles.builders import accept
+    from tests.engine.battles.test_campaign import accept
 
     world, scenario = two_battles(has_backup=False)
     participants = (
@@ -249,7 +249,7 @@ def test_failed_mutual_departure_reconciles_victor_and_event() -> None:
 
 
 def test_failed_retreat_restores_authoritative_deployment_partition() -> None:
-    from tests.engine.battles.builders import accept
+    from tests.engine.battles.test_campaign import accept
 
     world, scenario = two_battles(has_backup=False)
     for battle_id, faction_id in (("battle_1", ATTACKER), ("battle_2", DEFENDER)):

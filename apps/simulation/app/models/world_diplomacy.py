@@ -9,6 +9,7 @@ from pydantic import (
     model_serializer,
     model_validator,
 )
+from strategy_contracts.agents import AgentTrait
 from strategy_contracts.diplomacy import GroundKind
 from strategy_contracts.enums import RelationStatus, TroopType
 from strategy_contracts.ids import (
@@ -57,6 +58,8 @@ class CommitmentStatus(str, Enum):
     FULFILLED = "fulfilled"
     BREACHED = "breached"
     EXPIRED = "expired"
+    DORMANT = "dormant"
+    SUSPENDED = "suspended"
 
 
 class CommitmentState(WorldModel):
@@ -66,6 +69,16 @@ class CommitmentState(WorldModel):
     end_turn: WholeNumber | None = None
     status: CommitmentStatus = CommitmentStatus.ACTIVE
     origin_scene_id: UUID | None = None
+    linked_commitment_id: str | None = None
+
+    @model_serializer(mode="wrap")
+    def omit_unset_link(
+        self, handler: SerializerFunctionWrapHandler
+    ) -> dict[str, object]:
+        document = handler(self)
+        if document.get("linked_commitment_id") is None:
+            document.pop("linked_commitment_id", None)
+        return document
 
 
 class OathbreakerMark(WorldModel):
@@ -97,6 +110,16 @@ class GroundState(WorldModel):
     is_forged: bool = False
     matures_turn: WholeNumber | None = None
     suspect_level: WholeNumber = 0
+    inherited_from_leader_id: LeaderId | None = None
+
+    @model_serializer(mode="wrap")
+    def omit_unset_inheritance(
+        self, handler: SerializerFunctionWrapHandler
+    ) -> dict[str, object]:
+        document = handler(self)
+        if document.get("inherited_from_leader_id") is None:
+            document.pop("inherited_from_leader_id", None)
+        return document
 
     @model_validator(mode="after")
     def validate_claim_has_region(self) -> "GroundState":
@@ -116,6 +139,14 @@ class WarGoalState(WorldModel):
     region_id: RegionId | None = None
 
 
+OMITTED_WHEN_EMPTY_WAR_KEYS = (
+    "side_by_faction",
+    "scored_region_ids",
+    "occupation_points_attacker",
+    "occupation_points_defender",
+)
+
+
 class WarState(WorldModel):
     id: str
     attacker_id: FactionId
@@ -132,6 +163,9 @@ class WarState(WorldModel):
     battle_points_defender: WholeNumber = 0
     prisoner_points_attacker: WholeNumber = 0
     prisoner_points_defender: WholeNumber = 0
+    scored_region_ids: list[str] = Field(default_factory=list)
+    occupation_points_attacker: WholeNumber = 0
+    occupation_points_defender: WholeNumber = 0
     side_by_faction: dict[FactionId, WarSide] = Field(default_factory=dict)
 
     @model_serializer(mode="wrap")
@@ -139,8 +173,9 @@ class WarState(WorldModel):
         self, handler: SerializerFunctionWrapHandler
     ) -> dict[str, object]:
         document = handler(self)
-        if not document.get("side_by_faction"):
-            document.pop("side_by_faction", None)
+        for key in OMITTED_WHEN_EMPTY_WAR_KEYS:
+            if not document.get(key):
+                document.pop(key, None)
         return document
 
 
@@ -194,8 +229,25 @@ class PrisonerState(WorldModel):
         return self
 
 
+class AgentState(WorldModel):
+    name: str
+    traits: list[AgentTrait]
+    loyalty: WholeNumber
+    bribed_by: FactionId | None = None
+
+
 class EnvoyState(WorldModel):
     id: str
     from_faction_id: FactionId
     at_faction_id: FactionId
     character_id: EntityId | None = None
+    agent: AgentState | None = None
+
+    @model_serializer(mode="wrap")
+    def omit_absent_agent(
+        self, handler: SerializerFunctionWrapHandler
+    ) -> dict[str, object]:
+        document = handler(self)
+        if document.get("agent") is None:
+            document.pop("agent", None)
+        return document

@@ -1,9 +1,8 @@
 from app.engine.negotiation import player_faction_id
 from app.engine.overtures.cards import demand_card
 from app.engine.overtures.renewals import pending_renewals
-from app.engine.pressure.strain import compute_strain
 from app.engine.pressure.wars import find_war, side_score
-from app.engine.pressure.will import compute_will
+from app.engine.pressure.weariness import is_war_weary
 from app.models.world_diplomacy import WarState
 from app.models.world_state import WorldState
 from strategy_contracts.ids import FactionId
@@ -24,17 +23,6 @@ def _is_approachable(world: WorldState, faction_id: FactionId) -> bool:
     return world.overture_cooldowns.get(faction_id, 0) <= world.clock.turn
 
 
-def _is_exhausted(
-    world: WorldState, scenario: StrategyScenario, faction_id: FactionId
-) -> bool:
-    tuning = scenario.tuning.overtures
-    strain = compute_strain(world, scenario, faction_id).value
-    will = compute_will(world, scenario, faction_id).value
-    return (
-        strain >= tuning.peace_offer_min_strain or will <= tuning.peace_offer_max_will
-    )
-
-
 def _kind_for(
     world: WorldState,
     scenario: StrategyScenario,
@@ -42,7 +30,7 @@ def _kind_for(
     war: WarState,
 ) -> OvertureKind | None:
     tuning = scenario.tuning.overtures
-    if _is_exhausted(world, scenario, faction_id):
+    if is_war_weary(world, scenario, faction_id):
         return OvertureKind.PEACE_OFFER
     player_id = player_faction_id(world)
     edge = side_score(war, faction_id) - side_score(war, player_id)

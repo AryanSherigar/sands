@@ -8,8 +8,12 @@ from app.models.orders import (
     AnswerCallOrder,
     AnswerDemandOrder,
     AnswerEventOrder,
+    AppeaseCoalitionOrder,
     AttackOrder,
+    BesiegeOrder,
+    BribeEnvoyOrder,
     CallNegotiationOrder,
+    CutSubsidyOrder,
     DeclareDefaultOrder,
     DeclareWarOrder,
     DemandFromVassalOrder,
@@ -22,12 +26,15 @@ from app.models.orders import (
     HandlePrisonerOrder,
     MapScoutOrder,
     MediateOrder,
+    MobilizeOrder,
     MoveArmyOrder,
     RaiseArmyOrder,
     ReleaseVassalOrder,
     SendEnvoyOrder,
     SetPayOrder,
     SetTaxRateOrder,
+    SubsidizeOrder,
+    SuePeaceOrder,
     TakeLoanOrder,
 )
 from app.models.world_battle import StandingPlan
@@ -119,6 +126,7 @@ Command = Annotated[
     | DisbandArmyOrder
     | MoveArmyOrder
     | AttackOrder
+    | BesiegeOrder
     | HaltArmyOrder
     | MapScoutOrder
     | DeclareWarOrder
@@ -126,10 +134,16 @@ Command = Annotated[
     | CallNegotiationOrder
     | FabricateClaimOrder
     | SendEnvoyOrder
+    | BribeEnvoyOrder
     | HandlePrisonerOrder
     | MediateOrder
+    | SuePeaceOrder
+    | SubsidizeOrder
+    | CutSubsidyOrder
+    | MobilizeOrder
     | AnswerCallOrder
     | DenounceAllianceOrder
+    | AppeaseCoalitionOrder
     | DemandFromVassalOrder
     | AnswerDemandOrder
     | GrantConsentOrder

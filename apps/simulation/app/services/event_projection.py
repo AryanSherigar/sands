@@ -10,21 +10,34 @@ from app.models.api_world_view import (
     PendingEventView,
 )
 from app.models.orders import AnswerEventOrder
+from app.models.world_event_memory import EventMemory
 from app.models.world_events import PendingEvent
 from app.models.world_state import WorldState
 from strategy_contracts.conditions import ConditionScope
-from strategy_contracts.events import EffectSpec, EventChoice, EventDefinition
+from strategy_contracts.events import (
+    EffectSpec,
+    EventChoice,
+    EventDefinition,
+    EventNarrativePayload,
+)
 from strategy_contracts.scenario import StrategyScenario
 
 
 def project_pending_events(
-    world: WorldState, scenario: StrategyScenario, faction_id: str
+    world: WorldState,
+    scenario: StrategyScenario,
+    faction_id: str,
+    narratives: dict[str, EventNarrativePayload] | None = None,
 ) -> list[PendingEventView]:
     views: list[PendingEventView] = []
     for pending in sorted(world.pending_events, key=lambda item: item.id):
-        template = find_template(scenario, pending.template_id)
+        template = find_template(world, scenario, pending.template_id)
         if template is not None:
-            views.append(_pending_view(world, scenario, faction_id, pending, template))
+            views.append(
+                _pending_view(
+                    world, scenario, faction_id, pending, template, narratives
+                )
+            )
     return views
 
 
@@ -34,6 +47,7 @@ def _pending_view(
     faction_id: str,
     pending: PendingEvent,
     template: EventDefinition,
+    narratives: dict[str, EventNarrativePayload] | None = None,
 ) -> PendingEventView:
     queued = _queued_answer(world, faction_id, pending.id)
     offered = [choice for choice in template.choices if choice.id in pending.choice_ids]
@@ -58,6 +72,7 @@ def _pending_view(
         neglect_effects=_previews(template.neglect_effects),
         queued_choice_id=queued[1] if queued else None,
         queued_command_id=queued[0] if queued else None,
+        narrative=narratives.get(pending.id) if narratives else None,
     )
 
 
@@ -106,13 +121,22 @@ def _previews(effects: list[EffectSpec]) -> list[EffectPreview]:
     return [EffectPreview(kind=effect.kind, amount=effect.amount) for effect in effects]
 
 
+def _is_rival_memory(
+    template: EventDefinition, memory: EventMemory, faction_id: str
+) -> bool:
+    is_faction_subject = template.subject_kind is ConditionScope.FACTION
+    return is_faction_subject and memory.subject_id != faction_id
+
+
 def project_event_memories(
-    world: WorldState, scenario: StrategyScenario
+    world: WorldState, scenario: StrategyScenario, faction_id: str
 ) -> list[EventMemoryView]:
     views: list[EventMemoryView] = []
     for memory in world.event_memories:
-        template = find_template(scenario, memory.template_id)
+        template = find_template(world, scenario, memory.template_id)
         if template is None or not (memory.last_tier or memory.scar):
+            continue
+        if _is_rival_memory(template, memory, faction_id):
             continue
         subject = Subject(template.subject_kind, memory.subject_id)
         views.append(

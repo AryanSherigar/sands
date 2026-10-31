@@ -1,6 +1,7 @@
 from app.engine.diplomacy.events import diplomacy_event
 from app.engine.diplomacy.grounds import grant_ground
 from app.engine.diplomacy.reputation import shift_standing
+from app.engine.treaty.registry import term_parties
 from app.models.world_diplomacy import (
     CommitmentState,
     CommitmentStatus,
@@ -15,8 +16,11 @@ from strategy_contracts.peace import PeaceTier
 from strategy_contracts.scenario import StrategyScenario
 from strategy_contracts.terms import (
     AllianceTerm,
+    MilitaryAccessTerm,
     NonAggressionTerm,
     Term,
+    TradeDealTerm,
+    TributeTerm,
     VassalTerm,
 )
 
@@ -61,11 +65,41 @@ def _pacts_between(
     ]
 
 
+def _void_treaty_clauses(
+    world: WorldState, first: FactionId, second: FactionId
+) -> None:
+    for commitment in world.commitments:
+        is_clause = isinstance(
+            commitment.term, TradeDealTerm | MilitaryAccessTerm | TributeTerm
+        )
+        is_pair = term_parties(commitment.term) == {first, second}
+        if is_clause and is_pair and commitment.status == CommitmentStatus.ACTIVE:
+            commitment.status = CommitmentStatus.EXPIRED
+
+
 def _mark_oathbreaker(world: WorldState, breacher_id: FactionId) -> None:
     if all(mark.faction_id != breacher_id for mark in world.oathbreakers):
         world.oathbreakers.append(
             OathbreakerMark(faction_id=breacher_id, since_turn=world.clock.turn)
         )
+
+
+def grant_broken_promise_ground(
+    world: WorldState,
+    scenario: StrategyScenario,
+    holder_id: FactionId,
+    breacher_id: FactionId,
+) -> None:
+    holder = world.factions[holder_id]
+    if holder.is_destroyed or holder.leader_id is None:
+        return
+    grant_ground(
+        world,
+        scenario,
+        kind=GroundKind.BROKEN_PROMISE,
+        holder_faction_id=holder_id,
+        target_faction_id=breacher_id,
+    )
 
 
 def _grant_guarantor_grounds(
@@ -76,16 +110,7 @@ def _grant_guarantor_grounds(
 ) -> None:
     guarantor_ids = sorted({g for truce in truces for g in truce.guarantor_ids})
     for guarantor_id in guarantor_ids:
-        faction = world.factions[guarantor_id]
-        if faction.is_destroyed or faction.leader_id is None:
-            continue
-        grant_ground(
-            world,
-            scenario,
-            kind=GroundKind.BROKEN_PROMISE,
-            holder_faction_id=guarantor_id,
-            target_faction_id=breacher_id,
-        )
+        grant_broken_promise_ground(world, scenario, guarantor_id, breacher_id)
 
 
 def settle_hostages_on_breach(
@@ -100,6 +125,21 @@ def settle_hostages_on_breach(
             world.peace.hostages.remove(hostage)
 
 
+def apply_breach_consequences(
+    world: WorldState,
+    scenario: StrategyScenario,
+    breacher_id: FactionId,
+    cost_percent: int = PERCENT,
+) -> None:
+    _mark_oathbreaker(world, breacher_id)
+    tuning = scenario.tuning.diplomacy
+    shift_standing(
+        world.factions[breacher_id],
+        -(tuning.breach_reputation_cost * cost_percent // PERCENT),
+        -(tuning.breach_stability_cost * cost_percent // PERCENT),
+    )
+
+
 def breach_agreements(
     world: WorldState,
     scenario: StrategyScenario,
@@ -109,6 +149,7 @@ def breach_agreements(
 ) -> list[EventLogEntry]:
     """Break every pact and truce between the pair, charging the breach cost once."""
     pair = {breacher_id, target_id}
+    _void_treaty_clauses(world, breacher_id, target_id)
     pacts = _pacts_between(world, breacher_id, target_id)
     truces = [t for t in world.truces if {t.faction_a, t.faction_b} == pair]
     if not pacts and not truces:
@@ -116,13 +157,7 @@ def breach_agreements(
     for pact in pacts:
         pact.status = CommitmentStatus.BREACHED
     world.truces = [truce for truce in world.truces if truce not in truces]
-    _mark_oathbreaker(world, breacher_id)
-    tuning = scenario.tuning.diplomacy
-    shift_standing(
-        world.factions[breacher_id],
-        -(tuning.breach_reputation_cost * cost_percent // PERCENT),
-        -(tuning.breach_stability_cost * cost_percent // PERCENT),
-    )
+    apply_breach_consequences(world, scenario, breacher_id, cost_percent)
     settle_hostages_on_breach(world, {truce.id for truce in truces}, breacher_id)
     _grant_guarantor_grounds(world, scenario, truces, breacher_id)
     return [diplomacy_event(AGREEMENT_BREACHED, [breacher_id, target_id])]

@@ -15,6 +15,15 @@ from app.models.world_state import WorldState
 from strategy_contracts.enums import TroopType
 
 BATTLE_EVENT_PREFIX = "battle_"
+SIEGE_EVENT_KINDS = frozenset(
+    {
+        "siege_started",
+        "siege_progressed",
+        "region_occupied",
+        "region_conquered",
+        "occupation_lifted",
+    }
+)
 ECONOMY_CATEGORY_BY_KIND: dict[str, EconomyCategory] = {
     "income_collected": "tax",
     "upkeep_paid": "upkeep",
@@ -131,6 +140,12 @@ def _visible_subject_ids(world: WorldState, faction_id: str) -> set[str]:
     return {faction_id} | own_armies | own_regions | own_governors
 
 
+def _is_siege_event_visible(event: EventLogEntry, visible: set[str]) -> bool:
+    return event.kind in SIEGE_EVENT_KINDS and bool(
+        set(event.cause.subject_ids) & visible
+    )
+
+
 def _visible_events(
     events: Sequence[EventLogEntry], world: WorldState, faction_id: str
 ) -> list[EventLogEntry]:
@@ -138,9 +153,12 @@ def _visible_events(
     return [
         event
         for event in events
-        if not event.kind.startswith(BATTLE_EVENT_PREFIX)
-        and event.cause.subject_ids
-        and set(event.cause.subject_ids) <= visible
+        if _is_siege_event_visible(event, visible)
+        or (
+            not event.kind.startswith(BATTLE_EVENT_PREFIX)
+            and event.cause.subject_ids
+            and set(event.cause.subject_ids) <= visible
+        )
     ]
 
 

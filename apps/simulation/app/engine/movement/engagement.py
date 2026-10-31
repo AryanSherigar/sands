@@ -1,5 +1,5 @@
 from app.engine.battle_records import populate_battle_contingents
-from app.models.world_battle import BattleState, BattleStatus
+from app.models.world_battle import BattleSide, BattleState, BattleStatus
 from app.models.world_state import CounterKind, WorldState
 from strategy_contracts.ids import ArmyId, RegionId
 
@@ -49,6 +49,33 @@ def _stop_marching(world: WorldState, army_ids: list[ArmyId]) -> None:
         world.armies[army_id].order = None
 
 
+def _settled_side(
+    world: WorldState, battle: BattleState, army_id: ArmyId, labelled: BattleSide
+) -> BattleSide:
+    contingent = battle.contingents.get(world.armies[army_id].owner_id)
+    return labelled if contingent is None else contingent.side
+
+
+def _split_by_settled_side(
+    world: WorldState,
+    battle: BattleState,
+    attacker_ids: list[ArmyId],
+    defender_ids: list[ArmyId],
+) -> tuple[set[ArmyId], set[ArmyId]]:
+    sides: dict[BattleSide, set[ArmyId]] = {
+        BattleSide.ATTACKER: set(),
+        BattleSide.DEFENDER: set(),
+    }
+    labelled = (
+        (attacker_ids, BattleSide.ATTACKER),
+        (defender_ids, BattleSide.DEFENDER),
+    )
+    for army_ids, side in labelled:
+        for army_id in army_ids:
+            sides[_settled_side(world, battle, army_id, side)].add(army_id)
+    return sides[BattleSide.ATTACKER], sides[BattleSide.DEFENDER]
+
+
 def open_or_join_battle(
     world: WorldState,
     region_id: RegionId,
@@ -56,9 +83,12 @@ def open_or_join_battle(
     defender_ids: list[ArmyId],
 ) -> BattleState:
     battle = _find_open_battle(world, region_id) or _new_battle(world, region_id)
+    joining_attackers, joining_defenders = _split_by_settled_side(
+        world, battle, attacker_ids, defender_ids
+    )
     defenders = set(battle.defender_army_ids)
-    attackers = set(battle.attacker_army_ids) | (set(attacker_ids) - defenders)
-    defenders |= set(defender_ids) - attackers
+    attackers = set(battle.attacker_army_ids) | (joining_attackers - defenders)
+    defenders |= joining_defenders - attackers
     battle.attacker_army_ids = sorted(attackers)
     battle.defender_army_ids = sorted(defenders)
     populate_battle_contingents(world, battle)

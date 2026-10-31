@@ -1,8 +1,14 @@
+from app.engine.outrage.status import outrage_of
 from app.engine.pressure.bands import to_band
 from app.engine.pressure.strain import compute_strain
 from app.engine.pressure.wars import wars_of
 from app.engine.pressure.will import compute_will
-from app.models.api_world_view import OwnPressureView, RumorView
+from app.models.api_world_view import (
+    MobilizationView,
+    OwnPressureView,
+    RumorView,
+    SubsidyView,
+)
 from app.models.world_state import WorldState
 from strategy_contracts.ids import FactionId
 from strategy_contracts.scenario import StrategyScenario
@@ -36,3 +42,27 @@ def project_rumors(world: WorldState, faction_id: FactionId) -> list[RumorView]:
         for rumor in sorted(world.pressure.rumors, key=lambda item: item.id)
         if rumor.observer_id == faction_id
     ]
+
+
+def project_subsidies(world: WorldState, faction_id: FactionId) -> list[SubsidyView]:
+    return [
+        SubsidyView(
+            id=item.id,
+            payer_id=item.payer_id,
+            receiver_id=item.receiver_id,
+            war_id=item.war_id,
+            amount_per_turn=item.amount_per_turn,
+            turns_left=item.expires_turn - world.clock.turn + 1,
+        )
+        for item in sorted(world.pressure.subsidies, key=lambda entry: entry.id)
+        if faction_id in (item.payer_id, item.receiver_id)
+    ]
+
+
+def project_mobilization(
+    world: WorldState, faction_id: FactionId
+) -> MobilizationView | None:
+    state = outrage_of(world, faction_id)
+    if state is None or world.clock.turn >= state.mobilized_until_turn:
+        return None
+    return MobilizationView(turns_left=state.mobilized_until_turn - world.clock.turn)

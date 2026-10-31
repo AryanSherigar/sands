@@ -9,6 +9,7 @@ import { ExampleChips } from "./advanced/ExampleChips";
 import { RuleCard } from "./advanced/RuleCard";
 import { TurnOffToolPrompt } from "./advanced/TurnOffToolPrompt";
 import { GuideStepLayout } from "./GuideStepLayout";
+import { CombatEncounterEditor } from "./CombatEncounterEditor";
 
 const EMPTY_COPY = "No rules yet. Add one, or tap an example below to start from.";
 const EXAMPLE_CHIPS = RULE_EXAMPLES.map(({ id, label }) => ({ id, label }));
@@ -46,6 +47,7 @@ export const StepRules: React.FC = () => {
         + Add a rule
       </Button>
       <ExampleChips heading="Questions to help" examples={EXAMPLE_CHIPS} onPick={commands.addExample} />
+      <CombatEncounterEditor />
     </GuideStepLayout>
   );
 };

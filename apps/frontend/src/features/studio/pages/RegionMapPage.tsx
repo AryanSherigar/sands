@@ -8,6 +8,8 @@ import {
   ALLOWED_COVER_IMAGE_TYPES,
   MAX_COVER_IMAGE_BYTES,
 } from "../constants/upload";
+import { GenerateMapForm } from "../components/GenerateMapForm";
+import { useGenerateMap } from "../hooks/useGenerateMap";
 import { useSaveRegionMap } from "../hooks/useSaveRegionMap";
 import { useUploadMapImage } from "../hooks/useUploadMapImage";
 
@@ -17,6 +19,8 @@ interface Picture {
 }
 
 const PICTURE_ERROR = "Use a JPEG, PNG or WebP picture under 5 MB.";
+const ART_FAILED_NOTICE = "The painted picture failed, showing the region colors. Choose a different picture to try again.";
+const STAGE_LABELS = { idle: null, regions: "Drawing regions", art: "Painting the map" } as const;
 
 async function measure(file: File): Promise<{ width: number; height: number }> {
   const bitmap = await createImageBitmap(file);
@@ -27,6 +31,10 @@ export const RegionMapPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const upload = useUploadMapImage();
   const save = useSaveRegionMap(id ?? "");
+  const generator = useGenerateMap(id ?? "");
+  const [description, setDescription] = useState("");
+  const [startFile, setStartFile] = useState<File | null>(null);
+  const [hasArt, setHasArt] = useState(true);
   const [picture, setPicture] = useState<Picture | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [isSaved, setIsSaved] = useState(false);
@@ -49,6 +57,22 @@ export const RegionMapPage: React.FC = () => {
     }
   };
 
+  const handleGenerate = async (nextDescription: string): Promise<void> => {
+    setDescription(nextDescription);
+    setMessage(null);
+    const generated = await generator.generate(nextDescription).catch(() => null);
+    if (!generated) return;
+    setStartFile(generated.regionImage);
+    setHasArt(generated.hasArt);
+    setPicture(generated.picture);
+  };
+
+  const handleChooseDifferentPicture = (): void => {
+    setPicture(null);
+    setStartFile(null);
+    setHasArt(true);
+  };
+
   const handleFinish = async (result: RegionMapResult): Promise<void> => {
     try {
       await save.mutateAsync(result.document);
@@ -64,6 +88,15 @@ export const RegionMapPage: React.FC = () => {
     <main className="mx-auto max-w-6xl space-y-4 p-6 font-sans text-content">
       <h1 className="text-xl font-semibold">Map regions</h1>
       {!picture && (
+        <GenerateMapForm
+          initialDescription={description}
+          isBusy={generator.isGenerating}
+          stageLabel={STAGE_LABELS[generator.stage]}
+          errorMessage={generator.errorMessage}
+          onGenerate={handleGenerate}
+        />
+      )}
+      {!picture && (
         <label className="block space-y-2 text-sm">
           Map picture
           <input type="file" accept="image/jpeg,image/png,image/webp" onChange={handlePictureChange} />
@@ -76,9 +109,11 @@ export const RegionMapPage: React.FC = () => {
           pictureUrl={picture.url}
           pictureSize={picture.size}
           initialDocument={null}
+          startFile={startFile}
           onFinish={handleFinish}
         />
       )}
+      {picture && !hasArt && <p role="status" className="text-sm text-content-muted">{ART_FAILED_NOTICE}</p>}
       {save.errorMessage && <p role="alert" className="text-sm text-danger">{save.errorMessage}</p>}
       {isSaved && (
         <p role="status" className="text-sm text-success">
@@ -86,7 +121,7 @@ export const RegionMapPage: React.FC = () => {
         </p>
       )}
       {picture && !isSaved && (
-        <Button variant="ghost" size="sm" onClick={() => setPicture(null)}>
+        <Button variant="ghost" size="sm" onClick={handleChooseDifferentPicture}>
           Choose a different picture
         </Button>
       )}

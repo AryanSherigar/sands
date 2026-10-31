@@ -20,6 +20,7 @@ const PICTURE_SIZE = { width: 60, height: 60 };
 const mocks = vi.hoisted(() => ({
   pictureHolder: { pixels: null as PixelImage | null },
   failure: { shouldFail: false },
+  traced: [] as File[],
 }));
 
 vi.mock("../../hooks/useTraceMap", async () => {
@@ -31,7 +32,8 @@ vi.mock("../../hooks/useTraceMap", async () => {
     const { labelMap, warnings } = build(image);
     return { labelMap, warnings, result: trace(labelMap, {}, options) };
   };
-  const traceColorImage = async () => {
+  const traceColorImage = async (file: File) => {
+    mocks.traced.push(file);
     if (mocks.failure.shouldFail) throw new Error("worker exploded");
     const image = blocks(
       ["rg", "bg"],
@@ -49,13 +51,16 @@ vi.mock("../../hooks/usePicturePixels", () => ({
   usePicturePixels: () => ({ pixels: mocks.pictureHolder.pixels }),
 }));
 
-function renderEditor(props: Partial<{ initialDocument: MapDocument | null; onFinish: () => void }> = {}) {
+function renderEditor(
+  props: Partial<{ initialDocument: MapDocument | null; onFinish: () => void; startFile: File | null }> = {},
+) {
   const onFinish = props.onFinish ?? vi.fn();
   render(
     <RegionMapEditor
       pictureUrl="data:image/png;base64,AAAA"
       pictureSize={PICTURE_SIZE}
       initialDocument={props.initialDocument ?? null}
+      startFile={props.startFile ?? null}
       onFinish={onFinish}
     />,
   );
@@ -83,9 +88,24 @@ beforeEach(() => {
   useRegionMapStore.setState(useRegionMapStore.getInitialState(), true);
   mocks.pictureHolder.pixels = null;
   mocks.failure.shouldFail = false;
+  mocks.traced = [];
 });
 
 describe("RegionMapEditor", () => {
+  it("traces the start file once on mount without asking for a region image", async () => {
+    const startFile = new File(["x"], "generated-regions.png", { type: "image/png" });
+    renderEditor({ startFile });
+    await screen.findByText(/regions found/i);
+    expect(mocks.traced).toEqual([startFile]);
+    expect(screen.queryByRole("button", { name: /region-color image/i })).not.toBeInTheDocument();
+  });
+
+  it("shows the start chooser when there is no start file", () => {
+    renderEditor();
+    expect(screen.getByRole("button", { name: /region-color image/i })).toBeInTheDocument();
+    expect(mocks.traced).toEqual([]);
+  });
+
   it("shows what was traced and how many regions need attention", async () => {
     renderEditor();
     await traceFromColorImage();

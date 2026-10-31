@@ -5,7 +5,7 @@ from app.engine.opinion import opinion_of
 from app.engine.pressure.wars import wars_of
 from app.engine.rng import DeterministicRng
 from app.engine.vassals.registry import vassalage_between
-from app.models.world_diplomacy import CommitmentStatus, TruceState
+from app.models.world_diplomacy import CommitmentState, CommitmentStatus, TruceState
 from app.models.world_events import EventLogEntry, PhaseName
 from app.models.world_peace import BreachPressureState
 from app.models.world_state import WorldState
@@ -65,12 +65,19 @@ def recovery_gap(world: WorldState, faction_id: FactionId) -> int:
     return world.factions[faction_id].war_exhaustion
 
 
+def _is_unexpired(world: WorldState, commitment: CommitmentState) -> bool:
+    is_active = commitment.status == CommitmentStatus.ACTIVE
+    return is_active and (
+        commitment.end_turn is None or commitment.end_turn > world.clock.turn
+    )
+
+
 def _has_trade_deal(world: WorldState, truce: TruceState) -> bool:
     pair = {truce.faction_a, truce.faction_b}
     return any(
-        commitment.status == CommitmentStatus.ACTIVE
-        and isinstance(commitment.term, TradeDealTerm)
+        isinstance(commitment.term, TradeDealTerm)
         and {commitment.term.faction_a, commitment.term.faction_b} == pair
+        and _is_unexpired(world, commitment)
         for commitment in world.commitments
     )
 

@@ -3,7 +3,7 @@ from app.engine.economy.income import faction_income
 from app.engine.economy.ledger import available_cash, change_treasury
 from app.engine.opinion import shift_opinion
 from app.engine.vassals.independence import start_independence_war
-from app.engine.vassals.levy import move_levied_manpower
+from app.engine.vassals.levy import move_levied_manpower, take_levied_soldiers
 from app.engine.vassals.overreach import HALF_DIVISOR, raise_unrest
 from app.engine.vassals.registry import vassalage_by_id
 from app.models.world_events import EventLogEntry
@@ -15,6 +15,7 @@ from strategy_contracts.vassal import DemandKind, DemandReply
 
 DEMAND_PAID = "demand_paid"
 DEMAND_REFUSED = "demand_refused"
+LEVY_ARMIES_TAKEN = "levy_armies_taken"
 REFUSED_DEMAND_CAUSE = "refused_demand"
 
 
@@ -47,6 +48,28 @@ def _grant_access(
     return turns
 
 
+def _pay_levy(
+    world: WorldState, scenario: StrategyScenario, demand: DemandState, asked: int
+) -> list[EventLogEntry]:
+    parties = [demand.overlord_id, demand.vassal_id]
+    excess = asked - min(asked, demand.granted)
+    soldiers = 0
+    if excess > 0:
+        soldiers = take_levied_soldiers(
+            world, scenario, demand.overlord_id, demand.vassal_id, excess
+        )
+    regional_share = asked if excess > 0 and soldiers == 0 else asked - excess
+    moved = move_levied_manpower(
+        world, demand.overlord_id, demand.vassal_id, regional_share
+    )
+    events = [diplomacy_event(DEMAND_PAID, parties, {"paid": moved + soldiers})]
+    if soldiers > 0:
+        events.append(
+            diplomacy_event(LEVY_ARMIES_TAKEN, parties, {"soldiers": soldiers})
+        )
+    return events
+
+
 def _pay(
     world: WorldState,
     scenario: StrategyScenario,
@@ -61,7 +84,7 @@ def _pay(
     if demand.kind is DemandKind.TRIBUTE:
         paid = _pay_tribute(world, scenario, demand, asked)
     elif demand.kind is DemandKind.LEVY:
-        paid = move_levied_manpower(world, demand.overlord_id, demand.vassal_id, asked)
+        return _pay_levy(world, scenario, demand, asked)
     else:
         turns = tuning.garrison_demand_turns // (HALF_DIVISOR if is_counter else 1)
         paid = _grant_access(world, scenario, demand, max(1, turns))

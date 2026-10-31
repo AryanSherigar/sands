@@ -23,6 +23,8 @@ from strategy_contracts.ids import FactionId
 from strategy_contracts.pressure import ShockKind
 from strategy_contracts.scenario import StrategyScenario
 
+WAR_DECLARED = "war_declared"
+
 
 def _is_surprise(
     world: WorldState,
@@ -134,7 +136,7 @@ def declare_war(
         issue_protection_calls(world, scenario, war)
     events.append(
         diplomacy_event(
-            "war_declared",
+            WAR_DECLARED,
             [war.id, order.faction_id, order.target_faction_id],
             is_major=True,
         )

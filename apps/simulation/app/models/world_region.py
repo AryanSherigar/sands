@@ -19,6 +19,7 @@ class ImprovementState(WorldModel):
 class OccupationState(WorldModel):
     occupier_id: FactionId
     siege_progress: WholeNumber
+    hold_turns: WholeNumber = 0
 
 
 class RegionIntel(WorldModel):

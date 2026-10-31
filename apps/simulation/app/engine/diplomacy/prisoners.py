@@ -1,12 +1,13 @@
 from app.engine.coalitions.ledger import record_atrocity
 from app.engine.diplomacy.events import diplomacy_event
 from app.engine.diplomacy.reputation import shift_standing
+from app.engine.outrage.effects import denies_quarter
 from app.engine.peace.hostages import find_hostage, harm_hostage, release_hostage
 from app.engine.pressure.wars import find_war
 from app.models.orders import HandlePrisonerOrder
 from app.models.world_diplomacy import PrisonerKind, PrisonerState
 from app.models.world_events import EventLogEntry
-from app.models.world_state import WorldState
+from app.models.world_state import HELD_PRISONER_EXECUTION_RULESET, WorldState
 from strategy_contracts.ids import FactionId
 from strategy_contracts.peace import PeaceTuning
 from strategy_contracts.scenario import StrategyScenario
@@ -108,7 +109,7 @@ def _release(world: WorldState, prisoner: PrisonerState) -> list[EventLogEntry]:
     ]
 
 
-def _execute(
+def execute_prisoner(
     world: WorldState, tuning: PeaceTuning, prisoner: PrisonerState
 ) -> list[EventLogEntry]:
     world.prisoners = [item for item in world.prisoners if item.id != prisoner.id]
@@ -147,4 +148,23 @@ def handle_prisoner(
         return _exchange(world, tuning, prisoner)
     if order.action == "release":
         return _release(world, prisoner)
-    return _execute(world, tuning, prisoner)
+    return execute_prisoner(world, tuning, prisoner)
+
+
+def execute_held_prisoners(
+    world: WorldState, scenario: StrategyScenario
+) -> list[EventLogEntry]:
+    if world.outrage_ruleset < HELD_PRISONER_EXECUTION_RULESET:
+        return []
+    cap = scenario.tuning.outrage.held_prisoner_executions_per_turn
+    events: list[EventLogEntry] = []
+    for faction_id in sorted({item.held_by_id for item in world.prisoners}):
+        if not denies_quarter(world, scenario, faction_id):
+            continue
+        held = sorted(
+            (item for item in world.prisoners if item.held_by_id == faction_id),
+            key=lambda item: item.id,
+        )
+        for prisoner in held[:cap]:
+            events += execute_prisoner(world, scenario.tuning.peace, prisoner)
+    return events

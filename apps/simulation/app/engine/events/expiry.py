@@ -24,7 +24,7 @@ def expire_pending(
     events: list[EventLogEntry] = []
     for pending in due:
         world.pending_events.remove(pending)
-        template = find_template(scenario, pending.template_id)
+        template = find_template(world, scenario, pending.template_id)
         if template is not None:
             events.append(_neglect(world, scenario, faction_id, pending, template))
     return events

@@ -6,6 +6,7 @@ from pydantic import Field, model_validator
 from strategy_contracts.ids import EntityId, TraitId, WholeNumber
 from strategy_contracts.limits import MAX_NAME_CHARS
 from strategy_contracts.scene import (
+    GrudgeBand,
     ParticipantKind,
     SceneInitiator,
     SceneOutcome,
@@ -46,6 +47,13 @@ class SceneParticipantView(WorldModel):
     trait_ids: list[TraitId] = Field(default_factory=list)
 
 
+class VoicedGrudgeView(WorldModel):
+    text: str
+    band: GrudgeBand
+    is_inherited: bool
+    predecessor_name: str | None
+
+
 class SceneView(WorldModel):
     scene_id: UUID
     scene_type: SceneType
@@ -60,3 +68,4 @@ class SceneView(WorldModel):
     pending_proposal: TermsCard | None = None
     pending_proposal_sequence: int | None = None
     outcome: SceneOutcome | None = None
+    voiced_grudges: list[VoicedGrudgeView] = Field(default_factory=list)

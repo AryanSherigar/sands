@@ -2,6 +2,7 @@ from typing import Annotated, Literal
 
 from app.models.base import WorldModel
 from pydantic import Field, model_validator
+from strategy_contracts.coalition import AppeaseOffer
 from strategy_contracts.enums import (
     ImprovementKind,
     PayLevel,
@@ -70,6 +71,7 @@ class BesiegeOrder(WorldModel):
     kind: Literal["besiege"] = "besiege"
     faction_id: FactionId
     army_id: ArmyId
+    target_region_id: RegionId
 
 
 class RaiseArmyOrder(WorldModel):
@@ -170,6 +172,12 @@ class SendEnvoyOrder(WorldModel):
     target_faction_id: FactionId
 
 
+class BribeEnvoyOrder(WorldModel):
+    kind: Literal["bribe_envoy"] = "bribe_envoy"
+    faction_id: FactionId
+    envoy_id: str
+
+
 class HandlePrisonerOrder(WorldModel):
     kind: Literal["handle_prisoner"] = "handle_prisoner"
     faction_id: FactionId
@@ -183,6 +191,32 @@ class MediateOrder(WorldModel):
     war_id: str
 
 
+class SuePeaceOrder(WorldModel):
+    kind: Literal["sue_peace"] = "sue_peace"
+    faction_id: FactionId
+    war_id: str
+
+
+class SubsidizeOrder(WorldModel):
+    kind: Literal["subsidize"] = "subsidize"
+    faction_id: FactionId
+    target_faction_id: FactionId
+    war_id: str
+    amount_per_turn: int
+    turns: int
+
+
+class CutSubsidyOrder(WorldModel):
+    kind: Literal["cut_subsidy"] = "cut_subsidy"
+    faction_id: FactionId
+    subsidy_id: str
+
+
+class MobilizeOrder(WorldModel):
+    kind: Literal["mobilize"] = "mobilize"
+    faction_id: FactionId
+
+
 class AnswerCallOrder(WorldModel):
     kind: Literal["answer_call"] = "answer_call"
     faction_id: FactionId
@@ -194,6 +228,13 @@ class DenounceAllianceOrder(WorldModel):
     kind: Literal["denounce_alliance"] = "denounce_alliance"
     faction_id: FactionId
     alliance_id: str
+
+
+class AppeaseCoalitionOrder(WorldModel):
+    kind: Literal["appease_coalition"] = "appease_coalition"
+    faction_id: FactionId
+    member_id: FactionId
+    offer: AppeaseOffer
 
 
 class DemandFromVassalOrder(WorldModel):
@@ -259,10 +300,16 @@ Order = Annotated[
     | FabricateClaimOrder
     | ProposeAgreementOrder
     | SendEnvoyOrder
+    | BribeEnvoyOrder
     | HandlePrisonerOrder
     | MediateOrder
+    | SuePeaceOrder
+    | SubsidizeOrder
+    | CutSubsidyOrder
+    | MobilizeOrder
     | AnswerCallOrder
     | DenounceAllianceOrder
+    | AppeaseCoalitionOrder
     | DemandFromVassalOrder
     | AnswerDemandOrder
     | GrantConsentOrder

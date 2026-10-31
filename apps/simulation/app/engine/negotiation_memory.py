@@ -59,3 +59,9 @@ def record_talks_memory(
         _remember(leader, TALKS_HELD, TALKS_HELD_WEIGHT, subject_id, turn)
         return
     record_negotiation_memory(leader, subject_id, turn, TermsResult.REFUSED)
+
+
+def record_memory(
+    leader: LeaderState, kind: str, weight: int, subject_id: str | None, turn: int
+) -> None:
+    _remember(leader, kind, weight, subject_id, turn)

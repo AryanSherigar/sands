@@ -2,7 +2,7 @@ from app.engine.commands.ledger import PENDING_STATUSES
 from app.engine.economy.manpower import faction_manpower
 from app.engine.movement.knowledge import visible_regions
 from app.engine.movement.map_index import MapIndex, build_map_index
-from app.engine.negotiation import active_pacts
+from app.engine.pacts import active_pacts
 from app.models.api_battle import CampaignWorldView
 from app.models.api_world_view import (
     ArmyView,
@@ -12,6 +12,7 @@ from app.models.api_world_view import (
     QueuedOrderView,
     RegionView,
     RivalView,
+    SiegeView,
     Visibility,
 )
 from app.models.world_internal import is_rebel_faction
@@ -24,8 +25,15 @@ from app.services.peace_projection import (
     project_hostages,
     project_mediations,
     project_truces,
+    project_wars,
 )
-from app.services.pressure_projection import project_own_pressure, project_rumors
+from app.services.pressure_projection import (
+    project_mobilization,
+    project_own_pressure,
+    project_rumors,
+    project_subsidies,
+)
+from app.services.promise_projection import project_sworn_promises
 from app.services.uprising_projection import project_uprisings
 from app.services.vassal_projection import (
     project_pending_demands,
@@ -77,9 +85,23 @@ def project_region(
     if is_visible:
         view.owner_id = region.owner_id
         view.last_seen_turn = world.clock.turn
+        view.occupation = region.occupation
+        view.siege = _siege_view(world, identity)
     if region.owner_id == faction_id:
         view.detail = region.model_copy(deep=True)
     return view
+
+
+def _siege_view(world: WorldState, region_id: str) -> SiegeView | None:
+    siege = next((item for item in world.sieges if item.region_id == region_id), None)
+    if siege is None:
+        return None
+    return SiegeView(besieger_id=siege.besieger_id, progress=siege.progress)
+
+
+def _commander_name(world: WorldState, commander_id: str | None) -> str | None:
+    commander = world.commanders.get(commander_id or "")
+    return None if commander is None else commander.name
 
 
 def own_armies(world: WorldState, faction_id: str) -> list[ArmyView]:
@@ -88,7 +110,9 @@ def own_armies(world: WorldState, faction_id: str) -> list[ArmyView]:
             army_id=army.id,
             owner_id=army.owner_id,
             location_id=army.location_id,
+            pay_level=army.pay_level,
             troops=army.troops,
+            commander_name=_commander_name(world, army.commander_id),
         )
         for _, army in sorted(world.armies.items())
         if army.owner_id == faction_id
@@ -178,15 +202,19 @@ def project_world(
         armies=own_armies(world, faction_id),
         queued_orders=queued_order_views(world, faction_id),
         pending_events=project_pending_events(world, scenario, faction_id),
-        event_memories=project_event_memories(world, scenario),
+        event_memories=project_event_memories(world, scenario, faction_id),
         rivals=project_rivals(world, scenario, faction_id),
         pacts=project_pacts(world),
+        sworn_promises=project_sworn_promises(world, faction_id),
         uprisings=project_uprisings(world, scenario, faction_id),
         own_pressure=project_own_pressure(world, scenario, faction_id),
         rumors=project_rumors(world, faction_id),
         truces=project_truces(world, faction_id),
         own_hostages=project_hostages(world, faction_id),
         open_mediations=project_mediations(world, faction_id),
+        wars=project_wars(world, faction_id),
+        subsidies=project_subsidies(world, faction_id),
+        mobilization=project_mobilization(world, faction_id),
         alliances=project_alliances(world, faction_id),
         pending_calls=project_calls(world, faction_id),
         vassalages=project_vassalages(world, faction_id),

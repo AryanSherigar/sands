@@ -60,6 +60,15 @@ def _enlist(
     )
 
 
+def lift_member_opinion_penalty(
+    world: WorldState, coalition: CoalitionState, member_id: FactionId
+) -> None:
+    cause = f"{OPINION_CAUSE_PREFIX}{coalition.id}"
+    leader = world.leaders[world.factions[member_id].leader_id]
+    for opinion in leader.opinions.values():
+        opinion.reasons = [item for item in opinion.reasons if item.cause != cause]
+
+
 def _lift_opinion_penalties(world: WorldState, coalition: CoalitionState) -> None:
     cause = f"{OPINION_CAUSE_PREFIX}{coalition.id}"
     for leader in world.leaders.values():
@@ -165,6 +174,14 @@ def _prune_members(world: WorldState, coalition: CoalitionState) -> None:
     ]
 
 
+def end_coalition(
+    world: WorldState, coalition: CoalitionState, reason: str
+) -> EventLogEntry:
+    _lift_opinion_penalties(world, coalition)
+    world.coalition.coalitions.remove(coalition)
+    return _event(reason, coalition, is_major=True)
+
+
 def _review(
     world: WorldState,
     scenario: StrategyScenario,
@@ -179,9 +196,7 @@ def _review(
     if reason is None:
         coalition.expires_turn += scenario.tuning.coalition.duration_turns
         return [_event(COALITION_RENEWED, coalition)]
-    _lift_opinion_penalties(world, coalition)
-    world.coalition.coalitions.remove(coalition)
-    return [_event(reason, coalition, is_major=True)]
+    return [end_coalition(world, coalition, reason)]
 
 
 def tick_coalitions(

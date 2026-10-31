@@ -2,9 +2,11 @@ from datetime import datetime
 from uuid import UUID
 
 from app.models.base import WorldModel
+from pydantic import Field
 from strategy_contracts.scenario import StrategyScenario
 from strategy_contracts.scene import SceneOutcome, ScenePackage, SceneStatus, SceneType
 from strategy_contracts.terms import TermsCard
+from strategy_contracts.treaty import Verdict
 
 
 class PlaythroughRow(WorldModel):
@@ -31,6 +33,8 @@ class SceneExchangeRow(WorldModel):
     player_text: str
     leader_text: str
     proposal: TermsCard | None
+    cited_grudge_ids: list[str] = Field(default_factory=list)
+    verdict: Verdict | None = None
     created_at: datetime
 
 

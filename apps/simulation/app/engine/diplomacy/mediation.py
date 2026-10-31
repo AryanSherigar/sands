@@ -1,5 +1,6 @@
 from app.engine.diplomacy.events import diplomacy_event
 from app.engine.peace.acceptance import does_counterpart_accept
+from app.engine.peace.bare_peace import build_bare_peace_card, mirror_card
 from app.engine.peace.signing import is_white_peace_eligible, sign_peace
 from app.engine.pressure.forcers import open_mediation
 from app.models.orders import MediateOrder
@@ -7,43 +8,20 @@ from app.models.world_diplomacy import WarState
 from app.models.world_events import EventLogEntry
 from app.models.world_state import WorldState
 from strategy_contracts.ids import FactionId
-from strategy_contracts.peace import PeaceTier
 from strategy_contracts.scenario import StrategyScenario
-from strategy_contracts.terms import PeaceTerm, TermsCard
 
 MEDIATION_OFFERED = "mediation_offered"
-
-
-def _white_peace_card(war: WarState, mediator_id: FactionId) -> TermsCard:
-    peace = PeaceTerm(
-        faction_a=war.attacker_id,
-        faction_b=war.defender_id,
-        tier=PeaceTier.SHORT,
-        guarantor_ids=[mediator_id],
-        is_white_peace=True,
-    )
-    return TermsCard(
-        proposer_id=war.attacker_id,
-        counterpart_id=war.defender_id,
-        terms=[peace],
-        is_confirmed_by_player=True,
-        is_confirmed_by_counterpart=True,
-    )
-
-
-def _mirrored(card: TermsCard) -> TermsCard:
-    return card.model_copy(
-        update={"proposer_id": card.counterpart_id, "counterpart_id": card.proposer_id}
-    )
 
 
 def _try_white_peace(
     world: WorldState, scenario: StrategyScenario, war: WarState, mediator_id: FactionId
 ) -> list[EventLogEntry]:
-    card = _white_peace_card(war, mediator_id)
+    card = build_bare_peace_card(
+        war, war.attacker_id, war.defender_id, [mediator_id], is_white_peace=True
+    )
     is_agreed = does_counterpart_accept(
         world, scenario, card, war
-    ) and does_counterpart_accept(world, scenario, _mirrored(card), war)
+    ) and does_counterpart_accept(world, scenario, mirror_card(card), war)
     if not is_agreed or not is_white_peace_eligible(world, scenario, war):
         return []
     return sign_peace(world, scenario, card, f"mediation-{war.id}")

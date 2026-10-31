@@ -21,7 +21,7 @@ def resolve_answer(
         raise CommandError("event unavailable", "not_found", 404)
     if pending.deadline_turn < world.clock.turn:
         raise CommandError("event has expired", "event_expired")
-    template = find_template(scenario, pending.template_id)
+    template = find_template(world, scenario, pending.template_id)
     choice = find_choice(template, order.choice_id) if template else None
     if choice is None or choice.id not in pending.choice_ids:
         raise CommandError("choice unavailable", "invalid_choice", 422)

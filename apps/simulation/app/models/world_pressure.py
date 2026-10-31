@@ -24,6 +24,7 @@ class SubsidyState(WorldModel):
     receiver_id: FactionId
     war_id: str
     expires_turn: WholeNumber
+    amount_per_turn: WholeNumber = 0
 
 
 class RumorState(WorldModel):

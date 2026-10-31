@@ -2,6 +2,7 @@ from app.engine.events.constants import (
     EVENT_ANSWERED_KIND,
     EVENT_FIRED_KIND,
     EVENT_NEGLECTED_KIND,
+    EVENT_NPC_RESOLVED_KIND,
     EVENT_SUMMARY_PREFIX,
 )
 from app.models.world_events import (
@@ -55,6 +56,27 @@ def event_neglected(pending: PendingEvent, changes: list[StateChange]) -> EventL
             summary_key=f"{EVENT_SUMMARY_PREFIX}.{pending.cause_key}.neglected",
             subject_ids=[pending.subject_id],
             inputs={**pending.cause_inputs, "tier": pending.tier},
+        ),
+        changes=changes,
+    )
+
+
+def event_npc_resolved(
+    cause_key: str,
+    faction_id: str,
+    outcome_key: str,
+    inputs: dict[str, int],
+    changes: list[StateChange],
+) -> EventLogEntry:
+    return EventLogEntry(
+        seq=0,
+        turn=0,
+        phase=PhaseName.EVENTS,
+        kind=EVENT_NPC_RESOLVED_KIND,
+        cause=EventCause(
+            summary_key=f"{EVENT_SUMMARY_PREFIX}.{cause_key}.{outcome_key}",
+            subject_ids=[faction_id],
+            inputs=inputs,
         ),
         changes=changes,
     )

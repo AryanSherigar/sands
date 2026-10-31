@@ -1,6 +1,7 @@
 import type { MapRegion } from "@/shared/types/strategy-map.types";
 import type { ScenarioResponse } from "../../types/scenario.types";
-import type { PublishReport, StrategyFields } from "../../types/strategyDocument.types";
+import type { StartPanelId } from "../../lib/strategyPanels";
+import type { PublishIssue, PublishReport, StrategyArmy, StrategyCommander, StrategyFaction, StrategyFields, StrategyGrudge, StrategyRelation } from "../../types/strategyDocument.types";
 
 export type EditStrategyFields = (change: (current: StrategyFields) => StrategyFields) => void;
 
@@ -36,4 +37,111 @@ export interface StrategyPublishSectionProps {
   report: PublishReport | undefined;
   isMapMissing: boolean;
   onFlush: () => Promise<void>;
+  onOpenPanel: (panelId: StartPanelId) => void;
+}
+
+export interface StrategyNumberFieldProps {
+  label: string;
+  value: number;
+  max?: number;
+  onCommit: (value: number) => void;
+}
+
+export interface StrategyFactionStatsProps {
+  faction: StrategyFaction;
+  onEdit: EditStrategyFields;
+}
+
+export interface StrategyRegionEconomyProps {
+  fields: StrategyFields;
+  regions: MapRegion[];
+  onEdit: EditStrategyFields;
+}
+
+export interface StrategyArmiesPanelProps {
+  fields: StrategyFields;
+  regions: MapRegion[];
+  onEdit: EditStrategyFields;
+}
+
+export interface StrategyCommanderFieldsProps {
+  army: StrategyArmy;
+  commander: StrategyCommander | null;
+  onEdit: EditStrategyFields;
+}
+
+export interface StrategyArmyRowProps {
+  army: StrategyArmy;
+  commander: StrategyCommander | null;
+  regions: MapRegion[];
+  isForeign: boolean;
+  onEdit: EditStrategyFields;
+}
+
+export interface StrategyRelationsPanelProps {
+  fields: StrategyFields;
+  onEdit: EditStrategyFields;
+}
+
+export interface StrategyRelationRowProps {
+  factionA: StrategyFaction;
+  factionB: StrategyFaction;
+  relation: StrategyRelation | undefined;
+  onEdit: EditStrategyFields;
+}
+
+export interface StrategyClaimsEditorProps {
+  fields: StrategyFields;
+  regions: MapRegion[];
+  onEdit: EditStrategyFields;
+}
+
+export interface StrategyGrudgesEditorProps {
+  fields: StrategyFields;
+  onEdit: EditStrategyFields;
+}
+
+export interface StrategyClaimsGrudgesPanelProps {
+  fields: StrategyFields;
+  regions: MapRegion[];
+  onEdit: EditStrategyFields;
+}
+
+export interface StrategyGrudgeRowProps {
+  grudge: StrategyGrudge;
+  holderName: string;
+  targetName: string;
+  onEdit: EditStrategyFields;
+}
+
+export interface StrategyTimelinePanelProps {
+  fields: StrategyFields;
+  onEdit: EditStrategyFields;
+}
+
+export interface StrategyPresetPickerProps {
+  fields: StrategyFields;
+  regions: MapRegion[];
+  onEdit: EditStrategyFields;
+}
+
+export interface StrategyIssueListProps {
+  issues: PublishIssue[];
+  tone: string;
+  onOpenPanel: (panelId: StartPanelId) => void;
+}
+
+export interface StrategyStartPanelBodyProps {
+  panelId: StartPanelId;
+  fields: StrategyFields;
+  regions: MapRegion[];
+  onEdit: EditStrategyFields;
+}
+
+export interface StrategyStartSituationProps {
+  fields: StrategyFields;
+  regions: MapRegion[];
+  openPanel: StartPanelId | null;
+  onOpenPanel: (panelId: StartPanelId | null) => void;
+  onEdit: EditStrategyFields;
 }

@@ -21,6 +21,9 @@ FACTION_KINDS = frozenset(
         "tax_rate_set",
     }
 )
+SIEGE_FACT_KINDS = frozenset(
+    {"siege_started", "region_occupied", "region_conquered", "occupation_lifted"}
+)
 ARMY_KINDS = frozenset(
     {
         "army_supply_attrition",
@@ -66,6 +69,8 @@ def project_summary_fact(
         return _fact(world, event, [])
     if event.kind == OUTRAGE_REVEALED:
         return _outrage_fact(world, event, player)
+    if event.kind in SIEGE_FACT_KINDS:
+        return _siege_fact(world, event, player)
     if event.kind not in FACTION_KINDS or player not in subjects:
         return None
     uprising_ids = {item.id for item in world.uprisings if item.faction_id == player}
@@ -76,6 +81,19 @@ def project_summary_fact(
     if not subjects <= {player, *regions, *uprising_ids}:
         return None
     return _fact(world, event, sorted(subjects & regions))
+
+
+def _siege_fact(
+    world: WorldState, event: EventLogEntry, player: str
+) -> SummaryFact | None:
+    subjects = set(event.cause.subject_ids)
+    region_ids = sorted(subjects & set(world.regions))
+    is_player_region = any(
+        world.regions[item].owner_id == player for item in region_ids
+    )
+    if player not in subjects and not is_player_region:
+        return None
+    return _fact(world, event, region_ids)
 
 
 def _outrage_fact(

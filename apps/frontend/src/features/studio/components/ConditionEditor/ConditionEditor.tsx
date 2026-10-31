@@ -103,6 +103,7 @@ export const ConditionEditor: React.FC<ConditionEditorProps> = ({
         <ConditionForm
           condition={editingCondition}
           availableFields={availableFields}
+          characters={entities.filter((entity) => entity.entity_type === "character" && entity.avatar_url).map((entity) => ({ id: entity.entity_id, name: entity.canonical_name }))}
           hasAtmosphere={scenario?.enabled_tools?.includes("atmosphere") ?? false}
           onSubmit={handleSubmit}
           onCancel={handleCloseForm}

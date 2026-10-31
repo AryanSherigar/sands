@@ -61,6 +61,18 @@ const findCard = async (entityId: string) =>
   within(await screen.findByRole("region", { name: `card-${entityId}` }));
 
 describe("Card", () => {
+  it("attaches an animated portrait through the character card", async () => {
+    const user = userEvent.setup();
+    const avatar = "https://example.com/asha.mavatar";
+    const api = installCardApi({ entities: [{ ...mara, avatar_url: avatar }], facts: [] });
+    renderCards({ entityId: "mara" });
+    const card = await findCard("mara");
+    await user.click(await card.findByRole("button", { name: "Edit animated portrait" }));
+    await user.click(screen.getByRole("button", { name: "Attach to character" }));
+    await waitFor(() => expect(api.entityUpdates.at(-1)?.body.avatar_url).toBe(avatar), { timeout: SAVE_TIMEOUT_MS });
+    expect(screen.queryByRole("dialog", { name: "Create animated character avatar" })).not.toBeInTheDocument();
+  });
+
   it("shows the name as the first trigger and lets the creator remove it", async () => {
     const user = userEvent.setup();
     const api = installCardApi({ entities: [mara], facts: [] });

@@ -9,12 +9,18 @@ from app.models.world_events import EndingState, PendingBattle
 from app.models.world_faction import LoanState
 from app.models.world_internal import UprisingResponse, UprisingState
 from app.models.world_player import PlayerRuler
-from app.models.world_region import RegionState
+from app.models.world_region import OccupationState, RegionState
 from pydantic import Field
 from strategy_contracts.alliance import AllianceType
 from strategy_contracts.conditions import ConditionScope
-from strategy_contracts.enums import RelationStatus, TaxRate, Terrain, TroopType
-from strategy_contracts.events import EffectKind
+from strategy_contracts.enums import (
+    PayLevel,
+    RelationStatus,
+    TaxRate,
+    Terrain,
+    TroopType,
+)
+from strategy_contracts.events import EffectKind, EventNarrativePayload
 from strategy_contracts.ids import (
     ArmyId,
     EntityId,
@@ -30,6 +36,7 @@ from strategy_contracts.peace import PeaceTier
 from strategy_contracts.pressure import PressureBand, RumorTopic
 from strategy_contracts.scene import SceneType
 from strategy_contracts.summary import SummaryAvailability
+from strategy_contracts.terms import PromiseKind
 from strategy_contracts.vassal import DemandKind
 
 
@@ -43,6 +50,11 @@ class IntRange(WorldModel):
     high: int
 
 
+class SiegeView(WorldModel):
+    besieger_id: FactionId
+    progress: WholeNumber
+
+
 class RegionView(WorldModel):
     region_id: RegionId
     owner_id: FactionId | None
@@ -51,12 +63,15 @@ class RegionView(WorldModel):
     last_seen_turn: WholeNumber | None = None
     garrison_estimate: IntRange | None = None
     detail: RegionState | None = None
+    occupation: OccupationState | None = None
+    siege: SiegeView | None = None
 
 
 class ArmyView(WorldModel):
     army_id: ArmyId
     owner_id: FactionId
     location_id: RegionId
+    pay_level: PayLevel = PayLevel.FULL
     size_estimate: IntRange | None = None
     troops: dict[TroopType, WholeNumber] | None = None
     commander_name: str | None = None
@@ -89,6 +104,15 @@ class PactView(WorldModel):
     faction_b: FactionId
     start_turn: WholeNumber
     end_turn: WholeNumber
+
+
+class SwornPromiseView(WorldModel):
+    commitment_id: str
+    promisor_id: FactionId
+    beneficiary_id: FactionId
+    promise: PromiseKind
+    subject_id: EntityId | None = None
+    end_turn: WholeNumber | None = None
 
 
 class SceneRef(WorldModel):
@@ -145,6 +169,7 @@ class PendingEventView(WorldModel):
     neglect_effects: list[EffectPreview] = Field(default_factory=list)
     queued_choice_id: EntityId | None = None
     queued_command_id: str | None = None
+    narrative: EventNarrativePayload | None = None
 
 
 class EventMemoryView(WorldModel):
@@ -244,11 +269,31 @@ class HostageView(WorldModel):
     is_at_mercy: bool = False
 
 
+class WarView(WorldModel):
+    id: str
+    attacker_id: FactionId
+    defender_id: FactionId
+    participant_ids: list[FactionId] = Field(default_factory=list)
+
+
 class MediationOfferView(WorldModel):
     id: str
     mediator_id: FactionId
     war_id: str
     expires_turn: WholeNumber
+
+
+class SubsidyView(WorldModel):
+    id: str
+    payer_id: FactionId
+    receiver_id: FactionId
+    war_id: str
+    amount_per_turn: WholeNumber
+    turns_left: WholeNumber
+
+
+class MobilizationView(WorldModel):
+    turns_left: WholeNumber
 
 
 class WorldView(WorldModel):
@@ -262,6 +307,7 @@ class WorldView(WorldModel):
     armies: list[ArmyView] = Field(default_factory=list)
     rivals: list[RivalView] = Field(default_factory=list)
     pacts: list[PactView] = Field(default_factory=list)
+    sworn_promises: list[SwornPromiseView] = Field(default_factory=list)
     queued_orders: list[QueuedOrderView] = Field(default_factory=list)
     orders_remaining: int
     pending_events: list[PendingEventView] = Field(default_factory=list)
@@ -273,6 +319,9 @@ class WorldView(WorldModel):
     truces: list[TruceView] = Field(default_factory=list)
     own_hostages: list[HostageView] = Field(default_factory=list)
     open_mediations: list[MediationOfferView] = Field(default_factory=list)
+    wars: list[WarView] = Field(default_factory=list)
+    subsidies: list[SubsidyView] = Field(default_factory=list)
+    mobilization: MobilizationView | None = None
     alliances: list[AllianceView] = Field(default_factory=list)
     pending_calls: list[CallView] = Field(default_factory=list)
     vassalages: list[VassalageView] = Field(default_factory=list)

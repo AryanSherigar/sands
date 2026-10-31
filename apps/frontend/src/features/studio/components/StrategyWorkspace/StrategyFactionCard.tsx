@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "@/shared/components/ui/Button";
 import { Input } from "@/shared/components/ui/Input";
 import { Select } from "@/shared/components/ui/Select";
@@ -13,12 +13,40 @@ import {
   updateFaction,
   updateLeader,
 } from "../../lib/strategyDocument";
+import { AnimatedPortrait } from "@/shared/components/AnimatedPortrait/AnimatedPortrait";
+import { StrategyFactionStats } from "./StrategyFactionStats";
+import { LeaderAvatarCreatorModal } from "./LeaderAvatarCreatorModal";
+import { StrategyLeaderHistoryEditor } from "./StrategyLeaderHistoryEditor";
+import type { StrategyLeader } from "../../types/strategyDocument.types";
 import type { StrategyFactionCardProps } from "./StrategyWorkspace.types";
 
 const NO_CAPITAL = "";
 
 const replaceTrait = (traitIds: string[], slot: number, traitId: string): string[] =>
   Object.assign([...traitIds], { [slot]: traitId });
+
+function renderLeaderThumbnail(leader: StrategyLeader, factionName: string): React.ReactNode {
+  if (leader.avatar_url) {
+    return (
+      <AnimatedPortrait
+        avatarUrl={leader.avatar_url}
+        portraitUrl={leader.portrait_url ?? undefined}
+        fallbackSrc="data:image/svg+xml;utf8,<svg></svg>"
+        label={`${leader.name} of ${factionName}`}
+      />
+    );
+  }
+  if (leader.portrait_url) {
+    return (
+      <img
+        src={leader.portrait_url}
+        alt={`${leader.name} portrait`}
+        className="w-full h-full object-cover"
+      />
+    );
+  }
+  return <span className="text-[11px] text-text-muted">No avatar</span>;
+}
 
 export const StrategyFactionCard: React.FC<StrategyFactionCardProps> = ({
   factionId,
@@ -28,6 +56,7 @@ export const StrategyFactionCard: React.FC<StrategyFactionCardProps> = ({
 }) => {
   const faction = fields.factions.find((item) => item.id === factionId);
   const leader = fields.leaders.find((item) => item.faction_id === factionId);
+  const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
   if (!faction || !leader) return null;
 
   const traitOptions = BUILTIN_TRAIT_OPTIONS.map((item) => ({ value: item.id, label: item.name }));
@@ -63,6 +92,7 @@ export const StrategyFactionCard: React.FC<StrategyFactionCardProps> = ({
         />
         Players can pick this faction
       </label>
+      <StrategyFactionStats faction={faction} onEdit={onEdit} />
       <label className="block space-y-1 text-sm">
         Capital
         <Select
@@ -100,6 +130,47 @@ export const StrategyFactionCard: React.FC<StrategyFactionCardProps> = ({
           onChange={(event) => onEdit((current) => setLeaderAmbitionPreset(current, leader.id, event.target.value))}
         />
       </label>
+      <StrategyLeaderHistoryEditor
+        leader={leader}
+        factionName={faction.name}
+        onEdit={onEdit}
+      />
+      <div className="pt-3 border-t border-border-subtle flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 rounded border border-border-subtle overflow-hidden bg-surface-inset flex items-center justify-center">
+            {renderLeaderThumbnail(leader, faction.name)}
+          </div>
+          <div>
+            <p className="text-xs font-semibold text-text-primary">Leader Avatar</p>
+            <p className="text-[11px] text-text-muted">
+              {leader.avatar_url ? "Animated 2D Mesh Active" : "No animated avatar"}
+            </p>
+          </div>
+        </div>
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          onClick={() => setIsAvatarModalOpen(true)}
+        >
+          {leader.avatar_url ? "Edit Avatar" : "Generate Avatar"}
+        </Button>
+      </div>
+
+      <LeaderAvatarCreatorModal
+        isOpen={isAvatarModalOpen}
+        onClose={() => setIsAvatarModalOpen(false)}
+        leaderName={leader.name}
+        factionName={faction.name}
+        currentAvatarUrl={leader.avatar_url}
+        currentPortraitUrl={leader.portrait_url}
+        onSavePortrait={(url) =>
+          onEdit((current) => updateLeader(current, leader.id, { portrait_url: url }))
+        }
+        onSave={(url) =>
+          onEdit((current) => updateLeader(current, leader.id, { avatar_url: url }))
+        }
+      />
     </li>
   );
 };

@@ -16,8 +16,6 @@ MAX_COVER_IMAGE_BYTES = 5 * 1024 * 1024
 MAX_SCENARIO_AUDIO_BYTES = 10 * 1024 * 1024
 MAX_SCENARIO_AUDIO_SECONDS = 300
 
-_GENERATED_COVER_IMAGE_CONTENT_TYPE = "image/png"
-
 ALLOWED_COVER_IMAGE_CONTENT_TYPES: dict[str, str] = {
     "image/jpeg": ".jpg",
     "image/png": ".png",
@@ -144,7 +142,7 @@ class UploadService:
                 prompt, settings.image_generation_timeout_seconds
             )
             return await self._upload_with_prefix(
-                image_bytes, _GENERATED_COVER_IMAGE_CONTENT_TYPE, "scenario-covers"
+                image_bytes, image_gen_client.output_content_type(), "scenario-covers"
             )
 
     def _build_cover_prompt(self, request: CoverImageGenerationRequest) -> str:

@@ -16,6 +16,14 @@ def next_army_id(world: WorldState) -> ArmyId:
 
 def remove_army(world: WorldState, army_id: ArmyId) -> None:
     army = world.armies.pop(army_id)
+    world.supply_failure_turns.pop(army_id, None)
+    _drop_army_from_sieges(world, army_id)
     commander = world.commanders.get(army.commander_id or "")
     if commander is not None:
         commander.army_id = None
+
+
+def _drop_army_from_sieges(world: WorldState, army_id: ArmyId) -> None:
+    for siege in world.sieges:
+        siege.army_ids = [item for item in siege.army_ids if item != army_id]
+    world.sieges = [siege for siege in world.sieges if siege.army_ids]
