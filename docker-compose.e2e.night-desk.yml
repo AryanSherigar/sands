@@ -1,0 +1,16 @@
+# Stacks on docker-compose.e2e.yml: swaps TRS's entrypoint for the Night Desk
+# one (scripted narrator, memory stubbed), so only four services are needed.
+#
+#   docker compose -p sands-e2e -f docker-compose.yml -f docker-compose.e2e.yml \
+#     -f docker-compose.e2e.night-desk.yml \
+#     up -d --build postgres migration-runner core-api turn-resolution-service
+#   (cd apps/turn-resolution-service && .venv/bin/python scripts/night_desk_e2e.py)
+#   docker compose -p sands-e2e -f docker-compose.yml -f docker-compose.e2e.yml \
+#     -f docker-compose.e2e.night-desk.yml down -v
+#
+# The driver seeds the scenario by running Core's generator from
+# apps/core-api/.venv against the e2e Postgres (127.0.0.1:15432).
+
+services:
+  turn-resolution-service:
+    command: ["python", "/e2e/night_desk_e2e_stub_server.py"]

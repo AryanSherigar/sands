@@ -1,0 +1,385 @@
+name: sands
+
+services:
+  postgres:
+    image: postgres:18-bookworm
+    container_name: sands-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-sands_db}
+    expose:
+      - "5432"
+    volumes:
+      - postgres18_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-sands_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - backend-net
+
+  migration-runner:
+    build:
+      context: .
+      dockerfile: apps/core-api/Dockerfile
+    container_name: sands-migration-runner
+    command: ["alembic", "upgrade", "head"]
+    environment:
+      DATABASE_URL: ${CORE_API_DATABASE_URL:-postgresql+asyncpg://postgres:postgres@postgres:5432/sands_db}
+    restart: "no"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - backend-net
+
+  core-api:
+    build:
+      context: .
+      dockerfile: apps/core-api/Dockerfile
+    container_name: sands-core-api
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: ${CORE_API_DATABASE_URL:-postgresql+asyncpg://postgres:postgres@postgres:5432/sands_db}
+      SECRET_KEY: ${SECRET_KEY:-dev-secret-key-change-in-production}
+      JWT_ALGORITHM: ${JWT_ALGORITHM:-HS256}
+      JWT_ACCESS_EXPIRE_MINUTES: ${JWT_ACCESS_EXPIRE_MINUTES:-15}
+      JWT_REFRESH_EXPIRE_DAYS: ${JWT_REFRESH_EXPIRE_DAYS:-7}
+      FIREBASE_PROJECT_ID: ${FIREBASE_PROJECT_ID:-ai-dnd-47eb0}
+      FIREBASE_CREDENTIALS_PATH: ${FIREBASE_CREDENTIALS_PATH:-}
+      CORS_ORIGINS: ${CORS_ORIGINS:-["http://localhost:5173","http://localhost:3000","http://localhost:80"]}
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      PYTHONPATH: /app:/app/strategy-contracts
+      MEMORY_URL: http://memory:8080
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      MUSE_API_KEY: ${MUSE_API_KEY:-}
+      MUSE_BASE_URL: ${MUSE_BASE_URL:-https://api.meta.ai/v1}
+      MUSE_IMAGE_MODEL_NAME: ${MUSE_IMAGE_MODEL_NAME:-muse-image-1.0}
+      CORE_API_PUBLIC_URL: ${CORE_API_PUBLIC_URL:-http://localhost:80}
+      R2_ACCOUNT_ID: ${R2_ACCOUNT_ID:-}
+      R2_ACCESS_KEY_ID: ${R2_ACCESS_KEY_ID:-}
+      R2_SECRET_ACCESS_KEY: ${R2_SECRET_ACCESS_KEY:-}
+      R2_BUCKET_NAME: ${R2_BUCKET_NAME:-}
+      R2_PUBLIC_BASE_URL: ${R2_PUBLIC_BASE_URL:-}
+      INTERNAL_PROXY_TOKEN: ${INTERNAL_PROXY_TOKEN:-dev-internal-proxy-token-change-me}
+      TRUSTED_PROXY_HOPS: ${TRUSTED_PROXY_HOPS:-1}
+      SIMULATION_URL: http://simulation:8081
+      SIMULATION_INTERNAL_TOKEN: ${INTERNAL_SERVICE_TOKEN:-dev-internal-service-token-change-me}
+      RATE_LIMIT_EXEMPT_FIREBASE_UIDS: ${RATE_LIMIT_EXEMPT_FIREBASE_UIDS:-}
+    expose:
+      - "8000"
+    volumes:
+      - uploads_data:/app/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migration-runner:
+        condition: service_completed_successfully
+    networks:
+      - frontend-net
+      - backend-net
+
+  turn-resolution-service:
+    build:
+      context: ./apps/turn-resolution-service
+      additional_contexts:
+        contracts: ./packages/strategy-contracts
+      dockerfile: Dockerfile
+    container_name: sands-trs
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: ${TRS_DATABASE_URL:-postgresql+asyncpg://postgres:postgres@postgres:5432/sands_db}
+      SECRET_KEY: ${SECRET_KEY:-dev-secret-key-change-in-production}
+      JWT_ALGORITHM: ${JWT_ALGORITHM:-HS256}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      FISH_API_KEY: ${FISH_API_KEY:-}
+      NARRATION_PROVIDER: ${NARRATION_PROVIDER:-openai}
+      OPENAI_COMPATIBLE_BASE_URL: ${OPENAI_COMPATIBLE_BASE_URL:-https://api.meta.ai/v1}
+      OPENAI_COMPATIBLE_API_KEY: ${OPENAI_COMPATIBLE_API_KEY:-${MUSE_API_KEY:-}}
+      OPENAI_COMPATIBLE_MODEL_NAME: ${OPENAI_COMPATIBLE_MODEL_NAME:-muse-spark-1.3}
+      OPENAI_COMPATIBLE_REASONING_EFFORT: ${OPENAI_COMPATIBLE_REASONING_EFFORT:-minimal}
+      MUSE_API_KEY: ${MUSE_API_KEY:-}
+      MUSE_BASE_URL: ${MUSE_BASE_URL:-https://api.meta.ai/v1}
+      MUSE_IMAGE_MODEL_NAME: ${MUSE_IMAGE_MODEL_NAME:-muse-image-1.0}
+      MUSE_VOICE_MODEL_NAME: ${MUSE_VOICE_MODEL_NAME:-muse-voice-transcribe-1.0}
+      FISH_TTS_MODEL: ${FISH_TTS_MODEL:-s2.1-pro-free}
+      FISH_KATIE_VOICE_ID: ${FISH_KATIE_VOICE_ID:-ecc977e5dca94390926fab1e0c2ba292}
+      FISH_TIMEOUT_SECONDS: ${FISH_TIMEOUT_SECONDS:-12}
+      CORS_ORIGINS: ${CORS_ORIGINS:-["http://localhost:5173","http://localhost:3000","http://localhost:80"]}
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      MEMORY_URL: http://memory:8080
+      SIMULATION_URL: http://simulation:8081
+      R2_ACCOUNT_ID: ${R2_ACCOUNT_ID:-}
+      R2_ACCESS_KEY_ID: ${R2_ACCESS_KEY_ID:-}
+      R2_SECRET_ACCESS_KEY: ${R2_SECRET_ACCESS_KEY:-}
+      R2_BUCKET_NAME: ${R2_BUCKET_NAME:-}
+      R2_PUBLIC_BASE_URL: ${R2_PUBLIC_BASE_URL:-}
+      IS_TURNS_SUSPENDED: ${IS_TURNS_SUSPENDED:-false}
+      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:-dev-internal-service-token-change-me}
+      SPEECH_TO_TEXT_CREDENTIALS_PATH: /secrets/stt-sa.json
+      SPEECH_TO_TEXT_PROJECT_ID: ${SPEECH_TO_TEXT_PROJECT_ID:-}
+      SPEECH_TO_TEXT_LOCATION: ${SPEECH_TO_TEXT_LOCATION:-us}
+      SHOULD_USE_SERVICE_ACCOUNT_FOR_TTS: ${SHOULD_USE_SERVICE_ACCOUNT_FOR_TTS:-false}
+      TEXT_TO_SPEECH_LOCATION: ${TEXT_TO_SPEECH_LOCATION:-global}
+      INTERNAL_PROXY_TOKEN: ${INTERNAL_PROXY_TOKEN:-dev-internal-proxy-token-change-me}
+      TRUSTED_PROXY_HOPS: ${TRUSTED_PROXY_HOPS:-1}
+      RATE_LIMIT_EXEMPT_FIREBASE_UIDS: ${RATE_LIMIT_EXEMPT_FIREBASE_UIDS:-}
+    volumes:
+      - ./secrets/stt-sa.json:/secrets/stt-sa.json:ro
+      - uploads_data:/app/uploads
+    expose:
+      - "8001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - frontend-net
+      - backend-net
+
+  memory-postgres:
+    build:
+      context: ./apps/memory/docker
+      dockerfile: postgres.Dockerfile
+    container_name: sands-memory-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: memory_db
+      POSTGRES_PASSWORD: memory_db
+      POSTGRES_DB: memory_db
+    volumes:
+      - memory_postgres_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U memory_db -d memory_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "127.0.0.1:5433:5432"
+    networks:
+      - backend-net
+
+  memory-migrate:
+    build:
+      context: ./apps/memory
+    container_name: sands-memory-migrate
+    command: ["python", "-m", "app.db.migrate"]
+    environment:
+      ENVIRONMENT: development
+      MEMORY_AUTH_MODE: dev
+      MEMORY_DATABASE_URL: postgresql://memory_db:memory_db@memory-postgres:5432/memory_db
+    restart: "no"
+    depends_on:
+      memory-postgres:
+        condition: service_healthy
+    networks:
+      - backend-net
+
+  memory:
+    build:
+      context: ./apps/memory
+    container_name: sands-memory
+    restart: unless-stopped
+    environment:
+      ENVIRONMENT: development
+      MEMORY_AUTH_MODE: dev
+      MEMORY_DATABASE_URL: postgresql://memory_db:memory_db@memory-postgres:5432/memory_db
+      EMBEDDING_API_KEY: ${GOOGLE_CLOUD_API_KEY:-}
+      EXTRACTION_API_KEY: ${MUSE_API_KEY:-}
+      EXTRACTION_PROVIDER: ${EXTRACTION_PROVIDER:-muse}
+      MUSE_API_KEY: ${MUSE_API_KEY:-}
+      MUSE_BASE_URL: ${MUSE_BASE_URL:-https://api.meta.ai/v1}
+    expose:
+      - "8080"
+    depends_on:
+      memory-postgres:
+        condition: service_healthy
+      memory-migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/health', timeout=3)"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - backend-net
+
+  memory-sweep:
+    image: curlimages/curl:8.11.1
+    container_name: sands-memory-sweep
+    restart: unless-stopped
+    environment:
+      SWEEP_INTERVAL_SECONDS: ${SWEEP_INTERVAL_SECONDS:-60}
+      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:-dev-internal-service-token-change-me}
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        while true; do
+          relay=$$(curl -s -o /dev/null -w '%{http_code}' -m 30 -X POST \
+            -H "X-Internal-Service-Token: $$INTERNAL_SERVICE_TOKEN" \
+            http://turn-resolution-service:8001/internal/memory/relay)
+          process=$$(curl -s -o /dev/null -w '%{http_code}' -m 60 -X POST \
+            -H "x-dev-service-name: memory-sweep" \
+            http://memory:8080/v1/jobs/process-pending)
+          echo "sweep relay=$$relay process_pending=$$process"
+          sleep "$$SWEEP_INTERVAL_SECONDS"
+        done
+    depends_on:
+      - turn-resolution-service
+      - memory
+    networks:
+      - backend-net
+
+  memory-maintenance:
+    build:
+      context: .
+      dockerfile: apps/core-api/Dockerfile
+    container_name: sands-memory-maintenance
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: ${CORE_API_DATABASE_URL:-postgresql+asyncpg://postgres:postgres@postgres:5432/sands_db}
+      MEMORY_URL: http://memory:8080
+      MAINTENANCE_INTERVAL_SECONDS: ${MAINTENANCE_INTERVAL_SECONDS:-86400}
+      PYTHONPATH: /app:/app/strategy-contracts
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        while true; do
+          python -m scripts.prune_memory_outbox || echo "prune_memory_outbox failed"
+          python -m scripts.reconcile_memory_orphans || echo "reconcile_memory_orphans failed"
+          sleep "$$MAINTENANCE_INTERVAL_SECONDS"
+        done
+    depends_on:
+      migration-runner:
+        condition: service_completed_successfully
+      memory:
+        condition: service_healthy
+    networks:
+      - backend-net
+
+  frontend:
+    build:
+      context: ./apps/frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_CORE_API_URL: ${VITE_CORE_API_URL:-/api}
+        VITE_TRS_URL: ${VITE_TRS_URL:-/trs}
+        VITE_FIREBASE_API_KEY: ${VITE_FIREBASE_API_KEY:-}
+        VITE_FIREBASE_AUTH_DOMAIN: ${VITE_FIREBASE_AUTH_DOMAIN:-}
+        VITE_FIREBASE_PROJECT_ID: ${VITE_FIREBASE_PROJECT_ID:-}
+        VITE_FIREBASE_STORAGE_BUCKET: ${VITE_FIREBASE_STORAGE_BUCKET:-}
+        VITE_FIREBASE_MESSAGING_SENDER_ID: ${VITE_FIREBASE_MESSAGING_SENDER_ID:-}
+        VITE_FIREBASE_APP_ID: ${VITE_FIREBASE_APP_ID:-}
+        VITE_MEASUREMENT_ID: ${VITE_MEASUREMENT_ID:-}
+    container_name: sands-frontend
+    restart: unless-stopped
+    environment:
+      PORT: "8080"
+      CORE_API_ORIGIN: "http://core-api:8000"
+      TRS_ORIGIN: "http://turn-resolution-service:8001"
+      SIMULATION_ORIGIN: "http://simulation:8081"
+      INTERNAL_PROXY_TOKEN: ${INTERNAL_PROXY_TOKEN:-dev-internal-proxy-token-change-me}
+    ports:
+      - "80:8080"
+    depends_on:
+      - core-api
+      - turn-resolution-service
+      - simulation
+    networks:
+      - frontend-net
+
+  simulation-postgres:
+    image: postgres:18-bookworm
+    container_name: sands-simulation-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: simulation_db
+      POSTGRES_PASSWORD: simulation_db
+      POSTGRES_DB: simulation_db
+    volumes:
+      - simulation_postgres_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U simulation_db -d simulation_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "127.0.0.1:${SIMULATION_POSTGRES_PORT:-5434}:5432"
+    networks:
+      - backend-net
+
+  simulation-migrate:
+    build:
+      context: ./apps/simulation
+      additional_contexts:
+        contracts: ./packages/strategy-contracts
+    container_name: sands-simulation-migrate
+    command: ["python", "-m", "app.db.migrate"]
+    environment:
+      ENVIRONMENT: development
+      SIMULATION_DATABASE_URL: postgresql://simulation_db:simulation_db@simulation-postgres:5432/simulation_db
+    restart: "no"
+    depends_on:
+      simulation-postgres:
+        condition: service_healthy
+    networks:
+      - backend-net
+
+  simulation:
+    build:
+      context: ./apps/simulation
+      additional_contexts:
+        contracts: ./packages/strategy-contracts
+    container_name: sands-simulation
+    restart: unless-stopped
+    environment:
+      ENVIRONMENT: development
+      SIMULATION_DATABASE_URL: postgresql://simulation_db:simulation_db@simulation-postgres:5432/simulation_db
+      SECRET_KEY: ${SECRET_KEY:-dev-secret-key-change-in-production}
+      JWT_ALGORITHM: ${JWT_ALGORITHM:-HS256}
+      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:-dev-internal-service-token-change-me}
+      LLM_PROVIDER_PROTOCOL: ${LLM_PROVIDER_PROTOCOL:-custom}
+      LLM_PROVIDER_REASONING_EFFORT: ${LLM_PROVIDER_REASONING_EFFORT:-}
+      STANCE_PROVIDER_ENABLED: ${STANCE_PROVIDER_ENABLED:-false}
+      STANCE_PROVIDER_URL: ${STANCE_PROVIDER_URL:-}
+      STANCE_PROVIDER_API_KEY: ${STANCE_PROVIDER_API_KEY:-}
+      STANCE_PROVIDER_MODEL: ${STANCE_PROVIDER_MODEL:-}
+      INTENT_PROVIDER_ENABLED: ${INTENT_PROVIDER_ENABLED:-false}
+      INTENT_PROVIDER_URL: ${INTENT_PROVIDER_URL:-}
+      INTENT_PROVIDER_API_KEY: ${INTENT_PROVIDER_API_KEY:-}
+      INTENT_PROVIDER_MODEL: ${INTENT_PROVIDER_MODEL:-}
+      SPEECH_PROVIDER_ENABLED: ${SPEECH_PROVIDER_ENABLED:-false}
+      SPEECH_PROVIDER_URL: ${SPEECH_PROVIDER_URL:-}
+      SPEECH_PROVIDER_API_KEY: ${SPEECH_PROVIDER_API_KEY:-}
+      SPEECH_PROVIDER_MODEL: ${SPEECH_PROVIDER_MODEL:-}
+    expose:
+      - "8081"
+    depends_on:
+      simulation-postgres:
+        condition: service_healthy
+      simulation-migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8081/health', timeout=3)"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - frontend-net
+      - backend-net
+
+networks:
+  frontend-net:
+    driver: bridge
+  backend-net:
+    driver: bridge
+
+volumes:
+  postgres18_data:
+  memory_postgres_data:
+  simulation_postgres_data:
+  uploads_data:

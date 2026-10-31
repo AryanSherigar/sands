@@ -1,0 +1,28 @@
+# Monorepo wide ignores
+**/.venv/
+**/node_modules/
+**/__pycache__/
+**/*.py[cod]
+**/dist/
+**/target/
+**/.pytest_cache/
+**/coverage/
+
+# Environment & Secrets
+**/.env
+**/.env.*
+!.env.example
+
+# Git & Metadata
+.git/
+.github/
+.vscode/
+.idea/
+docs/
+*.md
+!README.md
+
+# Video Studio (isolated from docker builds)
+video-studio/
+video-studio/out/
+video-studio/node_modules/

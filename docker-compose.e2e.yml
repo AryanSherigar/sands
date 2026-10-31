@@ -1,0 +1,70 @@
+# Isolated stack for the memory outbox end-to-end run. It shares nothing with the
+# regular dev stack: own project name, container names, host ports and volumes.
+#
+#   docker compose -p sands-e2e -f docker-compose.yml -f docker-compose.e2e.yml \
+#     up -d --build postgres migration-runner core-api turn-resolution-service \
+#     memory-postgres memory-migrate memory memory-sweep
+#   (cd apps/turn-resolution-service && .venv/bin/python scripts/memory_outbox_e2e.py)
+#   (cd apps/turn-resolution-service && .venv/bin/python scripts/memory_read_path_e2e.py)
+#   docker compose -p sands-e2e -f docker-compose.yml -f docker-compose.e2e.yml down -v
+#
+# TRS runs a test-only entrypoint that swaps the narrator for a deterministic one
+# (recording its prompts at /__e2e/prompts) and shrinks the inline delivery cap to
+# 1 ms, so the sweep sidecar must do the delivery for the runs to pass. The
+# read-path run uses Core's shipped scripts/ to build the scenario's memory
+# template.
+
+services:
+  postgres:
+    container_name: sands-e2e-postgres
+    ports:
+      - "127.0.0.1:15432:5432"
+
+  migration-runner:
+    container_name: sands-e2e-migration-runner
+
+  core-api:
+    container_name: sands-e2e-core-api
+    ports:
+      - "127.0.0.1:18000:8000"
+    environment:
+      INTERNAL_PROXY_TOKEN: ""
+      TRUSTED_PROXY_HOPS: "0"
+      IS_RATE_LIMIT_ENABLED: "false"
+
+  turn-resolution-service:
+    container_name: sands-e2e-trs
+    command: ["python", "/e2e/memory_e2e_stub_server.py"]
+    ports:
+      - "127.0.0.1:18001:8001"
+    environment:
+      PYTHONPATH: /app
+      INTERNAL_PROXY_TOKEN: ""
+      TRUSTED_PROXY_HOPS: "0"
+      INTERNAL_SERVICE_TOKEN: e2e-internal-token
+      IS_RATE_LIMIT_ENABLED: "false"
+      MEMORY_DELIVERY_TIMEOUT_SECONDS: "0.001"
+    volumes:
+      - ./apps/turn-resolution-service/scripts:/e2e:ro
+
+  memory-postgres:
+    container_name: sands-e2e-memory-postgres
+    ports: !override
+      - "127.0.0.1:15433:5432"
+
+  memory-migrate:
+    container_name: sands-e2e-memory-migrate
+
+  memory:
+    container_name: sands-e2e-memory
+    ports:
+      - "127.0.0.1:18080:8080"
+
+  memory-sweep:
+    container_name: sands-e2e-memory-sweep
+    environment:
+      SWEEP_INTERVAL_SECONDS: "5"
+      INTERNAL_SERVICE_TOKEN: e2e-internal-token
+
+  memory-maintenance:
+    container_name: sands-e2e-memory-maintenance
