@@ -74,6 +74,7 @@ class PlaythroughResponse(BaseModel):
     state: dict[str, object]
     checkpoint: str | None = None
     turn_count: int
+    narrative_turn_count: int | None = None
     status: str
     # NOTE: Set once a master playthrough has ended. The client refetches this
     # response after every turn, so it must carry the ending the stream sent.

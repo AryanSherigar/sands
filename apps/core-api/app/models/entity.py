@@ -37,6 +37,7 @@ class EntityCreate(BaseModel):
     attributes_schema: dict[str, AttributeFieldSchema] = Field(default_factory=dict)
     narrator_instruction: str | None = None
     is_player: bool = False
+    avatar_url: str | None = Field(default=None, max_length=1024)
     expected_content_edited_at: datetime | None = None
 
 
@@ -54,6 +55,7 @@ class EntityUpdate(BaseModel):
     attributes_schema: dict[str, AttributeFieldSchema] | None = None
     narrator_instruction: str | None = None
     is_player: bool | None = None
+    avatar_url: str | None = Field(default=None, max_length=1024)
     expected_content_edited_at: datetime | None = None
 
 
@@ -73,6 +75,7 @@ class EntityResponse(BaseModel):
     attributes_schema: dict[str, object] = Field(default_factory=dict)
     narrator_instruction: str | None = None
     is_player: bool = False
+    avatar_url: str | None = None
     fact_count: int = 0
     scenario_content_edited_at: datetime | None = None
 

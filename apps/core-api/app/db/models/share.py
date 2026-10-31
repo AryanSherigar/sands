@@ -3,6 +3,7 @@
 import uuid
 from datetime import datetime
 
+from app.db.base import Base, CreatedAtMixin
 from sqlalchemy import (
     CheckConstraint,
     DateTime,
@@ -14,8 +15,6 @@ from sqlalchemy import (
 )
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
-
-from app.db.base import Base, CreatedAtMixin
 
 SHARE_PLAYTHROUGH_MODE_CONSTRAINT = "uq_playthrough_shares_playthrough_mode"
 

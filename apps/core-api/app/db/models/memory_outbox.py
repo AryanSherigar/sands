@@ -3,6 +3,7 @@
 import uuid
 from datetime import datetime
 
+from app.db.base import Base, CreatedAtMixin
 from sqlalchemy import (
     TIMESTAMP,
     BigInteger,
@@ -15,8 +16,6 @@ from sqlalchemy import (
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
-
-from app.db.base import Base, CreatedAtMixin
 
 ITEM_KIND_REGISTER = "register_playthrough"
 ITEM_KIND_TURN = "turn"

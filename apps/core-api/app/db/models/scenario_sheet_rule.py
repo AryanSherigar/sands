@@ -2,6 +2,7 @@
 
 import uuid
 
+from app.db.base import Base, TimestampMixin
 from sqlalchemy import (
     Boolean,
     ForeignKey,
@@ -14,8 +15,6 @@ from sqlalchemy import (
 from sqlalchemy import text as sql_text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
-
-from app.db.base import Base, TimestampMixin
 
 
 class ScenarioSheetRule(Base, TimestampMixin):

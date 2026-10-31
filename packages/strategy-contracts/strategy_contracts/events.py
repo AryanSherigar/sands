@@ -1,6 +1,8 @@
 from enum import Enum
+from typing import Literal
+from uuid import UUID
 
-from pydantic import Field, model_validator
+from pydantic import ConfigDict, Field, model_validator
 
 from strategy_contracts.base import StrictModel
 from strategy_contracts.conditions import (
@@ -31,6 +33,8 @@ DEFAULT_SCAR_DECAY_PER_TURN = 1
 DEFAULT_POINTS_PER_TIER_BUMP = 20
 DEFAULT_NEGLECT_SCAR = 30
 DEFAULT_TIER_CALM_TURNS = 3
+DEFAULT_CHANCE_PERCENT = 100
+MAX_CHANCE_PERCENT = 100
 MAX_TERMS_PER_CHOICE = 8
 
 EVENT_SUBJECT_SCOPES = frozenset(
@@ -145,6 +149,10 @@ class EventDefinition(StrictModel):
     neglect_scar: int = Field(default=DEFAULT_NEGLECT_SCAR, ge=0, le=MAX_SCAR_POINTS)
     scar: ScarSpec = Field(default_factory=ScarSpec)
     tier_calm_turns: int = Field(default=DEFAULT_TIER_CALM_TURNS, ge=1)
+    chance_percent: int = Field(
+        default=DEFAULT_CHANCE_PERCENT, ge=0, le=MAX_CHANCE_PERCENT
+    )
+    applies_to_npcs: bool = False
     cause_key: EntityId
     cause_metrics: list[ConditionMetric] = Field(
         default_factory=list, max_length=MAX_CAUSE_METRICS
@@ -156,7 +164,12 @@ class EventDefinition(StrictModel):
         self._validate_tier_levels()
         self._validate_choice_ids()
         self._validate_trigger_scopes()
+        self._validate_npc_scope()
         return self
+
+    def _validate_npc_scope(self) -> None:
+        if self.applies_to_npcs and self.subject_kind is not ConditionScope.FACTION:
+            raise ValueError("only faction events can apply to npc rulers")
 
     def _validate_subject_kind(self) -> None:
         if self.subject_kind not in EVENT_SUBJECT_SCOPES:
@@ -197,3 +210,58 @@ class EventDefinition(StrictModel):
             raise ValueError(
                 f"{comparison.metric.value} must use {SUBJECT_PLACEHOLDER}"
             )
+
+
+class EventNarrativePayload(StrictModel):
+    model_config = ConfigDict(extra="forbid")
+    body_prose: str
+    cause_quote: str
+    character_name: str
+    character_title: str
+    disposition: str
+
+
+class EventNarrativeBriefing(StrictModel):
+    model_config = ConfigDict(extra="forbid")
+    playthrough_id: UUID
+    event_id: str
+    template_id: str
+    template_name: str
+    subject_name: str
+    region_id: str | None = None
+    tier: int
+    cause_description: str
+    ruler_name: str
+    ruler_traits: list[str] = Field(default_factory=list)
+    season_year: str
+    choices: list[dict[str, str]] = Field(default_factory=list)
+
+
+class EventNarrativeClaimInput(StrictModel):
+    model_config = ConfigDict(extra="forbid")
+    claim_id: UUID
+
+
+class EventNarrativeClaim(StrictModel):
+    model_config = ConfigDict(extra="forbid")
+    lease_token: UUID
+    briefing: EventNarrativeBriefing
+
+
+class EventNarrativeCompleteInput(StrictModel):
+    model_config = ConfigDict(extra="forbid")
+    lease_token: UUID
+    narration: EventNarrativePayload
+
+
+class EventNarrativeFailInput(StrictModel):
+    model_config = ConfigDict(extra="forbid")
+    lease_token: UUID
+    error_code: str
+
+
+class EventNarrativeView(StrictModel):
+    model_config = ConfigDict(extra="forbid")
+    event_id: str
+    status: Literal["pending", "generating", "completed", "failed"]
+    narration: EventNarrativePayload | None = None

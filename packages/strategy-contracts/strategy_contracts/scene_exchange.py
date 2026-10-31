@@ -4,7 +4,11 @@ from pydantic import Field
 
 from strategy_contracts.base import StrictModel
 from strategy_contracts.ids import EntityId, FactionId, WholeNumber
-from strategy_contracts.limits import MAX_TERMS_PER_CARD, MAX_TEXT_CHARS
+from strategy_contracts.limits import (
+    MAX_CITED_GRUDGES,
+    MAX_TERMS_PER_CARD,
+    MAX_TEXT_CHARS,
+)
 from strategy_contracts.peace import PeaceTier
 from strategy_contracts.scene import (
     MAX_TONE_GRADE,
@@ -12,7 +16,8 @@ from strategy_contracts.scene import (
     SceneStatus,
     SubmissionStatus,
 )
-from strategy_contracts.terms import Term, TermsCard
+from strategy_contracts.terms import PromiseKind, Term, TermsCard
+from strategy_contracts.treaty import Verdict, WeightBand
 
 
 class SceneAction(str, Enum):
@@ -31,6 +36,13 @@ class SceneDecision(StrictModel):
     is_white_peace: bool = False
     guarantor_ids: list[FactionId] = Field(default_factory=list)
     terms: list[Term] = Field(default_factory=list, max_length=MAX_TERMS_PER_CARD)
+    cited_grudge_ids: list[EntityId] = Field(
+        default_factory=list, max_length=MAX_CITED_GRUDGES
+    )
+    promise_kind: PromiseKind | None = None
+    promise_subject_id: EntityId | None = None
+    is_promise_by_ruler: bool = False
+    tone_grade: int = Field(default=2, ge=0, le=MAX_TONE_GRADE)
 
 
 class SceneExchangeSubmission(StrictModel):
@@ -41,12 +53,18 @@ class SceneExchangeSubmission(StrictModel):
     tone_grade: int = Field(default=0, ge=0, le=MAX_TONE_GRADE)
 
 
+class LetterBodySubmission(StrictModel):
+    text: str = Field(min_length=1, max_length=MAX_TEXT_CHARS)
+
+
 class SceneExchangeResult(StrictModel):
     status: SubmissionStatus
     scene_status: SceneStatus
     exchanges_remaining: WholeNumber
     pending_proposal: TermsCard | None = None
     reason: str | None = None
+    verdict: Verdict | None = None
+    clause_bands: list[WeightBand] = Field(default_factory=list)
 
 
 class SceneExchangeView(StrictModel):
@@ -54,6 +72,7 @@ class SceneExchangeView(StrictModel):
     player_text: str
     leader_text: str
     proposal: TermsCard | None = None
+    verdict: Verdict | None = None
 
 
 class InternalScenePackage(StrictModel):

@@ -7,11 +7,10 @@ counter columns, so concurrent requests can't race an increment/decrement.
 
 import uuid
 
+from app.db.base import Base, CreatedAtMixin
 from sqlalchemy import ForeignKey, text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
-
-from app.db.base import Base, CreatedAtMixin
 
 
 class MusicGenerationLog(Base, CreatedAtMixin):

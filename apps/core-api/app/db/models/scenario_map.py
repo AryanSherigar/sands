@@ -2,11 +2,10 @@
 
 import uuid
 
+from app.db.base import Base, TimestampMixin
 from sqlalchemy import ForeignKey, Index, Integer, String, text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
-
-from app.db.base import Base, TimestampMixin
 
 
 class ScenarioMap(Base, TimestampMixin):

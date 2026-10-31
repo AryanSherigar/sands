@@ -27,6 +27,7 @@ class ConditionMetric(str, Enum):
     ARMY_UNPAID_TURNS = "army_unpaid_turns"
     ARMY_MORALE = "army_morale"
     REGIONS_WITH_UNREST_AT_LEAST = "regions_with_unrest_at_least"
+    MONTH = "month"
 
 
 class ConditionScope(str, Enum):

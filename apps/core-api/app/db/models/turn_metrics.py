@@ -6,12 +6,11 @@ See docs/specs/closed-alpha/alpha-data-collection.spec.md.
 
 import uuid
 
+from app.db.base import Base, CreatedAtMixin
 from sqlalchemy import ForeignKey, Integer, text
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.types import Text
-
-from app.db.base import Base, CreatedAtMixin
 
 
 class TurnMetrics(Base, CreatedAtMixin):

@@ -3,11 +3,10 @@
 import uuid
 from datetime import datetime
 
+from app.db.base import Base
 from sqlalchemy import TIMESTAMP, ForeignKey, String, text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
-
-from app.db.base import Base
 
 ACHIEVEMENT_KEY_MAX_LENGTH = 64
 

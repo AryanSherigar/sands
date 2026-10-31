@@ -2,11 +2,10 @@
 
 import uuid
 
+from app.db.base import Base, TimestampMixin
 from sqlalchemy import ForeignKey, Index, String, UniqueConstraint, text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
-
-from app.db.base import Base, TimestampMixin
 
 
 class ScenarioEntityType(Base, TimestampMixin):

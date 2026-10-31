@@ -29,6 +29,14 @@ TURMOIL_REGION_COUNTS = (2, 3, 4)
 CHEAP_FIX_COST = 1
 COSTLY_FIX_COST = 2
 CONCESSION_SCAR = 5
+HARVEST_MONTHS = (8, 10)
+PLAGUE_MONTHS = (6, 9)
+BAD_HARVEST_CHANCE = 40
+PLAGUE_CHANCE = 15
+HUNGER_UNREST_THRESHOLDS = (40, 60)
+FAMINE_STABILITY_CEILING = 40
+PLAGUE_EXHAUSTION_TIERS = (30, 50, 70)
+DISASTER_SCAR = 10
 CRACKDOWN_SCAR = 25
 
 
@@ -298,6 +306,146 @@ def _realm_in_turmoil() -> EventDefinition:
     )
 
 
+def _season(months: tuple[int, int]) -> list[Condition]:
+    first, last = months
+    return [
+        _compare(ConditionMetric.MONTH, ConditionOperator.GTE, first),
+        _compare(ConditionMetric.MONTH, ConditionOperator.LTE, last),
+    ]
+
+
+def _unrest_regions(count: int, threshold: int) -> Comparison:
+    return _compare(
+        ConditionMetric.REGIONS_WITH_UNREST_AT_LEAST,
+        ConditionOperator.GTE,
+        count,
+        threshold=threshold,
+    )
+
+
+def _bad_harvest() -> EventDefinition:
+    season = _season(HARVEST_MONTHS)
+    shortage, famine = HUNGER_UNREST_THRESHOLDS
+    return EventDefinition(
+        id="bad_harvest",
+        name="Bad harvest",
+        subject_kind=ConditionScope.FACTION,
+        cause_key="bad_harvest",
+        cause_metrics=[
+            ConditionMetric.MONTH,
+            ConditionMetric.STABILITY,
+            ConditionMetric.REGIONS_WITH_UNREST_AT_LEAST,
+        ],
+        chance_percent=BAD_HARVEST_CHANCE,
+        applies_to_npcs=True,
+        tiers=[
+            _tier(1, AllOf(conditions=season)),
+            _tier(2, AllOf(conditions=[*season, _unrest_regions(1, shortage)])),
+            _tier(
+                3,
+                AllOf(
+                    conditions=[
+                        *season,
+                        _unrest_regions(2, famine),
+                        _compare(
+                            ConditionMetric.STABILITY,
+                            ConditionOperator.LTE,
+                            FAMINE_STABILITY_CEILING,
+                        ),
+                    ]
+                ),
+            ),
+        ],
+        choices=[
+            EventChoice(
+                id="buy_grain",
+                label_hint="Buy grain abroad to feed the towns",
+                order_cost=CHEAP_FIX_COST,
+                effects=[
+                    _effect(EffectKind.GOLD, -80, on_subject=False),
+                    _effect(EffectKind.UNREST, -3, on_subject=False),
+                ],
+            ),
+            EventChoice(
+                id="ration_stores",
+                label_hint="Requisition the granaries and ration the bread",
+                order_cost=CHEAP_FIX_COST,
+                scar_amount=DISASTER_SCAR,
+                effects=[
+                    _effect(EffectKind.STABILITY, -3, on_subject=False),
+                    _effect(EffectKind.UNREST, -4, on_subject=False),
+                ],
+            ),
+        ],
+        neglect_effects=[
+            _effect(EffectKind.UNREST, 6, on_subject=False),
+            _effect(EffectKind.STABILITY, -4, on_subject=False),
+            _effect(EffectKind.MANPOWER, -30, on_subject=False),
+        ],
+    )
+
+
+def _plague() -> EventDefinition:
+    season = _season(PLAGUE_MONTHS)
+    first, second, third = PLAGUE_EXHAUSTION_TIERS
+    shortage, famine = HUNGER_UNREST_THRESHOLDS
+    exhaustion = ConditionMetric.WAR_EXHAUSTION
+
+    def worn(level: int) -> Comparison:
+        return _compare(exhaustion, ConditionOperator.GTE, level)
+
+    return EventDefinition(
+        id="plague",
+        name="Plague",
+        subject_kind=ConditionScope.FACTION,
+        cause_key="plague",
+        cause_metrics=[
+            ConditionMetric.MONTH,
+            exhaustion,
+            ConditionMetric.REGIONS_WITH_UNREST_AT_LEAST,
+        ],
+        chance_percent=PLAGUE_CHANCE,
+        applies_to_npcs=True,
+        tiers=[
+            _tier(1, AllOf(conditions=[*season, worn(first)])),
+            _tier(
+                2,
+                AllOf(conditions=[*season, worn(second), _unrest_regions(1, shortage)]),
+            ),
+            _tier(
+                3,
+                AllOf(conditions=[*season, worn(third), _unrest_regions(2, famine)]),
+            ),
+        ],
+        choices=[
+            EventChoice(
+                id="pay_physicians",
+                label_hint="Pay physicians and bury the dead decently",
+                order_cost=CHEAP_FIX_COST,
+                effects=[
+                    _effect(EffectKind.GOLD, -60, on_subject=False),
+                    _effect(EffectKind.MANPOWER, -20, on_subject=False),
+                ],
+            ),
+            EventChoice(
+                id="decree_quarantine",
+                label_hint="Decree a quarantine of the afflicted towns",
+                order_cost=CHEAP_FIX_COST,
+                scar_amount=DISASTER_SCAR,
+                effects=[
+                    _effect(EffectKind.UNREST, 3, on_subject=False),
+                    _effect(EffectKind.GOLD, -30, on_subject=False),
+                ],
+            ),
+        ],
+        neglect_effects=[
+            _effect(EffectKind.MANPOWER, -100, on_subject=False),
+            _effect(EffectKind.UNREST, 8, on_subject=False),
+            _effect(EffectKind.GOLD, -40, on_subject=False),
+        ],
+    )
+
+
 BUILTIN_EVENTS: tuple[EventDefinition, ...] = tuple(
     sorted(
         (
@@ -309,17 +457,26 @@ BUILTIN_EVENTS: tuple[EventDefinition, ...] = tuple(
         key=lambda event: event.id,
     )
 )
-BUILTIN_EVENT_IDS = frozenset(event.id for event in BUILTIN_EVENTS)
+DISASTER_EVENTS: tuple[EventDefinition, ...] = tuple(
+    sorted((_bad_harvest(), _plague()), key=lambda event: event.id)
+)
+DISASTER_EVENT_IDS = frozenset(event.id for event in DISASTER_EVENTS)
+BUILTIN_EVENT_IDS = frozenset(event.id for event in BUILTIN_EVENTS) | DISASTER_EVENT_IDS
 
 
 def effective_events(
-    custom_events: list[EventDefinition], disabled_builtin_ids: list[str]
+    custom_events: list[EventDefinition],
+    disabled_builtin_ids: list[str],
+    *,
+    has_disasters: bool = False,
 ) -> list[EventDefinition]:
     """Built-ins minus the disabled ones, with same-id custom events replacing
-    them, sorted by id so evaluation order is stable."""
+    them, sorted by id so evaluation order is stable. The disaster templates
+    join only when ``has_disasters`` is set (worlds on events ruleset 2)."""
+    builtins = (*BUILTIN_EVENTS, *DISASTER_EVENTS) if has_disasters else BUILTIN_EVENTS
     by_id = {
         event.id: event
-        for event in BUILTIN_EVENTS
+        for event in builtins
         if event.id not in set(disabled_builtin_ids)
     }
     by_id.update({event.id: event for event in custom_events})

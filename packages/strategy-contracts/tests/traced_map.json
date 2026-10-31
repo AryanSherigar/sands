@@ -1,0 +1,146 @@
+{
+  "schema_version": 1,
+  "source": "manual",
+  "width": 72,
+  "height": 72,
+  "image_url": null,
+  "regions": [
+    {
+      "id": "region_01",
+      "name": "Region 1",
+      "terrain": "plain",
+      "outline": "M0 0 L24 0 L24 24 L0 24 Z",
+      "label_point": {
+        "x": 11,
+        "y": 11
+      },
+      "neighbor_ids": [
+        "region_02",
+        "region_04"
+      ],
+      "source_color": null,
+      "source_ref": null
+    },
+    {
+      "id": "region_02",
+      "name": "Region 2",
+      "terrain": "hills",
+      "outline": "M24 0 L48 0 L48 24 L24 24 Z",
+      "label_point": {
+        "x": 35,
+        "y": 11
+      },
+      "neighbor_ids": [
+        "region_01",
+        "region_03",
+        "region_05"
+      ],
+      "source_color": null,
+      "source_ref": null
+    },
+    {
+      "id": "region_03",
+      "name": "Region 3",
+      "terrain": "mountain",
+      "outline": "M48 0 L72 0 L72 36 L48 36 Z",
+      "label_point": {
+        "x": 59,
+        "y": 11
+      },
+      "neighbor_ids": [
+        "region_02",
+        "region_05",
+        "region_06"
+      ],
+      "source_color": null,
+      "source_ref": null
+    },
+    {
+      "id": "region_04",
+      "name": "Region 4",
+      "terrain": "forest",
+      "outline": "M0 24 L24 24 L24 48 L0 48 Z",
+      "label_point": {
+        "x": 11,
+        "y": 35
+      },
+      "neighbor_ids": [
+        "region_01",
+        "region_05",
+        "region_07"
+      ],
+      "source_color": null,
+      "source_ref": null
+    },
+    {
+      "id": "region_05",
+      "name": "Region 5",
+      "terrain": "marsh",
+      "outline": "M24 24 L48 24 L48 48 L24 48 Z",
+      "label_point": {
+        "x": 35,
+        "y": 35
+      },
+      "neighbor_ids": [
+        "region_02",
+        "region_03",
+        "region_04",
+        "region_06",
+        "region_08"
+      ],
+      "source_color": null,
+      "source_ref": null
+    },
+    {
+      "id": "region_06",
+      "name": "Region 6",
+      "terrain": "desert",
+      "outline": "M48 36 L72 36 L72 72 L48 72 Z",
+      "label_point": {
+        "x": 59,
+        "y": 47
+      },
+      "neighbor_ids": [
+        "region_03",
+        "region_05",
+        "region_08"
+      ],
+      "source_color": null,
+      "source_ref": null
+    },
+    {
+      "id": "region_07",
+      "name": "Region 7",
+      "terrain": "coast",
+      "outline": "M0 48 L24 48 L24 72 L0 72 Z",
+      "label_point": {
+        "x": 11,
+        "y": 59
+      },
+      "neighbor_ids": [
+        "region_04",
+        "region_08"
+      ],
+      "source_color": null,
+      "source_ref": null
+    },
+    {
+      "id": "region_08",
+      "name": "Region 8",
+      "terrain": "plain",
+      "outline": "M24 48 L48 48 L48 72 L24 72 Z",
+      "label_point": {
+        "x": 35,
+        "y": 59
+      },
+      "neighbor_ids": [
+        "region_05",
+        "region_06",
+        "region_07"
+      ],
+      "source_color": null,
+      "source_ref": null
+    }
+  ],
+  "roads": []
+}

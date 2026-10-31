@@ -3,11 +3,10 @@
 import uuid
 from datetime import datetime
 
+from app.db.base import Base, CreatedAtMixin
 from sqlalchemy import TIMESTAMP, ForeignKey, Index, Text, UniqueConstraint, text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
-
-from app.db.base import Base, CreatedAtMixin
 
 
 class ScenarioInvite(Base, CreatedAtMixin):

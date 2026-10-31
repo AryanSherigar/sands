@@ -25,6 +25,7 @@ DEFAULT_PRESS_TRAIT_TOTAL = 3
 DEFAULT_AI_ATTACK_BOOST = 20
 DEFAULT_AI_DEFENSE_PENALTY = 15
 DEFAULT_AI_CALCULATING_CUNNING = 3
+DEFAULT_HELD_PRISONER_EXECUTIONS_PER_TURN = 1
 
 
 def _default_level_thresholds() -> list[int]:
@@ -57,6 +58,9 @@ class OutrageTuning(StrictModel):
     ai_attack_boost: WholeNumber = DEFAULT_AI_ATTACK_BOOST
     ai_defense_penalty: WholeNumber = DEFAULT_AI_DEFENSE_PENALTY
     ai_calculating_cunning: int = Field(default=DEFAULT_AI_CALCULATING_CUNNING, ge=1)
+    held_prisoner_executions_per_turn: WholeNumber = (
+        DEFAULT_HELD_PRISONER_EXECUTIONS_PER_TURN
+    )
 
     @field_validator("level_thresholds_percent")
     @classmethod

@@ -2,11 +2,10 @@
 
 import uuid
 
+from app.db.base import Base, TimestampMixin
 from sqlalchemy import Boolean, ForeignKey, Index, String, Text, text
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
-
-from app.db.base import Base, TimestampMixin
 
 
 class Entity(Base, TimestampMixin):
@@ -50,3 +49,4 @@ class Entity(Base, TimestampMixin):
     is_player: Mapped[bool] = mapped_column(
         Boolean, server_default="false", default=False, nullable=False
     )
+    avatar_url: Mapped[str | None] = mapped_column(String(1024), nullable=True)

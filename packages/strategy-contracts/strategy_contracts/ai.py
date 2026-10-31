@@ -31,11 +31,29 @@ DEFAULT_GROUND_STRENGTH_DIVISOR = 10
 DEFAULT_RATIO_DIVISOR = 20
 DEFAULT_SECOND_FRONT_PENALTY = 4
 DEFAULT_DEMAND_GOLD = 30
+DEFAULT_PEACE_BONUS = 6
 DEFAULT_DEMAND_MIN_RATIO = 120
 DEFAULT_AIM_TARGET_BONUS = 4
 DEFAULT_FORGERY_BONUS = 2
 DEFAULT_UPRISING_BONUS = 10
 DEFAULT_MAX_ARMIES = 6
+DEFAULT_MOBILIZE_FRICTION = 3
+DEFAULT_MOBILIZE_CORNERED_BONUS = 8
+DEFAULT_APPEASE_BONUS = 6
+DEFAULT_APPEASE_SAFETY_MARGIN_PERCENT = 20
+DEFAULT_ENVOY_BONUS = 3
+DEFAULT_ENVOY_TARGET_BONUS = 3
+DEFAULT_SUBSIDY_BONUS = 4
+DEFAULT_SUBSIDY_TURNS = 4
+DEFAULT_DEMAND_VASSAL_BONUS = 3
+DEFAULT_ANNEX_BONUS = 8
+DEFAULT_RELEASE_BONUS = 8
+DEFAULT_DEMAND_STEP_PERCENT = 10
+DEFAULT_ANNEX_MAX_POWER_PERCENT = 50
+DEFAULT_RELEASE_GRIEVANCE = 20
+DEFAULT_DENOUNCE_BONUS = 6
+DEFAULT_OATH_HONOR_THRESHOLD = 2
+DEFAULT_OATH_BREAK_PENALTY = 40
 
 
 class AiTuning(StrictModel):
@@ -69,8 +87,28 @@ class AiTuning(StrictModel):
     ratio_divisor: int = Field(default=DEFAULT_RATIO_DIVISOR, ge=1)
     second_front_penalty: int = Field(default=DEFAULT_SECOND_FRONT_PENALTY, ge=0)
     demand_gold: int = Field(default=DEFAULT_DEMAND_GOLD, ge=0)
+    peace_bonus: int = Field(default=DEFAULT_PEACE_BONUS, ge=0)
     demand_min_ratio: int = Field(default=DEFAULT_DEMAND_MIN_RATIO, ge=0)
     aim_target_bonus: int = Field(default=DEFAULT_AIM_TARGET_BONUS, ge=0)
     forgery_bonus: int = Field(default=DEFAULT_FORGERY_BONUS, ge=0)
     uprising_bonus: int = Field(default=DEFAULT_UPRISING_BONUS, ge=0)
     max_armies: int = Field(default=DEFAULT_MAX_ARMIES, ge=1)
+    mobilize_friction: int = Field(default=DEFAULT_MOBILIZE_FRICTION, ge=0)
+    mobilize_cornered_bonus: int = Field(default=DEFAULT_MOBILIZE_CORNERED_BONUS, ge=0)
+    appease_bonus: int = Field(default=DEFAULT_APPEASE_BONUS, ge=0)
+    appease_safety_margin_percent: int = Field(
+        default=DEFAULT_APPEASE_SAFETY_MARGIN_PERCENT, ge=0
+    )
+    envoy_bonus: int = Field(default=DEFAULT_ENVOY_BONUS, ge=0)
+    envoy_target_bonus: int = Field(default=DEFAULT_ENVOY_TARGET_BONUS, ge=0)
+    subsidy_bonus: int = Field(default=DEFAULT_SUBSIDY_BONUS, ge=0)
+    subsidy_turns: int = Field(default=DEFAULT_SUBSIDY_TURNS, ge=1)
+    demand_vassal_bonus: int = Field(default=DEFAULT_DEMAND_VASSAL_BONUS, ge=0)
+    annex_bonus: int = Field(default=DEFAULT_ANNEX_BONUS, ge=0)
+    release_bonus: int = Field(default=DEFAULT_RELEASE_BONUS, ge=0)
+    demand_step_percent: int = Field(default=DEFAULT_DEMAND_STEP_PERCENT, ge=1)
+    annex_max_power_percent: int = Field(default=DEFAULT_ANNEX_MAX_POWER_PERCENT, ge=0)
+    release_grievance: int = Field(default=DEFAULT_RELEASE_GRIEVANCE, ge=0)
+    denounce_bonus: int = Field(default=DEFAULT_DENOUNCE_BONUS, ge=0)
+    oath_honor_threshold: int = Field(default=DEFAULT_OATH_HONOR_THRESHOLD, ge=0)
+    oath_break_penalty: int = Field(default=DEFAULT_OATH_BREAK_PENALTY, ge=0)

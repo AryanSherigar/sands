@@ -12,8 +12,14 @@ from strategy_contracts.map_graph import (
     find_duplicate_region_ids,
     find_one_way_links,
 )
-from strategy_contracts.scenario import EndingKind, StrategyScenario
+from strategy_contracts.scenario import EndingKind, LeaderSetup, StrategyScenario
 from strategy_contracts.stances import BUILTIN_STANCES
+from strategy_contracts.succession import (
+    MAX_PLAUSIBLE_HEIR_AGE,
+    MAX_PLAUSIBLE_RULER_AGE,
+    HeirSetup,
+    heir_chain,
+)
 from strategy_contracts.traits import BUILTIN_TRAITS
 
 MIN_FACTIONS_FOR_LONG_PLAY = 4
@@ -44,6 +50,10 @@ class IssueCode(str, Enum):
     UNKNOWN_STANCE_REFERENCE = "unknown_stance_reference"
     EMPTY_STANCE_MENU = "empty_stance_menu"
     INVALID_VASSALAGE = "invalid_vassalage"
+    HEIR_INVALID = "heir_invalid"
+    AGE_IMPLAUSIBLE = "age_implausible"
+    FACTION_HAS_NO_ARMY = "faction_has_no_army"
+    FACTION_HAS_NO_ECONOMY = "faction_has_no_economy"
 
 
 class Issue(StrictModel):
@@ -68,11 +78,18 @@ def _issue(code: IssueCode, path: str, message: str) -> Issue:
     return Issue(code=code, path=path, message=message)
 
 
+def _all_leader_ids(scenario: StrategyScenario) -> Iterator[str]:
+    for leader in scenario.leaders:
+        yield leader.id
+        for heir in heir_chain(leader.heir):
+            yield heir.id
+
+
 def _check_duplicate_ids(scenario: StrategyScenario) -> list[Issue]:
     groups = {
         "region": find_duplicate_region_ids(scenario.map),
         "faction": _duplicates(faction.id for faction in scenario.factions),
-        "leader": _duplicates(leader.id for leader in scenario.leaders),
+        "leader": _duplicates(_all_leader_ids(scenario)),
         "event": _duplicates(event.id for event in scenario.events),
     }
     return [
@@ -461,6 +478,79 @@ def _check_vassalages(scenario: StrategyScenario) -> list[Issue]:
     return issues
 
 
+def _heir_problem(heir: HeirSetup, known: dict[str, set[str]]) -> str | None:
+    if any(trait not in known["trait"] for trait in heir.trait_ids):
+        return f"heir '{heir.id}' has an unknown trait"
+    if any(ambition not in known["ambition"] for ambition in heir.ambition_ids):
+        return f"heir '{heir.id}' has an unknown ambition"
+    return None
+
+
+def _leader_heir_issues(
+    index: int, leader: LeaderSetup, known: dict[str, set[str]]
+) -> list[Issue]:
+    problems = (_heir_problem(heir, known) for heir in heir_chain(leader.heir))
+    return [
+        _issue(IssueCode.HEIR_INVALID, f"leaders[{index}].heir", problem)
+        for problem in problems
+        if problem is not None
+    ]
+
+
+def _check_heirs(scenario: StrategyScenario) -> list[Issue]:
+    known = _scenario_id_sets(scenario)
+    issues: list[Issue] = []
+    for index, leader in enumerate(scenario.leaders):
+        issues += _leader_heir_issues(index, leader, known)
+    return issues
+
+
+def _check_regent_traits(scenario: StrategyScenario) -> list[Issue]:
+    known = _scenario_id_sets(scenario)["trait"]
+    if all(trait in known for trait in scenario.tuning.succession.regent_trait_ids):
+        return []
+    return [
+        _issue(
+            IssueCode.HEIR_INVALID,
+            "tuning.succession.regent_trait_ids",
+            "regent has an unknown trait",
+        )
+    ]
+
+
+def _check_start_armies(scenario: StrategyScenario) -> list[Issue]:
+    manned = {
+        army.owner_id
+        for army in scenario.starting.armies
+        if sum(army.troops.values()) > 0
+    }
+    return [
+        _issue(
+            IssueCode.FACTION_HAS_NO_ARMY,
+            f"factions[{index}]",
+            f"'{faction.id}' has no army",
+        )
+        for index, faction in enumerate(scenario.factions)
+        if faction.id not in manned
+    ]
+
+
+def _check_start_economy(scenario: StrategyScenario) -> list[Issue]:
+    wealth: Counter[str] = Counter()
+    for setup in scenario.starting.regions:
+        if setup.owner_id is not None:
+            wealth[setup.owner_id] += setup.wealth
+    return [
+        _issue(
+            IssueCode.FACTION_HAS_NO_ECONOMY,
+            f"factions[{index}]",
+            f"'{faction.id}' starts with no wealth",
+        )
+        for index, faction in enumerate(scenario.factions)
+        if wealth[faction.id] == 0
+    ]
+
+
 BLOCKING_CHECKS: tuple[Check, ...] = (
     _check_duplicate_ids,
     _check_stances,
@@ -473,6 +563,10 @@ BLOCKING_CHECKS: tuple[Check, ...] = (
     _check_condition_depth,
     _check_event_references,
     _check_vassalages,
+    _check_heirs,
+    _check_regent_traits,
+    _check_start_armies,
+    _check_start_economy,
 )
 
 
@@ -534,7 +628,23 @@ def _warn_lopsided(scenario: StrategyScenario) -> list[Issue]:
     ]
 
 
-WARNING_CHECKS: tuple[Check, ...] = (_warn_size, _warn_history, _warn_lopsided)
+def _warn_ages(scenario: StrategyScenario) -> list[Issue]:
+    issues: list[Issue] = []
+    for index, leader in enumerate(scenario.leaders):
+        path = f"leaders[{index}]"
+        if leader.age > MAX_PLAUSIBLE_RULER_AGE:
+            issues.append(_issue(IssueCode.AGE_IMPLAUSIBLE, path, "ruler is very old"))
+        if any(heir.age > MAX_PLAUSIBLE_HEIR_AGE for heir in heir_chain(leader.heir)):
+            issues.append(_issue(IssueCode.AGE_IMPLAUSIBLE, path, "heir is very old"))
+    return issues
+
+
+WARNING_CHECKS: tuple[Check, ...] = (
+    _warn_size,
+    _warn_history,
+    _warn_lopsided,
+    _warn_ages,
+)
 
 
 def check_publishable(scenario: StrategyScenario) -> PublishReport:

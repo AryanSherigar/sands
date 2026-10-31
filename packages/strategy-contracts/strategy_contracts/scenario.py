@@ -3,6 +3,7 @@ from typing import Literal
 
 from pydantic import Field, field_validator, model_validator
 
+from strategy_contracts.agents import AgentTuning
 from strategy_contracts.ai import AiTuning
 from strategy_contracts.alliance import AllianceTuning
 from strategy_contracts.base import StrictModel
@@ -39,6 +40,7 @@ from strategy_contracts.ids import (
     TraitId,
     WholeNumber,
 )
+from strategy_contracts.letters import LetterTuning
 from strategy_contracts.limits import (
     MAX_DISABLED_BUILTIN_EVENTS,
     MAX_EVENT_DEFINITIONS,
@@ -53,8 +55,16 @@ from strategy_contracts.outrage import OutrageTuning
 from strategy_contracts.overtures import OvertureTuning
 from strategy_contracts.peace import PeaceTuning
 from strategy_contracts.pressure import PressureTuning
+from strategy_contracts.siege import SiegeTuning
 from strategy_contracts.stances import MAX_CUSTOM_STANCES, StanceDefinition
+from strategy_contracts.succession import (
+    MAX_HEIR_DEPTH,
+    HeirSetup,
+    SuccessionTuning,
+    heir_depth,
+)
 from strategy_contracts.traits import TraitDefinition
+from strategy_contracts.treaty import TreatyTuning
 from strategy_contracts.vassal import VassalageSetup, VassalTuning
 
 SCENARIO_SCHEMA_VERSION = 1
@@ -78,11 +88,13 @@ HEAVY_ORDER_KINDS = frozenset(
         OrderKind.CALL_NEGOTIATION,
         OrderKind.FABRICATE_CLAIM,
         OrderKind.ANNEX_VASSAL,
+        OrderKind.MOBILIZE,
     }
 )
 FREE_ORDER_KINDS = frozenset(
     {
         OrderKind.HALT_ARMY,
+        OrderKind.SUE_PEACE,
         OrderKind.ANSWER_CALL,
         OrderKind.ANSWER_DEMAND,
         OrderKind.GRANT_CONSENT,
@@ -282,6 +294,11 @@ class SystemToggles(StrictModel):
     is_events_enabled: bool = True
     is_outrage_enabled: bool = True
     is_overtures_enabled: bool = True
+    is_ai_peace_enabled: bool = True
+    is_ai_pressure_enabled: bool = True
+    is_ai_subsidy_enabled: bool = True
+    is_ai_vassal_enabled: bool = True
+    is_ai_alliance_enabled: bool = True
     is_orders_budget_enabled: bool = True
 
 
@@ -313,6 +330,14 @@ class LeaderSetup(StrictModel):
     age: int = Field(default=DEFAULT_LEADER_AGE, ge=0)
     portrait_url: str | None = None
     avatar_url: str | None = None
+    heir: HeirSetup | None = None
+
+    @field_validator("heir")
+    @classmethod
+    def validate_heir_depth(cls, heir: HeirSetup | None) -> HeirSetup | None:
+        if heir_depth(heir) > MAX_HEIR_DEPTH:
+            raise ValueError("an heir may have one heir of their own, no deeper")
+        return heir
 
 
 class PlayerRulerCustomization(StrictModel):
@@ -670,13 +695,18 @@ class Tuning(StrictModel):
     diplomacy: DiplomacyTuning = Field(default_factory=DiplomacyTuning)
     pressure: PressureTuning = Field(default_factory=PressureTuning)
     peace: PeaceTuning = Field(default_factory=PeaceTuning)
+    treaty: TreatyTuning = Field(default_factory=TreatyTuning)
     alliance: AllianceTuning = Field(default_factory=AllianceTuning)
     vassal: VassalTuning = Field(default_factory=VassalTuning)
     coalition: CoalitionTuning = Field(default_factory=CoalitionTuning)
     outrage: OutrageTuning = Field(default_factory=OutrageTuning)
     overtures: OvertureTuning = Field(default_factory=OvertureTuning)
+    letters: LetterTuning = Field(default_factory=LetterTuning)
+    agents: AgentTuning = Field(default_factory=AgentTuning)
     ai: AiTuning = Field(default_factory=AiTuning)
     endings: EndingsTuning = Field(default_factory=EndingsTuning)
+    succession: SuccessionTuning = Field(default_factory=SuccessionTuning)
+    siege: SiegeTuning = Field(default_factory=SiegeTuning)
 
     @field_validator("order_costs")
     @classmethod

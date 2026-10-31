@@ -18,6 +18,7 @@ class ShockKind(str, Enum):
     RULER_CAPTURED = "ruler_captured"
     NEW_ENEMY = "new_enemy"
     HOME_ARMY_DESTROYED = "home_army_destroyed"
+    RULER_DIED = "ruler_died"
 
 
 class HopeSource(str, Enum):
@@ -33,6 +34,8 @@ class RumorTopic(str, Enum):
     STRAIN = "strain"
     RAGE = "rage"
     THREAT = "threat"
+    HEALTH = "health"
+    COALITION = "coalition"
 
 
 DEFAULT_BAND_THRESHOLDS = (20, 40, 60, 80)
@@ -41,6 +44,7 @@ DEFAULT_SHOCK_AMOUNTS: dict[ShockKind, int] = {
     ShockKind.RULER_CAPTURED: 30,
     ShockKind.NEW_ENEMY: 15,
     ShockKind.HOME_ARMY_DESTROYED: 20,
+    ShockKind.RULER_DIED: 10,
 }
 DEFAULT_STALEMATE_TURNS_PER_STRAIN = 2
 DEFAULT_SECOND_FRONT_STRAIN = 10
@@ -55,6 +59,8 @@ DEFAULT_ACCEPTANCE_SHIFT_DIVISOR = 10
 DEFAULT_DEVASTATION_STEP = 10
 DEFAULT_HOPE_CANCEL_TURNS = 3
 DEFAULT_RELIEF_ARMY_MIN_MORALE = 50
+DEFAULT_SUBSIDY_MAX_PER_TURN = 100
+DEFAULT_SUBSIDY_MAX_TURNS = 8
 
 
 def _default_band_thresholds() -> list[int]:
@@ -94,6 +100,8 @@ class PressureTuning(StrictModel):
     relief_army_min_morale: int = Field(
         default=DEFAULT_RELIEF_ARMY_MIN_MORALE, ge=0, le=100
     )
+    subsidy_max_per_turn: int = Field(default=DEFAULT_SUBSIDY_MAX_PER_TURN, ge=1)
+    subsidy_max_turns: int = Field(default=DEFAULT_SUBSIDY_MAX_TURNS, ge=1)
 
     @field_validator("band_thresholds")
     @classmethod

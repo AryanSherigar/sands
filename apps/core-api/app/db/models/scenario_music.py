@@ -2,6 +2,7 @@
 
 import uuid
 
+from app.db.base import Base, TimestampMixin
 from sqlalchemy import (
     CheckConstraint,
     ForeignKey,
@@ -13,8 +14,6 @@ from sqlalchemy import (
 )
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
-
-from app.db.base import Base, TimestampMixin
 
 MOOD_SLOTS = ("peaceful", "mystery", "tension", "combat", "melancholy", "triumph")
 

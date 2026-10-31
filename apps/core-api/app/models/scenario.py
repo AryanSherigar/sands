@@ -16,11 +16,7 @@ from pydantic import (
     field_validator,
     model_validator,
 )
-
-try:
-    from strategy_contracts.scenario import StrategyScenario
-except (ImportError, ModuleNotFoundError):
-    StrategyScenario = None  # type: ignore[assignment,misc]
+from strategy_contracts.scenario import StrategyScenario
 
 MAX_MOOD_TAGS = 12
 MAX_MOOD_TAG_LENGTH = 40
@@ -58,9 +54,7 @@ def _validate_strategy_document(
 ) -> dict[str, object]:
     if not document:
         return document
-    if StrategyScenario is not None:
-        return StrategyScenario.model_validate(document).model_dump(mode="json")
-    return document
+    return StrategyScenario.model_validate(document).model_dump(mode="json")
 
 
 def _validate_mode_document_pair(mode: str, document: dict[str, object]) -> None:

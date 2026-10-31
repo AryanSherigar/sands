@@ -5,9 +5,15 @@ from uuid import UUID
 from pydantic import Field, model_validator
 
 from strategy_contracts.base import StrictModel
-from strategy_contracts.ids import EntityId, TraitId
-from strategy_contracts.limits import MAX_NAME_CHARS, MAX_TEXT_CHARS
+from strategy_contracts.ids import EntityId, FactionId, RegionId, TraitId
+from strategy_contracts.limits import (
+    MAX_CESSION_OPTIONS,
+    MAX_GRUDGES_PER_SCENE,
+    MAX_NAME_CHARS,
+    MAX_TEXT_CHARS,
+)
 from strategy_contracts.negotiation_rules import DEFAULT_MAX_PACT_TURNS
+from strategy_contracts.peace import PeaceTier
 from strategy_contracts.terms import TermKind, TermsCard
 
 
@@ -107,11 +113,91 @@ class AcceptanceRange(StrictModel):
         return self
 
 
+class GrudgeSource(str, Enum):
+    OPINION = "opinion"
+    GROUND = "ground"
+
+
+class GrudgeBand(str, Enum):
+    FAINT = "faint"
+    FIRM = "firm"
+    BURNING = "burning"
+
+
+class Grudge(StrictModel):
+    id: EntityId
+    text: str = Field(min_length=1, max_length=MAX_TEXT_CHARS)
+    source: GrudgeSource
+    band: GrudgeBand
+    is_inherited: bool = False
+    predecessor_name: str | None = Field(default=None, max_length=MAX_NAME_CHARS)
+
+
+class WarStanding(str, Enum):
+    LEADING = "leading"
+    EVEN = "even"
+    TRAILING = "trailing"
+
+
+class CessionOption(StrictModel):
+    region_id: RegionId
+    name: str = Field(min_length=1, max_length=MAX_NAME_CHARS)
+
+
+class PeaceTierOption(StrictModel):
+    tier: PeaceTier
+    turns: int = Field(ge=0)
+    needs_guarantor: bool
+
+
+class PeaceBrief(StrictModel):
+    player_faction_id: FactionId
+    player_faction_name: str = Field(max_length=MAX_NAME_CHARS)
+    counterpart_faction_id: FactionId
+    counterpart_faction_name: str = Field(max_length=MAX_NAME_CHARS)
+    standing: WarStanding
+    tiers: list[PeaceTierOption]
+    player_regions: list[CessionOption] = Field(
+        default_factory=list, max_length=MAX_CESSION_OPTIONS
+    )
+    counterpart_regions: list[CessionOption] = Field(
+        default_factory=list, max_length=MAX_CESSION_OPTIONS
+    )
+
+
+LEGACY_GRIEVANCES_KEY = "real_grievances"
+
+
 class HiddenLimits(StrictModel):
     acceptance: AcceptanceRange | None = None
-    real_grievances: list[str] = Field(default_factory=list)
+    grudges: list[Grudge] = Field(
+        default_factory=list, max_length=MAX_GRUDGES_PER_SCENE
+    )
+    peace_brief: PeaceBrief | None = None
     outrage_level: OutrageLevel = OutrageLevel.NONE
     is_enraged: bool = False
+
+    @model_validator(mode="before")
+    @classmethod
+    def upgrade_legacy_grievances(cls, data: object) -> object:
+        """Packages stored before grudges existed carried plain-text grievances."""
+        if not isinstance(data, dict) or LEGACY_GRIEVANCES_KEY not in data:
+            return data
+        upgraded = {
+            key: value for key, value in data.items() if key != LEGACY_GRIEVANCES_KEY
+        }
+        legacy = data[LEGACY_GRIEVANCES_KEY]
+        if "grudges" not in upgraded and isinstance(legacy, list):
+            upgraded["grudges"] = [
+                {
+                    "id": f"g{position}",
+                    "text": text,
+                    "source": GrudgeSource.OPINION.value,
+                    "band": GrudgeBand.FIRM.value,
+                }
+                for position, text in enumerate(legacy[:MAX_GRUDGES_PER_SCENE], start=1)
+            ]
+        return upgraded
 
 
 class ChoiceOption(StrictModel):

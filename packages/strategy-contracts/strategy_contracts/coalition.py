@@ -1,7 +1,9 @@
+from typing import Annotated, Literal
+
 from pydantic import Field
 
 from strategy_contracts.base import StrictModel
-from strategy_contracts.ids import WholeNumber
+from strategy_contracts.ids import RegionId, WholeNumber
 from strategy_contracts.limits import FULL_SHARE_PERCENT
 
 DEFAULT_CONQUEST_WINDOW_TURNS = 3
@@ -21,6 +23,17 @@ DEFAULT_MIN_MEMBERS = 2
 DEFAULT_DURATION_TURNS = 10
 DEFAULT_MEMBER_OPINION_PENALTY = 15
 DEFAULT_PEACE_SHIFT = 10
+DEFAULT_APPEASE_BASE_PRICE = 20
+DEFAULT_APPEASE_OPINION_WEIGHT = 2
+DEFAULT_APPEASE_CAUTION_DISCOUNT = 2
+DEFAULT_APPEASE_PRIDE_SURCHARGE = 2
+DEFAULT_APPEASE_GOLD_VALUE_PERCENT = 100
+DEFAULT_APPEASE_PACT_VALUE_PER_TURN = 3
+DEFAULT_APPEASE_PACT_MAX_VALUE = 30
+DEFAULT_APPEASE_CESSION_VALUE_DIVISOR = 1
+DEFAULT_APPEASE_COOLDOWN_TURNS = 3
+DEFAULT_APPEASE_REJOIN_LOCKOUT_TURNS = 5
+DEFAULT_APPEASE_MAX_PACT_TURNS = 12
 
 
 class CoalitionTuning(StrictModel):
@@ -44,3 +57,38 @@ class CoalitionTuning(StrictModel):
     duration_turns: int = Field(default=DEFAULT_DURATION_TURNS, ge=1)
     member_opinion_penalty: WholeNumber = DEFAULT_MEMBER_OPINION_PENALTY
     peace_shift: WholeNumber = DEFAULT_PEACE_SHIFT
+    appease_base_price: WholeNumber = DEFAULT_APPEASE_BASE_PRICE
+    appease_opinion_weight: WholeNumber = DEFAULT_APPEASE_OPINION_WEIGHT
+    appease_caution_discount: WholeNumber = DEFAULT_APPEASE_CAUTION_DISCOUNT
+    appease_pride_surcharge: WholeNumber = DEFAULT_APPEASE_PRIDE_SURCHARGE
+    appease_gold_value_percent: WholeNumber = DEFAULT_APPEASE_GOLD_VALUE_PERCENT
+    appease_pact_value_per_turn: WholeNumber = DEFAULT_APPEASE_PACT_VALUE_PER_TURN
+    appease_pact_max_value: WholeNumber = DEFAULT_APPEASE_PACT_MAX_VALUE
+    appease_cession_value_divisor: int = Field(
+        default=DEFAULT_APPEASE_CESSION_VALUE_DIVISOR, ge=1
+    )
+    appease_cooldown_turns: int = Field(default=DEFAULT_APPEASE_COOLDOWN_TURNS, ge=1)
+    appease_rejoin_lockout_turns: int = Field(
+        default=DEFAULT_APPEASE_REJOIN_LOCKOUT_TURNS, ge=1
+    )
+    appease_max_pact_turns: int = Field(default=DEFAULT_APPEASE_MAX_PACT_TURNS, ge=1)
+
+
+class GoldOffer(StrictModel):
+    kind: Literal["gold"] = "gold"
+    amount: int = Field(ge=1)
+
+
+class PactOffer(StrictModel):
+    kind: Literal["pact"] = "pact"
+    duration_turns: int = Field(ge=1)
+
+
+class ClaimCessionOffer(StrictModel):
+    kind: Literal["claim_cession"] = "claim_cession"
+    region_id: RegionId
+
+
+AppeaseOffer = Annotated[
+    GoldOffer | PactOffer | ClaimCessionOffer, Field(discriminator="kind")
+]

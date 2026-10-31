@@ -1,7 +1,7 @@
-"""Integration tests for database session management."""
+"""Integration tests for database connection and session management."""
 
 import pytest
-from app.db.session import close_db_connection, get_db_session
+from app.db.connection import close_db_connection, get_db_session
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
