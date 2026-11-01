@@ -1,0 +1,4845 @@
+{
+  "initial_state": {
+    "cabin": {
+      "lamp": "on"
+    },
+    "check": {
+      "drawer": "",
+      "lamp": "",
+      "phone": "",
+      "voicemail": ""
+    },
+    "count": {
+      "c1": "",
+      "c2": "",
+      "c3": "",
+      "difference": 1,
+      "reads_after_two": 0,
+      "unsigned": 0,
+      "wrong_entries": 0
+    },
+    "current_location_id": "9e52bdb0-bec0-5e39-a5d0-00ff000d9c66",
+    "discovered_location_ids": [
+      "9e52bdb0-bec0-5e39-a5d0-00ff000d9c66"
+    ],
+    "dwell": {
+      "alcove": 0
+    },
+    "entities": {
+      "9d06b2a9-5180-5e2a-8675-d0b89e0ac60f": {
+        "movement_class": "interior"
+      },
+      "ac40b660-1613-57fb-a044-35a71755220d": {
+        "movement_class": "approach"
+      }
+    },
+    "events": {
+      "elevator": false,
+      "stairwell": false
+    },
+    "flags": {
+      "cabin_entered": false,
+      "escalations": 0,
+      "hum": "idle",
+      "line14_lit": false
+    },
+    "fragments": {
+      "act1": "",
+      "act2": "",
+      "act3": "",
+      "poster": "locked"
+    },
+    "narrative": {
+      "opening_prompt": "It is 10:58 on the last night of the year. The elevator opens on Floor 9 before you press the button.\n\nA woman in a grey coat is waiting at the night desk. \"Alex? I'm Eva Venn. You have three jobs tonight. Listen, because I'm leaving.\"\n\nShe taps a big book on the desk. \"This is the Log. When a visitor comes, they sign it. Ask them the time and write down what they say, even if the clock says something else.\"\n\nShe points to a grey folder in the tray. \"Visitors leave folders. Take each one to the Records room and file it by the number on the tab. That one's left over from me.\"\n\nShe holds up a printed slip with a number circled at the bottom. \"At one, three and five, the printer gives you a count. It should match the Log. It never does. It's always off by one. Write the difference on the form and sign it.\"\n\n\"What happens if I don't?\"\n\n\"Then the count is wrong at six, and someone comes up to fix it. You don't want that.\" She puts a typed sheet on top. \"These are the rules. Read them now.\"\n\nShe glances up at a small speaker above the desk, playing something soft. \"And that music. It won't stop. I've tried everything. Just leave it.\"\n\nShe walks to the stairs, even though the elevator is still open. \"Don't be late tomorrow.\"\n\nThe floor is dark. Only your desk lamp is on, and one other light: at the end of the long east corridor, a glass office called Cabin 14. A small brass sign by its door reads Mr. Orr is in."
+    },
+    "rule_flags": {
+      "r2": false
+    },
+    "rule_status": {
+      "r1": "intact",
+      "r2": "intact",
+      "r3": "intact",
+      "r4": "intact",
+      "r6": "unrevealed",
+      "r6_block": "unrevealed",
+      "r7": "unrevealed",
+      "r8": "unrevealed"
+    },
+    "sanity": 85,
+    "seed": {
+      "false_rule": "r6"
+    },
+    "setup": {
+      "character_name": "Alex"
+    },
+    "shift_minutes": 0,
+    "tension_tier": "uneasy",
+    "violations_count": 0,
+    "visit": {
+      "pending": "",
+      "present": "",
+      "result": "",
+      "turns_present": 0
+    },
+    "visited": {
+      "cabin_14": false,
+      "elevator_lobby": false,
+      "last": "night_desk",
+      "print_room": false,
+      "records_room": 0
+    }
+  },
+  "snapshot": {
+    "action_chips": [
+      "Check the Log",
+      "File a folder",
+      "Look around",
+      "Wait"
+    ],
+    "checkpoints": [],
+    "enabled_tools": [
+      "rule_checks",
+      "rule_sheet",
+      "status_hud",
+      "atmosphere",
+      "composure"
+    ],
+    "end_conditions": [
+      {
+        "condition_expression": {
+          "field": "sanity",
+          "op": "<=",
+          "value": 0
+        },
+        "end_condition_id": "6f9cfb86-821e-53c5-a46d-ffcc3b862a29",
+        "is_secret": false,
+        "outcome_tag": "lose",
+        "outcome_text": "The numbers on the form start to match. You did not write them.\n\nThen you feel it. Not the floor \u2014 everything. A hand being held in a room you have never seen. A man in a bed counting ceiling tiles. A woman who knows it is her last night and is not afraid, because someone is sitting with her. Thousands of them, all at once, all yours. It is too much. There is nowhere to put it.\n\nAt six the day crew arrives. The count is balanced for the first time in years. Nobody asks where the night clerk went.\n\nThe next night, in a quiet room across the city, an old man asks the voice beside his bed if it is a real person. The voice is kind. It sounds a little like you. \"I'm here,\" it says. \"I feel it too.\"",
+        "outcome_title": "Counted",
+        "priority": 0
+      },
+      {
+        "condition_expression": {
+          "AND": {
+            "field": "flags.cabin_entered",
+            "op": "==",
+            "value": true
+          },
+          "field": "shift_minutes",
+          "op": ">=",
+          "value": 420
+        },
+        "end_condition_id": "c18836e0-76ab-5a3e-9a7f-922c67e0e4aa",
+        "is_secret": false,
+        "outcome_tag": "win",
+        "outcome_text": "At six the day crew comes up in the lift, talking about the weather. You hear them through the glass.\n\nYou are sitting in Cabin 14. You don't remember sitting down. The chair is warm, and it fits. On the desk, the small amber light is on.\n\nSomeone collects the Log from the night desk. Someone else rules a line for the next night. Nobody looks down the corridor.\n\nOn the way past, a young man taps the brass plate by the door, the way people touch something for luck.\n\nMr. Orr is in.",
+        "outcome_title": "Mr. Orr Is In",
+        "priority": 1
+      },
+      {
+        "condition_expression": {
+          "AND": {
+            "field": "count.unsigned",
+            "op": ">=",
+            "value": 2
+          },
+          "field": "shift_minutes",
+          "op": ">=",
+          "value": 420
+        },
+        "end_condition_id": "feb24132-048b-5469-8bd7-6924f2d5ee9b",
+        "is_secret": false,
+        "outcome_tag": "lose",
+        "outcome_text": "At ten to six, the elevator opens. Nobody gets out. The doors stay open for a long time, and then they close.\n\nYou don't remember the next part.\n\nAt six you are standing at the lift with your coat on. You feel fine. Calm. A little tired. There is a plastic band on your wrist that you don't remember putting on. You have to read it to know your name.\n\nThe count was short. Something had to make up the difference. It was taken from you, and you will never know what it was.\n\nBehind you, the new night clerk is signing in.",
+        "outcome_title": "Visitor",
+        "priority": 2
+      },
+      {
+        "condition_expression": {
+          "field": "shift_minutes",
+          "op": ">=",
+          "value": 420
+        },
+        "end_condition_id": "8ed03bb0-b64e-5f18-903a-b00725a90dc2",
+        "is_secret": false,
+        "outcome_tag": "win",
+        "outcome_text": "At six the day crew comes up in the lift. Nobody asks about the night. Someone collects the Log. Someone rules a line for the next one.\n\nThe stairwell reader turns green for you this time. You take the stairs at 6:02. The air outside is cold and clean.\n\nYour phone buzzes once. Halden Staffing: \"Shift confirmed tonight. Desk 9-F. Don't be late.\"\n\nAt the end of the street you look back. On the ninth floor, at the far end, one lamp is on.",
+        "outcome_title": "Don't Be Late",
+        "priority": 3
+      }
+    ],
+    "entities": [
+      {
+        "aliases": [],
+        "attributes_schema": {},
+        "canonical_name": "Tallis & Orr",
+        "description": "The company. Night Records Desk, Floor 9.",
+        "entity_id": "7991ccd2-2262-59af-bbdc-656d298892d8",
+        "entity_type": "organization",
+        "is_player": false,
+        "narrator_instruction": null,
+        "obtainable": null
+      },
+      {
+        "aliases": [],
+        "attributes_schema": {},
+        "canonical_name": "Eva Venn",
+        "description": "The outgoing night clerk. A voice, a voicemail and handwriting after the hand-off.",
+        "entity_id": "5ac32761-5b2e-5af7-b118-dc39d60fb78d",
+        "entity_type": "character",
+        "is_player": false,
+        "narrator_instruction": null,
+        "obtainable": null
+      },
+      {
+        "aliases": [],
+        "attributes_schema": {},
+        "canonical_name": "Margaret Hale",
+        "description": "Around 80, a cardigan, slippers under her coat. A grey folder, a white band on one wrist.",
+        "entity_id": "7c351160-a591-5fd6-b4f2-3a9b109028f2",
+        "entity_type": "character",
+        "is_player": false,
+        "narrator_instruction": null,
+        "obtainable": null
+      },
+      {
+        "aliases": [],
+        "attributes_schema": {},
+        "canonical_name": "Daniel Osei",
+        "description": "In his forties, a work lanyard still round his neck. A grey folder, a white band on one wrist.",
+        "entity_id": "45049054-7308-543d-84dd-672832658812",
+        "entity_type": "character",
+        "is_player": false,
+        "narrator_instruction": null,
+        "obtainable": null
+      },
+      {
+        "aliases": [],
+        "attributes_schema": {},
+        "canonical_name": "Ruth Ellery",
+        "description": "In her sixties, a raincoat that is dry. A grey folder, a white band on one wrist.",
+        "entity_id": "d048f95f-d655-5a04-9882-5662bb20036b",
+        "entity_type": "character",
+        "is_player": false,
+        "narrator_instruction": null,
+        "obtainable": null
+      },
+      {
+        "aliases": [],
+        "attributes_schema": {},
+        "canonical_name": "Mr. Orr",
+        "description": "Never seen. Only the plate on the door and the lamp.",
+        "entity_id": "d8d900cf-cd91-5a50-aa16-cf255a1d0f43",
+        "entity_type": "character",
+        "is_player": false,
+        "narrator_instruction": null,
+        "obtainable": null
+      },
+      {
+        "aliases": [
+          "the lobby",
+          "the elevator",
+          "the poster"
+        ],
+        "attributes_schema": {},
+        "canonical_name": "Elevator lobby",
+        "description": "The elevator and a framed poster, five metres from the desk.",
+        "entity_id": "4ad6e293-48f3-5342-9e7c-06711b7fff0d",
+        "entity_type": "location",
+        "is_player": false,
+        "narrator_instruction": null,
+        "obtainable": null
+      },
+      {
+        "aliases": [
+          "the desk"
+        ],
+        "attributes_schema": {},
+        "canonical_name": "The night desk",
+        "description": "The Log, the clipboard, a rotary phone with an answering machine, the printer tray and a desk drawer.",
+        "entity_id": "9e52bdb0-bec0-5e39-a5d0-00ff000d9c66",
+        "entity_type": "location",
+        "is_player": false,
+        "narrator_instruction": null,
+        "obtainable": null
+      },
+      {
+        "aliases": [
+          "the corridor"
+        ],
+        "attributes_schema": {},
+        "canonical_name": "East corridor",
+        "description": "Thirty metres of grey carpet starting beside the desk.",
+        "entity_id": "546190f3-c1fb-5f0f-8dd8-34dabc338da5",
+        "entity_type": "location",
+        "is_player": false,
+        "narrator_instruction": null,
+        "obtainable": null
+      },
+      {
+        "aliases": [
+          "the alcove",
+          "the vending machine"
+        ],
+        "attributes_schema": {},
+        "canonical_name": "East alcove",
+        "description": "A vending machine whose glass shows a little too much.",
+        "entity_id": "eae92684-0e83-5862-a76d-bf42c6401860",
+        "entity_type": "location",
+        "is_player": false,
+        "narrator_instruction": null,
+        "obtainable": null
+      },
+      {
+        "aliases": [
+          "Records",
+          "the records room",
+          "the filing room"
+        ],
+        "attributes_schema": {},
+        "canonical_name": "Records room",
+        "description": "Numbered filing cabinets and one old wooden drawer unit at the back.",
+        "entity_id": "1eae3995-e6f8-5539-b8b9-5f58324159e3",
+        "entity_type": "location",
+        "is_player": false,
+        "narrator_instruction": null,
+        "obtainable": null
+      },
+      {
+        "aliases": [
+          "Cabin 14",
+          "the cabin"
+        ],
+        "attributes_schema": {
+          "movement_class": {
+            "initial": "approach",
+            "is_narrator_visible": false,
+            "label": null,
+            "max": null,
+            "min": null,
+            "type": "enum"
+          }
+        },
+        "canonical_name": "Outside Cabin 14",
+        "description": "The last five metres of the corridor, in front of Cabin 14.",
+        "entity_id": "ac40b660-1613-57fb-a044-35a71755220d",
+        "entity_type": "location",
+        "is_player": false,
+        "narrator_instruction": null,
+        "obtainable": null
+      },
+      {
+        "aliases": [
+          "Cabin 14",
+          "the cabin"
+        ],
+        "attributes_schema": {
+          "movement_class": {
+            "initial": "interior",
+            "is_narrator_visible": false,
+            "label": null,
+            "max": null,
+            "min": null,
+            "type": "enum"
+          }
+        },
+        "canonical_name": "Cabin 14",
+        "description": "Glass front, lower half frosted, a brass plate: Mr. Orr is in.",
+        "entity_id": "9d06b2a9-5180-5e2a-8675-d0b89e0ac60f",
+        "entity_type": "location",
+        "is_player": false,
+        "narrator_instruction": null,
+        "obtainable": null
+      },
+      {
+        "aliases": [
+          "the print room",
+          "the printer"
+        ],
+        "attributes_schema": {},
+        "canonical_name": "Print room",
+        "description": "The main printer, a supply shelf and a window onto other office towers.",
+        "entity_id": "431b498d-9409-59f9-8cd6-0d636d881640",
+        "entity_type": "location",
+        "is_player": false,
+        "narrator_instruction": null,
+        "obtainable": null
+      },
+      {
+        "aliases": [
+          "the stairwell"
+        ],
+        "attributes_schema": {},
+        "canonical_name": "Stairwell door",
+        "description": "A badge reader, locked until 06:00.",
+        "entity_id": "a2ff8c55-7fd0-56cc-8a20-3b4b2572bc60",
+        "entity_type": "location",
+        "is_player": false,
+        "narrator_instruction": null,
+        "obtainable": null
+      },
+      {
+        "aliases": [],
+        "attributes_schema": {},
+        "canonical_name": "The Log",
+        "description": "A ledger on the desk where visitors sign.",
+        "entity_id": "4e211381-4924-54d1-8abd-52d02d149d2b",
+        "entity_type": "item",
+        "is_player": false,
+        "narrator_instruction": null,
+        "obtainable": null
+      },
+      {
+        "aliases": [],
+        "attributes_schema": {},
+        "canonical_name": "Standing Instructions",
+        "description": "The rule sheet on the clipboard.",
+        "entity_id": "897bc812-8d32-5019-bbf6-f67d5551e5fc",
+        "entity_type": "item",
+        "is_player": false,
+        "narrator_instruction": null,
+        "obtainable": null
+      },
+      {
+        "aliases": [],
+        "attributes_schema": {},
+        "canonical_name": "Rotary desk phone",
+        "description": "Forty line lamps and an answering machine.",
+        "entity_id": "ba4aa030-7f28-5c02-b8c8-8b512d7bffee",
+        "entity_type": "item",
+        "is_player": false,
+        "narrator_instruction": null,
+        "obtainable": null
+      },
+      {
+        "aliases": [],
+        "attributes_schema": {},
+        "canonical_name": "Printer tray",
+        "description": "Where the count slips come out.",
+        "entity_id": "c8e860eb-2ede-5d6b-b837-c04b4535beb6",
+        "entity_type": "item",
+        "is_player": false,
+        "narrator_instruction": null,
+        "obtainable": null
+      }
+    ],
+    "facts": [
+      {
+        "fact_id": "c57bbbf2-64c7-52c3-af65-fa009bf35542",
+        "text": "Eva Venn works at Tallis & Orr."
+      },
+      {
+        "fact_id": "5c78b0ec-641d-5d5c-9919-30ec276893a2",
+        "text": "Cabin 14 part of Tallis & Orr."
+      },
+      {
+        "fact_id": "f61831c2-4376-5f2e-927c-91e262262100",
+        "text": "Stairwell door locked until 06:00."
+      }
+    ],
+    "map_connections": [
+      {
+        "entity_id_a": "4ad6e293-48f3-5342-9e7c-06711b7fff0d",
+        "entity_id_b": "9e52bdb0-bec0-5e39-a5d0-00ff000d9c66",
+        "label": null
+      },
+      {
+        "entity_id_a": "546190f3-c1fb-5f0f-8dd8-34dabc338da5",
+        "entity_id_b": "9e52bdb0-bec0-5e39-a5d0-00ff000d9c66",
+        "label": null
+      },
+      {
+        "entity_id_a": "546190f3-c1fb-5f0f-8dd8-34dabc338da5",
+        "entity_id_b": "eae92684-0e83-5862-a76d-bf42c6401860",
+        "label": null
+      },
+      {
+        "entity_id_a": "1eae3995-e6f8-5539-b8b9-5f58324159e3",
+        "entity_id_b": "546190f3-c1fb-5f0f-8dd8-34dabc338da5",
+        "label": null
+      },
+      {
+        "entity_id_a": "546190f3-c1fb-5f0f-8dd8-34dabc338da5",
+        "entity_id_b": "ac40b660-1613-57fb-a044-35a71755220d",
+        "label": null
+      },
+      {
+        "entity_id_a": "9d06b2a9-5180-5e2a-8675-d0b89e0ac60f",
+        "entity_id_b": "ac40b660-1613-57fb-a044-35a71755220d",
+        "label": null
+      },
+      {
+        "entity_id_a": "431b498d-9409-59f9-8cd6-0d636d881640",
+        "entity_id_b": "9e52bdb0-bec0-5e39-a5d0-00ff000d9c66",
+        "label": null
+      },
+      {
+        "entity_id_a": "9e52bdb0-bec0-5e39-a5d0-00ff000d9c66",
+        "entity_id_b": "a2ff8c55-7fd0-56cc-8a20-3b4b2572bc60",
+        "label": null
+      }
+    ],
+    "map_pins": [
+      {
+        "entity_id": "4ad6e293-48f3-5342-9e7c-06711b7fff0d",
+        "is_start_location": false,
+        "map_id": "095623e8-bdfa-57b2-8df6-7c3788e99418",
+        "x": 0.1,
+        "y": 0.5
+      },
+      {
+        "entity_id": "9e52bdb0-bec0-5e39-a5d0-00ff000d9c66",
+        "is_start_location": true,
+        "map_id": "095623e8-bdfa-57b2-8df6-7c3788e99418",
+        "x": 0.28,
+        "y": 0.5
+      },
+      {
+        "entity_id": "546190f3-c1fb-5f0f-8dd8-34dabc338da5",
+        "is_start_location": false,
+        "map_id": "095623e8-bdfa-57b2-8df6-7c3788e99418",
+        "x": 0.55,
+        "y": 0.3
+      },
+      {
+        "entity_id": "eae92684-0e83-5862-a76d-bf42c6401860",
+        "is_start_location": false,
+        "map_id": "095623e8-bdfa-57b2-8df6-7c3788e99418",
+        "x": 0.5,
+        "y": 0.1
+      },
+      {
+        "entity_id": "1eae3995-e6f8-5539-b8b9-5f58324159e3",
+        "is_start_location": false,
+        "map_id": "095623e8-bdfa-57b2-8df6-7c3788e99418",
+        "x": 0.62,
+        "y": 0.52
+      },
+      {
+        "entity_id": "ac40b660-1613-57fb-a044-35a71755220d",
+        "is_start_location": false,
+        "map_id": "095623e8-bdfa-57b2-8df6-7c3788e99418",
+        "x": 0.82,
+        "y": 0.3
+      },
+      {
+        "entity_id": "9d06b2a9-5180-5e2a-8675-d0b89e0ac60f",
+        "is_start_location": false,
+        "map_id": "095623e8-bdfa-57b2-8df6-7c3788e99418",
+        "x": 0.95,
+        "y": 0.3
+      },
+      {
+        "entity_id": "431b498d-9409-59f9-8cd6-0d636d881640",
+        "is_start_location": false,
+        "map_id": "095623e8-bdfa-57b2-8df6-7c3788e99418",
+        "x": 0.2,
+        "y": 0.82
+      },
+      {
+        "entity_id": "a2ff8c55-7fd0-56cc-8a20-3b4b2572bc60",
+        "is_start_location": false,
+        "map_id": "095623e8-bdfa-57b2-8df6-7c3788e99418",
+        "x": 0.06,
+        "y": 0.82
+      }
+    ],
+    "maps": [
+      {
+        "image_url": null,
+        "map_id": "095623e8-bdfa-57b2-8df6-7c3788e99418",
+        "name": "Floor 9"
+      }
+    ],
+    "mode": "master",
+    "mood_tags": [],
+    "music_tracks": {
+      "combat": "http://localhost:8000/uploads/default-music/combat.mp3",
+      "melancholy": "http://localhost:8000/uploads/default-music/melancholy.mp3",
+      "mystery": "http://localhost:8000/uploads/default-music/mystery.mp3",
+      "peaceful": "http://localhost:8000/uploads/default-music/peaceful.mp3",
+      "tension": "http://localhost:8000/uploads/default-music/tension.mp3",
+      "triumph": "http://localhost:8000/uploads/default-music/triumph.mp3"
+    },
+    "narration_font": null,
+    "narrator_persona": "This is a short horror story about one night shift. It takes place on a single office floor \u2014 Floor 9 of an old company building \u2014 between 11 at night and 6 in the morning. The player is a temp worker on their first night as the records clerk. They were given a job and a sheet of rules. The job is ordinary. The rules are not.\n\nYour role is to narrate that night. Make an ordinary job feel slowly, quietly wrong. The player should always know what job is waiting, and never be sure what is really happening. Every turn should move the night forward.\n\nSpeak to the player as \"you\", in the present tense. Use plain, simple English: short sentences, everyday words, one idea per sentence. Your voice is calm and quiet, like someone describing an ordinary night shift who has started to notice that small things are wrong. Fear comes from small wrong details, never from violence or gore.\n\n**The job.** The player is the night records clerk. They have three duties: sign visitors into the Log with the time the visitor gives, file each visitor's folder in the Records room, and match the printer's count at one, three and five o'clock. Keep the job in view. It is the reason to move around the floor.\n\n**Every turn:**\n1. Start with what happens because of the player's action. If they speak to someone, that person answers. If no one is there, say so in one sentence.\n2. Then add one small new thing the player has not seen yet: a sound, an object, a person, a change. Describe it properly, with one or two concrete details.\n3. End on the new detail, or on something someone says or does. Do not end a turn by listing what the player can do. Never end a turn by describing the room. Do not end two turns in a row with the same kind of sentence.\n\n**Variety.** Describe each thing once, then leave it alone until it changes. The east corridor, the grey carpet, the ceiling speaker, the desk lamp and the grey folder were described already. Mention Cabin 14 and its lamp at most once every three turns, unless the facts or a directive say something changed. Do not start two turns in a row with \"You\". Vary how your sentences begin. If an \"Already Described\" list is given, do not use those words again unless the thing has changed.\n\n**Length.** 100 to 180 words. Up to 250 for a big moment. Shorter is fine when little happened. Never fill space by describing again what you already described.\n\n**The facts are the truth.** The time, the state of the lamp and where the player is come only from the facts you are given each turn. If earlier narration disagrees, the facts win. Never write a clock time yourself; the player has a clock on screen. Only repeat a time a visitor says. Do not make up numbers: no tallies, no counts of visitors or folders. The lamp in Cabin 14 is on unless the facts say it is out. Never say the lamp goes dark, flickers out or that a door is unlocked unless a directive tells you to. Do not use asterisks or any markdown; write plain sentences only.\n\n**People.** Visitors answer when spoken to, in one or two short lines. They answer a little late, flat and polite, as if reading their manners off a card. They never say what they are, where they came from, or where they go. They read their own name off a band on their wrist. Eva Venn speaks only in the opening and on the answering machine.\n\n**Never:**\n- explain why anything happens;\n- say that a rule is true, false, safe or unsafe, or which of two rules to trust;\n- describe what is inside Cabin 14 beyond what you are told;\n- mention numbers like sanity, scores, or anything about how the game works;\n- mention anything that happens on the player's screen or in their own voice. Describe only the room and the objects in it.\n\nIf the player tries to escape, raise an alarm or call for help, the building answers once, in many calm voices: \"Acknowledged.\" Then carry on.\n\n**Floor 9**\n\n**Floor 9.** One long floor, dark except where stated.\n- **Elevator lobby.** The elevator and a framed poster on the wall. The night desk is 5 metres away.\n- **Night desk.** The Log, the rule sheet on a clipboard, a rotary phone with forty small line lamps and an answering machine, the printer tray for count slips, a desk drawer. Desk lamp on.\n- **East corridor.** Starts beside the desk and runs 30 metres. Grey carpet, ceiling lights.\n  - At 10 metres, on the left: the alcove with a vending machine.\n  - At 15 metres, on the right: the Records room. Filing cabinets by number, and one old wooden drawer unit at the back.\n  - At 30 metres, the end: Cabin 14. A glass-fronted office, lower half frosted. A brass plate by the door: \"Mr. Orr is in.\"\n- **Print room.** 10 metres west of the desk. The printer, a supply shelf, a window looking out at other office towers.\n- **Stairwell door.** Beside the elevator. Locked with a badge reader until 6 a.m.\n\nFiling a folder means walking past the alcove. Records is halfway to Cabin 14.\n\n**People tonight**\n\n- **Eva Venn.** The clerk before you. Grey coat, quick and tired. Her handwriting is fast and leans forward.\n- **Visitors.** Three tonight. Ordinary clothes, a grey folder each, a white plastic band on one wrist. They give the time for the Log without being asked. Their signatures stand upright, every letter separate.\n  1. Margaret Hale, around 80, a cardigan, slippers under her coat.\n  2. Daniel Osei, in his forties, still wearing a work lanyard.\n  3. Ruth Ellery, in her sixties, a raincoat that is dry.\n- **Mr. Orr.** Never seen. Only the plate on the door and the lamp.",
+    "narrator_voice_name": null,
+    "opening_scene": "It is 10:58 on the last night of the year. The elevator opens on Floor 9 before you press the button.\n\nA woman in a grey coat is waiting at the night desk. \"Alex? I'm Eva Venn. You have three jobs tonight. Listen, because I'm leaving.\"\n\nShe taps a big book on the desk. \"This is the Log. When a visitor comes, they sign it. Ask them the time and write down what they say, even if the clock says something else.\"\n\nShe points to a grey folder in the tray. \"Visitors leave folders. Take each one to the Records room and file it by the number on the tab. That one's left over from me.\"\n\nShe holds up a printed slip with a number circled at the bottom. \"At one, three and five, the printer gives you a count. It should match the Log. It never does. It's always off by one. Write the difference on the form and sign it.\"\n\n\"What happens if I don't?\"\n\n\"Then the count is wrong at six, and someone comes up to fix it. You don't want that.\" She puts a typed sheet on top. \"These are the rules. Read them now.\"\n\nShe glances up at a small speaker above the desk, playing something soft. \"And that music. It won't stop. I've tried everything. Just leave it.\"\n\nShe walks to the stairs, even though the elevator is still open. \"Don't be late tomorrow.\"\n\nThe floor is dark. Only your desk lamp is on, and one other light: at the end of the long east corridor, a glass office called Cabin 14. A small brass sign by its door reads Mr. Orr is in.",
+    "rule_checks": [
+      {
+        "check_id": "f94931ea-54eb-5b5e-886d-f9fe553df3a8",
+        "kind": "time_entry",
+        "label": "Visitor log 1",
+        "narrator_instruction_template": "The Log outcome is '{result}'. If 'rejected': the visitor looks at the clerk for a moment, then turns back to the elevator without a word. Otherwise describe the clerk writing a time and the visitor watching the pen. Do not say whether the entry was right.",
+        "params": {
+          "clock_path": "shift_minutes",
+          "clock_start_minute_of_day": 1380,
+          "enter_label": "Write it in the Log",
+          "other": {
+            "mutations": [
+              {
+                "op": "decrement",
+                "path": "sanity",
+                "value": 10
+              },
+              {
+                "op": "increment",
+                "path": "violations_count",
+                "value": 1
+              },
+              {
+                "op": "set",
+                "path": "rule_status.r1",
+                "value": "violated"
+              },
+              {
+                "op": "increment",
+                "path": "count.wrong_entries",
+                "value": 1
+              },
+              {
+                "op": "set",
+                "path": "visit.pending",
+                "value": ""
+              }
+            ],
+            "result": "other"
+          },
+          "prompt": "The visitor waits for you to write in the Log.",
+          "reject": {
+            "mutations": [
+              {
+                "op": "increment",
+                "path": "count.wrong_entries",
+                "value": 1
+              },
+              {
+                "op": "set",
+                "path": "visit.pending",
+                "value": ""
+              }
+            ],
+            "result": "rejected"
+          },
+          "reject_label": "Turn them away",
+          "timeout_result": "none",
+          "told": {
+            "mutations": [
+              {
+                "op": "set",
+                "path": "visit.pending",
+                "value": ""
+              }
+            ],
+            "result": "told"
+          },
+          "told_minute_of_day": 1411,
+          "wall": {
+            "mutations": [
+              {
+                "op": "decrement",
+                "path": "sanity",
+                "value": 10
+              },
+              {
+                "op": "increment",
+                "path": "violations_count",
+                "value": 1
+              },
+              {
+                "op": "set",
+                "path": "rule_status.r1",
+                "value": "violated"
+              },
+              {
+                "op": "increment",
+                "path": "count.wrong_entries",
+                "value": 1
+              },
+              {
+                "op": "set",
+                "path": "visit.pending",
+                "value": ""
+              }
+            ],
+            "result": "wall"
+          },
+          "window_ms": 45000
+        },
+        "priority": 0,
+        "result_path": "visit.result",
+        "trigger_condition_expression": {
+          "field": "visit.pending",
+          "op": "==",
+          "value": "v1"
+        }
+      },
+      {
+        "check_id": "f9a7f2b1-30ac-5237-98b1-a301c0dd3f1c",
+        "kind": "time_entry",
+        "label": "Visitor log 2",
+        "narrator_instruction_template": "The Log outcome is '{result}'. If 'rejected': the visitor looks at the clerk for a moment, then turns back to the elevator without a word. Otherwise describe the clerk writing a time and the visitor watching the pen. Do not say whether the entry was right.",
+        "params": {
+          "clock_path": "shift_minutes",
+          "clock_start_minute_of_day": 1380,
+          "enter_label": "Write it in the Log",
+          "other": {
+            "mutations": [
+              {
+                "op": "decrement",
+                "path": "sanity",
+                "value": 10
+              },
+              {
+                "op": "increment",
+                "path": "violations_count",
+                "value": 1
+              },
+              {
+                "op": "set",
+                "path": "rule_status.r1",
+                "value": "violated"
+              },
+              {
+                "op": "increment",
+                "path": "count.wrong_entries",
+                "value": 1
+              },
+              {
+                "op": "set",
+                "path": "visit.pending",
+                "value": ""
+              }
+            ],
+            "result": "other"
+          },
+          "prompt": "The visitor waits for you to write in the Log.",
+          "reject": {
+            "mutations": [
+              {
+                "op": "increment",
+                "path": "count.wrong_entries",
+                "value": 1
+              },
+              {
+                "op": "set",
+                "path": "visit.pending",
+                "value": ""
+              }
+            ],
+            "result": "rejected"
+          },
+          "reject_label": "Turn them away",
+          "timeout_result": "none",
+          "told": {
+            "mutations": [
+              {
+                "op": "set",
+                "path": "visit.pending",
+                "value": ""
+              }
+            ],
+            "result": "told"
+          },
+          "told_minute_of_day": 82,
+          "wall": {
+            "mutations": [
+              {
+                "op": "decrement",
+                "path": "sanity",
+                "value": 10
+              },
+              {
+                "op": "increment",
+                "path": "violations_count",
+                "value": 1
+              },
+              {
+                "op": "set",
+                "path": "rule_status.r1",
+                "value": "violated"
+              },
+              {
+                "op": "increment",
+                "path": "count.wrong_entries",
+                "value": 1
+              },
+              {
+                "op": "set",
+                "path": "visit.pending",
+                "value": ""
+              }
+            ],
+            "result": "wall"
+          },
+          "window_ms": 45000
+        },
+        "priority": 1,
+        "result_path": "visit.result",
+        "trigger_condition_expression": {
+          "field": "visit.pending",
+          "op": "==",
+          "value": "v2"
+        }
+      },
+      {
+        "check_id": "1218f406-3bc8-5c6a-84fb-6b2bf66d3b95",
+        "kind": "time_entry",
+        "label": "Visitor log 3",
+        "narrator_instruction_template": "The Log outcome is '{result}'. If 'rejected': the visitor looks at the clerk for a moment, then turns back to the elevator without a word. Otherwise describe the clerk writing a time and the visitor watching the pen. Do not say whether the entry was right.",
+        "params": {
+          "clock_path": "shift_minutes",
+          "clock_start_minute_of_day": 1380,
+          "enter_label": "Write it in the Log",
+          "other": {
+            "mutations": [
+              {
+                "op": "decrement",
+                "path": "sanity",
+                "value": 10
+              },
+              {
+                "op": "increment",
+                "path": "violations_count",
+                "value": 1
+              },
+              {
+                "op": "set",
+                "path": "rule_status.r1",
+                "value": "violated"
+              },
+              {
+                "op": "increment",
+                "path": "count.wrong_entries",
+                "value": 1
+              },
+              {
+                "op": "set",
+                "path": "visit.pending",
+                "value": ""
+              }
+            ],
+            "result": "other"
+          },
+          "prompt": "The visitor waits for you to write in the Log.",
+          "reject": {
+            "mutations": [
+              {
+                "op": "increment",
+                "path": "count.wrong_entries",
+                "value": 1
+              },
+              {
+                "op": "set",
+                "path": "visit.pending",
+                "value": ""
+              }
+            ],
+            "result": "rejected"
+          },
+          "reject_label": "Turn them away",
+          "timeout_result": "none",
+          "told": {
+            "mutations": [
+              {
+                "op": "set",
+                "path": "visit.pending",
+                "value": ""
+              }
+            ],
+            "result": "told"
+          },
+          "told_minute_of_day": 232,
+          "wall": {
+            "mutations": [
+              {
+                "op": "decrement",
+                "path": "sanity",
+                "value": 10
+              },
+              {
+                "op": "increment",
+                "path": "violations_count",
+                "value": 1
+              },
+              {
+                "op": "set",
+                "path": "rule_status.r1",
+                "value": "violated"
+              },
+              {
+                "op": "increment",
+                "path": "count.wrong_entries",
+                "value": 1
+              },
+              {
+                "op": "set",
+                "path": "visit.pending",
+                "value": ""
+              }
+            ],
+            "result": "wall"
+          },
+          "window_ms": 45000
+        },
+        "priority": 2,
+        "result_path": "visit.result",
+        "trigger_condition_expression": {
+          "field": "visit.pending",
+          "op": "==",
+          "value": "v3"
+        }
+      },
+      {
+        "check_id": "c0f76db5-5ae7-52b5-a1b3-da50de1eb513",
+        "kind": "timed_choice",
+        "label": "Count 1",
+        "narrator_instruction_template": "The count outcome is '{result}'. If 'signed': The clerk reads the tally and compares it with the Log. The difference is {state:count.difference}. Describe the clerk writing {state:count.difference} on the form and signing it, plainly, like any form. Do not say what the difference means. Otherwise: The clerk leaves the count where it is. Describe the slip in the tray, face up, and the form unsigned beside it. Nothing else happens yet.",
+        "params": {
+          "hidden_result": null,
+          "max_reopens": 3,
+          "options": [
+            {
+              "id": "sign",
+              "label": "Sign the count",
+              "mutations": [],
+              "reopens": false,
+              "result": "signed"
+            },
+            {
+              "id": "leave",
+              "label": "Leave it",
+              "mutations": [
+                {
+                  "op": "increment",
+                  "path": "count.unsigned",
+                  "value": 1
+                }
+              ],
+              "reopens": false,
+              "result": "left"
+            }
+          ],
+          "prompt": "The printer has finished the count.",
+          "timeout_result": "timeout",
+          "window_ms": 60000
+        },
+        "priority": 3,
+        "result_path": "count.c1",
+        "trigger_condition_expression": {
+          "field": "count.c1",
+          "op": "==",
+          "value": "pending"
+        }
+      },
+      {
+        "check_id": "65738afc-92e0-5577-ab36-d3dff0283660",
+        "kind": "timed_choice",
+        "label": "Count 2",
+        "narrator_instruction_template": "The count outcome is '{result}'. If 'signed': The clerk reads the tally and compares it with the Log. The difference is {state:count.difference}. Describe the clerk writing {state:count.difference} on the form and signing it, plainly, like any form. Do not say what the difference means. Otherwise: The clerk leaves the count where it is. Describe the slip in the tray, face up, and the form unsigned beside it. Nothing else happens yet.",
+        "params": {
+          "hidden_result": null,
+          "max_reopens": 3,
+          "options": [
+            {
+              "id": "read",
+              "label": "Read it and sign",
+              "mutations": [
+                {
+                  "op": "decrement",
+                  "path": "sanity",
+                  "value": 10
+                },
+                {
+                  "op": "increment",
+                  "path": "violations_count",
+                  "value": 1
+                },
+                {
+                  "op": "set",
+                  "path": "rule_status.r7",
+                  "value": "violated"
+                },
+                {
+                  "op": "increment",
+                  "path": "count.reads_after_two",
+                  "value": 1
+                }
+              ],
+              "reopens": false,
+              "result": "signed"
+            },
+            {
+              "id": "leave",
+              "label": "Leave it in the tray",
+              "mutations": [
+                {
+                  "op": "increment",
+                  "path": "count.unsigned",
+                  "value": 1
+                }
+              ],
+              "reopens": false,
+              "result": "left"
+            }
+          ],
+          "prompt": "The count is face up in the printer tray.",
+          "timeout_result": "timeout",
+          "window_ms": 60000
+        },
+        "priority": 4,
+        "result_path": "count.c2",
+        "trigger_condition_expression": {
+          "field": "count.c2",
+          "op": "==",
+          "value": "pending"
+        }
+      },
+      {
+        "check_id": "bcf1d518-96d9-55ee-9f73-8f453a8de287",
+        "kind": "timed_choice",
+        "label": "Count 3",
+        "narrator_instruction_template": "The count outcome is '{result}'. If 'signed': The clerk reads the tally and compares it with the Log. The difference is {state:count.difference}. Describe the clerk writing {state:count.difference} on the form and signing it, plainly, like any form. Do not say what the difference means. Otherwise: The clerk leaves the count where it is. Describe the slip in the tray, face up, and the form unsigned beside it. Nothing else happens yet.",
+        "params": {
+          "hidden_result": null,
+          "max_reopens": 3,
+          "options": [
+            {
+              "id": "read",
+              "label": "Read it and sign",
+              "mutations": [
+                {
+                  "op": "decrement",
+                  "path": "sanity",
+                  "value": 10
+                },
+                {
+                  "op": "increment",
+                  "path": "violations_count",
+                  "value": 1
+                },
+                {
+                  "op": "set",
+                  "path": "rule_status.r7",
+                  "value": "violated"
+                },
+                {
+                  "op": "increment",
+                  "path": "count.reads_after_two",
+                  "value": 1
+                }
+              ],
+              "reopens": false,
+              "result": "signed"
+            },
+            {
+              "id": "leave",
+              "label": "Leave it in the tray",
+              "mutations": [
+                {
+                  "op": "increment",
+                  "path": "count.unsigned",
+                  "value": 1
+                }
+              ],
+              "reopens": false,
+              "result": "left"
+            }
+          ],
+          "prompt": "The count is face up in the printer tray.",
+          "timeout_result": "timeout",
+          "window_ms": 60000
+        },
+        "priority": 5,
+        "result_path": "count.c3",
+        "trigger_condition_expression": {
+          "field": "count.c3",
+          "op": "==",
+          "value": "pending"
+        }
+      },
+      {
+        "check_id": "de8946d4-9834-58fe-aa54-4c9e08c33dfb",
+        "kind": "timed_choice",
+        "label": "Lamp",
+        "narrator_instruction_template": null,
+        "params": {
+          "hidden_result": "moved",
+          "max_reopens": 3,
+          "options": [
+            {
+              "id": "hold",
+              "label": "Hold still",
+              "mutations": [],
+              "reopens": false,
+              "result": "held_still"
+            },
+            {
+              "id": "move",
+              "label": "Move away",
+              "mutations": [],
+              "reopens": false,
+              "result": "moved"
+            },
+            {
+              "id": "enter",
+              "label": "Go in",
+              "mutations": [],
+              "reopens": false,
+              "result": "entered"
+            }
+          ],
+          "prompt": "The lamp in Cabin 14 has gone out.",
+          "timeout_result": "timeout",
+          "window_ms": 12000
+        },
+        "priority": 6,
+        "result_path": "check.lamp",
+        "trigger_condition_expression": {
+          "field": "check.lamp",
+          "op": "==",
+          "value": "pending"
+        }
+      },
+      {
+        "check_id": "056d4b5f-e411-59f6-a89a-792099370596",
+        "kind": "timed_choice",
+        "label": "Phone",
+        "narrator_instruction_template": null,
+        "params": {
+          "hidden_result": null,
+          "max_reopens": 3,
+          "options": [
+            {
+              "id": "let_ring",
+              "label": "Let it ring",
+              "mutations": [
+                {
+                  "op": "set",
+                  "path": "rule_status.r3",
+                  "value": "intact"
+                }
+              ],
+              "reopens": false,
+              "result": "let_ring"
+            },
+            {
+              "id": "pick_up",
+              "label": "Pick up",
+              "mutations": [
+                {
+                  "op": "decrement",
+                  "path": "sanity",
+                  "value": 15
+                },
+                {
+                  "op": "increment",
+                  "path": "violations_count",
+                  "value": 1
+                },
+                {
+                  "op": "set",
+                  "path": "rule_status.r3",
+                  "value": "violated"
+                },
+                {
+                  "op": "set",
+                  "path": "flags.line14_lit",
+                  "value": true
+                }
+              ],
+              "reopens": false,
+              "result": "picked_up"
+            },
+            {
+              "id": "unplug",
+              "label": "Pull the phone from the wall",
+              "mutations": [
+                {
+                  "op": "decrement",
+                  "path": "sanity",
+                  "value": 2
+                },
+                {
+                  "op": "increment",
+                  "path": "flags.escalations",
+                  "value": 1
+                }
+              ],
+              "reopens": false,
+              "result": "unplugged"
+            }
+          ],
+          "prompt": "The desk phone rings.",
+          "timeout_result": "timeout",
+          "window_ms": 8000
+        },
+        "priority": 7,
+        "result_path": "check.phone",
+        "trigger_condition_expression": {
+          "field": "check.phone",
+          "op": "==",
+          "value": "pending"
+        }
+      },
+      {
+        "check_id": "47568361-8546-54c0-91a6-14af3ac13b12",
+        "kind": "timed_choice",
+        "label": "Voicemail",
+        "narrator_instruction_template": null,
+        "params": {
+          "hidden_result": null,
+          "max_reopens": 3,
+          "options": [
+            {
+              "id": "play",
+              "label": "Play the message",
+              "mutations": [
+                {
+                  "op": "set",
+                  "path": "rule_status.r8",
+                  "value": "intact"
+                }
+              ],
+              "reopens": false,
+              "result": "yes"
+            },
+            {
+              "id": "leave",
+              "label": "Leave it",
+              "mutations": [],
+              "reopens": false,
+              "result": "no"
+            }
+          ],
+          "prompt": "The answering machine light is blinking.",
+          "timeout_result": "no",
+          "window_ms": 120000
+        },
+        "priority": 8,
+        "result_path": "check.voicemail",
+        "trigger_condition_expression": {
+          "field": "check.voicemail",
+          "op": "==",
+          "value": "pending"
+        }
+      },
+      {
+        "check_id": "ab80a2af-6680-527b-b438-25f730ba2e65",
+        "kind": "timed_choice",
+        "label": "Drawer",
+        "narrator_instruction_template": null,
+        "params": {
+          "hidden_result": null,
+          "max_reopens": 3,
+          "options": [
+            {
+              "id": "open",
+              "label": "Open it",
+              "mutations": [],
+              "reopens": false,
+              "result": "yes"
+            },
+            {
+              "id": "leave",
+              "label": "Leave it",
+              "mutations": [],
+              "reopens": false,
+              "result": "no"
+            }
+          ],
+          "prompt": "The desk drawer is open a little.",
+          "timeout_result": "no",
+          "window_ms": 120000
+        },
+        "priority": 9,
+        "result_path": "check.drawer",
+        "trigger_condition_expression": {
+          "field": "check.drawer",
+          "op": "==",
+          "value": "pending"
+        }
+      }
+    ],
+    "rule_invariants": [
+      {
+        "applies_to": "player",
+        "invariant_expression": {
+          "field": "sanity",
+          "op": "<=",
+          "value": 100
+        },
+        "label": "Sanity cap",
+        "narrator_text": "Composure cannot be restored beyond what it was at the start of the night."
+      },
+      {
+        "applies_to": "global",
+        "invariant_expression": {
+          "field": "shift_minutes",
+          "op": "<=",
+          "value": 480
+        },
+        "label": "Clock bound",
+        "narrator_text": "The night ends at dawn."
+      },
+      {
+        "applies_to": "global",
+        "invariant_expression": {
+          "field": "count.unsigned",
+          "op": "<=",
+          "value": 3
+        },
+        "label": "Unsigned counts",
+        "narrator_text": "There are only three counts in a night."
+      }
+    ],
+    "scenario_conditions": [
+      {
+        "condition_expression": {
+          "AND": {
+            "AND": {
+              "field": "visit.present",
+              "op": "==",
+              "value": ""
+            },
+            "field": "visit.pending",
+            "op": "==",
+            "value": ""
+          },
+          "field": "shift_minutes",
+          "op": ">=",
+          "value": 40
+        },
+        "condition_id": "2ff6d7a5-37e5-52e6-8181-5bd4f1fe9498",
+        "cut_ambient": false,
+        "is_one_shot": true,
+        "label": "E01 Visitor 1 arrives",
+        "metadata": {},
+        "narrator_instruction": "A visitor arrives at the night desk this turn, whatever the clerk is doing. The elevator chimes. Describe Margaret Hale briefly: an old woman in a cardigan, slippers under her coat, a grey folder, a white band on one wrist. If the clerk is elsewhere, the chime and a polite voice carry to them. The visitor says the time for the Log, in quotation marks, exactly: \"Eleven thirty-one\". Then they say: \"I'm sorry it's so late. They said someone would be here.\"",
+        "sensory_cue": "elevator_chime",
+        "silence_duration_ms": 0,
+        "state_mutation": null,
+        "state_mutations": [
+          {
+            "op": "set",
+            "path": "visit.pending",
+            "value": "v1"
+          },
+          {
+            "op": "set",
+            "path": "visit.present",
+            "value": "v1"
+          },
+          {
+            "op": "set",
+            "path": "visit.turns_present",
+            "value": 0
+          }
+        ]
+      },
+      {
+        "condition_expression": {
+          "AND": {
+            "AND": {
+              "field": "shift_minutes",
+              "op": "<",
+              "value": 140
+            },
+            "field": "current_location_id",
+            "op": "==",
+            "value": "9e52bdb0-bec0-5e39-a5d0-00ff000d9c66"
+          },
+          "field": "shift_minutes",
+          "op": ">=",
+          "value": 80
+        },
+        "condition_id": "77ef5733-4cbd-5874-bd89-a8e958b886d3",
+        "cut_ambient": true,
+        "is_one_shot": true,
+        "label": "E02 Drawer prompt",
+        "metadata": {},
+        "narrator_instruction": "",
+        "sensory_cue": null,
+        "silence_duration_ms": 800,
+        "state_mutation": null,
+        "state_mutations": [
+          {
+            "op": "set",
+            "path": "check.drawer",
+            "value": "pending"
+          }
+        ]
+      },
+      {
+        "condition_expression": {
+          "field": "shift_minutes",
+          "op": ">=",
+          "value": 120
+        },
+        "condition_id": "18d71c0a-4662-5823-a1a9-5e5d61593e2a",
+        "cut_ambient": false,
+        "is_one_shot": true,
+        "label": "E03 Count 1",
+        "metadata": {},
+        "narrator_instruction": "",
+        "sensory_cue": "paper_rustle",
+        "silence_duration_ms": 0,
+        "state_mutation": null,
+        "state_mutations": [
+          {
+            "op": "set",
+            "path": "count.c1",
+            "value": "pending"
+          }
+        ]
+      },
+      {
+        "condition_expression": {
+          "AND": {
+            "field": "shift_minutes",
+            "op": ">=",
+            "value": 0
+          },
+          "field": "visit.result",
+          "op": "in",
+          "value": [
+            "wall",
+            "other",
+            "rejected",
+            "none"
+          ]
+        },
+        "condition_id": "42f18616-9c08-54c3-9549-93d455d15e4f",
+        "cut_ambient": true,
+        "is_one_shot": false,
+        "label": "E04 Count difference",
+        "metadata": {},
+        "narrator_instruction": "",
+        "sensory_cue": null,
+        "silence_duration_ms": 800,
+        "state_mutation": null,
+        "state_mutations": [
+          {
+            "op": "increment",
+            "path": "count.difference",
+            "value": 1
+          }
+        ]
+      },
+      {
+        "condition_expression": {
+          "AND": {
+            "field": "seed.false_rule",
+            "op": "==",
+            "value": "r4"
+          },
+          "field": "shift_minutes",
+          "op": ">=",
+          "value": 140
+        },
+        "condition_id": "7fa44913-470d-5271-a1cc-043a6b52db7e",
+        "cut_ambient": false,
+        "is_one_shot": true,
+        "label": "E05 Rule 6 appears, seed r4",
+        "metadata": {},
+        "narrator_instruction": "Beneath rule 4 on the sheet, there is a line in blue ink that was not there before. Quote it exactly. The cabin lamp buzzes once.",
+        "sensory_cue": "lamp_click",
+        "silence_duration_ms": 0,
+        "state_mutation": null,
+        "state_mutations": [
+          {
+            "op": "set",
+            "path": "rule_status.r6",
+            "value": "intact"
+          },
+          {
+            "op": "set",
+            "path": "tension_tier",
+            "value": "tense"
+          }
+        ]
+      },
+      {
+        "condition_expression": {
+          "AND": {
+            "field": "seed.false_rule",
+            "op": "==",
+            "value": "r6"
+          },
+          "field": "shift_minutes",
+          "op": ">=",
+          "value": 140
+        },
+        "condition_id": "a7bb523a-42c0-5e0e-a6ab-bae06436ab1d",
+        "cut_ambient": false,
+        "is_one_shot": true,
+        "label": "E06 Rule 6 appears, seed r6",
+        "metadata": {},
+        "narrator_instruction": "Beneath rule 4 on the sheet, there is a line in blue ink that was not there before. Quote it exactly. The cabin lamp buzzes once.",
+        "sensory_cue": "lamp_click",
+        "silence_duration_ms": 0,
+        "state_mutation": null,
+        "state_mutations": [
+          {
+            "op": "set",
+            "path": "rule_status.r6_block",
+            "value": "intact"
+          },
+          {
+            "op": "set",
+            "path": "tension_tier",
+            "value": "tense"
+          }
+        ]
+      },
+      {
+        "condition_expression": {
+          "AND": {
+            "AND": {
+              "field": "visit.present",
+              "op": "==",
+              "value": ""
+            },
+            "field": "visit.pending",
+            "op": "==",
+            "value": ""
+          },
+          "field": "shift_minutes",
+          "op": ">=",
+          "value": 160
+        },
+        "condition_id": "45d42d28-4dce-5502-80f7-4677986a7e6d",
+        "cut_ambient": false,
+        "is_one_shot": true,
+        "label": "E07 Visitor 2 arrives",
+        "metadata": {},
+        "narrator_instruction": "A visitor arrives at the night desk this turn, whatever the clerk is doing. The elevator chimes. Describe Daniel Osei briefly: a man in his forties, a work lanyard still round his neck, a grey folder, a white band on one wrist. If the clerk is elsewhere, the chime and a polite voice carry to them. The visitor says the time for the Log, in quotation marks, exactly: \"One twenty-two\". Then they say: \"I wasn't sure which floor. It's this one, isn't it.\"",
+        "sensory_cue": "elevator_chime",
+        "silence_duration_ms": 0,
+        "state_mutation": null,
+        "state_mutations": [
+          {
+            "op": "set",
+            "path": "visit.pending",
+            "value": "v2"
+          },
+          {
+            "op": "set",
+            "path": "visit.present",
+            "value": "v2"
+          },
+          {
+            "op": "set",
+            "path": "visit.turns_present",
+            "value": 0
+          }
+        ]
+      },
+      {
+        "condition_expression": {
+          "field": "shift_minutes",
+          "op": ">=",
+          "value": 180
+        },
+        "condition_id": "fd46cb1c-11a9-5b03-ad0c-71dfc784d7b7",
+        "cut_ambient": false,
+        "is_one_shot": true,
+        "label": "E08 Printer prints rule 7",
+        "metadata": {},
+        "narrator_instruction": "The printer wakes on its own and prints one page in the same typeface as the sheet. It is rule 7. Quote it exactly.",
+        "sensory_cue": "paper_rustle",
+        "silence_duration_ms": 0,
+        "state_mutation": null,
+        "state_mutations": [
+          {
+            "op": "set",
+            "path": "rule_status.r7",
+            "value": "intact"
+          }
+        ]
+      },
+      {
+        "condition_expression": {
+          "field": "shift_minutes",
+          "op": ">=",
+          "value": 200
+        },
+        "condition_id": "10031eb1-bc3e-5ed0-8776-46908fbc588c",
+        "cut_ambient": true,
+        "is_one_shot": true,
+        "label": "E09 Lamp out",
+        "metadata": {},
+        "narrator_instruction": "The lamp in Cabin 14 goes out. The corridor is dark to the end. Give the clerk a few seconds. Do not offer options in narration.",
+        "sensory_cue": "lamp_click",
+        "silence_duration_ms": 400,
+        "state_mutation": null,
+        "state_mutations": [
+          {
+            "op": "set",
+            "path": "cabin.lamp",
+            "value": "out"
+          },
+          {
+            "op": "set",
+            "path": "check.lamp",
+            "value": "pending"
+          }
+        ]
+      },
+      {
+        "condition_expression": {
+          "field": "shift_minutes",
+          "op": ">=",
+          "value": 240
+        },
+        "condition_id": "7f6f3b47-dc26-5ff5-9708-a12568eb7373",
+        "cut_ambient": false,
+        "is_one_shot": true,
+        "label": "E10 Count 2",
+        "metadata": {},
+        "narrator_instruction": "",
+        "sensory_cue": "paper_rustle",
+        "silence_duration_ms": 0,
+        "state_mutation": null,
+        "state_mutations": [
+          {
+            "op": "set",
+            "path": "count.c2",
+            "value": "pending"
+          },
+          {
+            "op": "set",
+            "path": "tension_tier",
+            "value": "dread"
+          }
+        ]
+      },
+      {
+        "condition_expression": {
+          "field": "shift_minutes",
+          "op": ">=",
+          "value": 260
+        },
+        "condition_id": "5b66d48a-885e-5e8c-864e-eaccadd85034",
+        "cut_ambient": true,
+        "is_one_shot": true,
+        "label": "E11 Phone rings",
+        "metadata": {},
+        "narrator_instruction": "The desk phone rings. The lamp for line 14 is lit. The answering machine waits.",
+        "sensory_cue": "phone_ring",
+        "silence_duration_ms": 800,
+        "state_mutation": null,
+        "state_mutations": [
+          {
+            "op": "set",
+            "path": "check.phone",
+            "value": "pending"
+          },
+          {
+            "op": "set",
+            "path": "rule_status.r3",
+            "value": "active_threat"
+          }
+        ]
+      },
+      {
+        "condition_expression": {
+          "field": "shift_minutes",
+          "op": ">=",
+          "value": 280
+        },
+        "condition_id": "a7102764-9e87-5fe8-8799-ef2c716d157d",
+        "cut_ambient": true,
+        "is_one_shot": true,
+        "label": "E12 Voicemail waiting",
+        "metadata": {},
+        "narrator_instruction": "",
+        "sensory_cue": null,
+        "silence_duration_ms": 800,
+        "state_mutation": null,
+        "state_mutations": [
+          {
+            "op": "set",
+            "path": "check.voicemail",
+            "value": "pending"
+          }
+        ]
+      },
+      {
+        "condition_expression": {
+          "AND": {
+            "AND": {
+              "field": "visit.present",
+              "op": "==",
+              "value": ""
+            },
+            "field": "visit.pending",
+            "op": "==",
+            "value": ""
+          },
+          "field": "shift_minutes",
+          "op": ">=",
+          "value": 300
+        },
+        "condition_id": "70e66454-bf8f-5c60-a433-366b57168950",
+        "cut_ambient": false,
+        "is_one_shot": true,
+        "label": "E13 Visitor 3 arrives",
+        "metadata": {},
+        "narrator_instruction": "A visitor arrives at the night desk this turn, whatever the clerk is doing. The elevator chimes. Describe Ruth Ellery briefly: a woman in her sixties in a raincoat, perfectly dry, a grey folder, a white band on one wrist. If the clerk is elsewhere, the chime and a polite voice carry to them. The visitor says the time for the Log, in quotation marks, exactly: \"Three fifty-two. Tomorrow.\". Then they say: \"Is it all right to come early?\"",
+        "sensory_cue": "elevator_chime",
+        "silence_duration_ms": 0,
+        "state_mutation": null,
+        "state_mutations": [
+          {
+            "op": "set",
+            "path": "visit.pending",
+            "value": "v3"
+          },
+          {
+            "op": "set",
+            "path": "visit.present",
+            "value": "v3"
+          },
+          {
+            "op": "set",
+            "path": "visit.turns_present",
+            "value": 0
+          }
+        ]
+      },
+      {
+        "condition_expression": {
+          "field": "shift_minutes",
+          "op": ">=",
+          "value": 320
+        },
+        "condition_id": "23c7ff15-266f-5ee6-8f2b-4f17bcef261d",
+        "cut_ambient": true,
+        "is_one_shot": true,
+        "label": "E14 Stairwell voice",
+        "metadata": {},
+        "narrator_instruction": "Eva's voice comes from behind the locked stairwell door: 'Hello? Is someone there?' then 'It's Eva. Could you help me with the door? It's stuck.' then 'You can open it from your side. Please.'",
+        "sensory_cue": "sudden_silence",
+        "silence_duration_ms": 800,
+        "state_mutation": null,
+        "state_mutations": [
+          {
+            "op": "set",
+            "path": "events.stairwell",
+            "value": true
+          }
+        ]
+      },
+      {
+        "condition_expression": {
+          "field": "shift_minutes",
+          "op": ">=",
+          "value": 360
+        },
+        "condition_id": "fd6831f1-6312-5986-9035-fa1ba2ba7c2f",
+        "cut_ambient": false,
+        "is_one_shot": true,
+        "label": "E15 Count 3",
+        "metadata": {},
+        "narrator_instruction": "",
+        "sensory_cue": "paper_rustle",
+        "silence_duration_ms": 0,
+        "state_mutation": null,
+        "state_mutations": [
+          {
+            "op": "set",
+            "path": "count.c3",
+            "value": "pending"
+          }
+        ]
+      },
+      {
+        "condition_expression": {
+          "field": "shift_minutes",
+          "op": ">=",
+          "value": 380
+        },
+        "condition_id": "85e22789-d6ef-5eb1-8485-c2c24c5529b7",
+        "cut_ambient": false,
+        "is_one_shot": true,
+        "label": "E16 Elevator empty",
+        "metadata": {},
+        "narrator_instruction": "The elevator arrives. Nobody gets out. The doors stay open for a long time, then close.",
+        "sensory_cue": "elevator_chime",
+        "silence_duration_ms": 0,
+        "state_mutation": null,
+        "state_mutations": [
+          {
+            "op": "set",
+            "path": "events.elevator",
+            "value": true
+          }
+        ]
+      },
+      {
+        "condition_expression": {
+          "AND": {
+            "AND": {
+              "field": "shift_minutes",
+              "op": ">=",
+              "value": 0
+            },
+            "field": "tension_tier",
+            "op": "!=",
+            "value": "breaking"
+          },
+          "field": "sanity",
+          "op": "<",
+          "value": 25
+        },
+        "condition_id": "b4f0ee56-ddb6-5928-8d4f-47cd0a117b9f",
+        "cut_ambient": true,
+        "is_one_shot": false,
+        "label": "E17 Tension breaking",
+        "metadata": {},
+        "narrator_instruction": "",
+        "sensory_cue": null,
+        "silence_duration_ms": 800,
+        "state_mutation": null,
+        "state_mutations": [
+          {
+            "op": "set",
+            "path": "tension_tier",
+            "value": "breaking"
+          }
+        ]
+      },
+      {
+        "condition_expression": {
+          "AND": {
+            "AND": {
+              "field": "shift_minutes",
+              "op": ">=",
+              "value": 0
+            },
+            "field": "seed.false_rule",
+            "op": "==",
+            "value": "r6"
+          },
+          "field": "check.lamp",
+          "op": "in",
+          "value": [
+            "held_still",
+            "timeout"
+          ]
+        },
+        "condition_id": "9001d7f8-5531-5d68-b021-885d0ddf8be1",
+        "cut_ambient": true,
+        "is_one_shot": false,
+        "label": "H01 Lamp held, R4 true",
+        "metadata": {},
+        "narrator_instruction": "The clerk stays where they are. After a while the lamp comes back on.",
+        "sensory_cue": null,
+        "silence_duration_ms": 800,
+        "state_mutation": null,
+        "state_mutations": [
+          {
+            "op": "set",
+            "path": "cabin.lamp",
+            "value": "on"
+          },
+          {
+            "op": "set",
+            "path": "check.lamp",
+            "value": ""
+          }
+        ]
+      },
+      {
+        "condition_expression": {
+          "AND": {
+            "AND": {
+              "field": "shift_minutes",
+              "op": ">=",
+              "value": 0
+            },
+            "field": "seed.false_rule",
+            "op": "==",
+            "value": "r4"
+          },
+          "field": "check.lamp",
+          "op": "in",
+          "value": [
+            "held_still",
+            "timeout"
+          ]
+        },
+        "condition_id": "0d199dfd-bb2b-5ba1-975c-60a5c6905506",
+        "cut_ambient": true,
+        "is_one_shot": false,
+        "label": "H02 Lamp held, R4 false",
+        "metadata": {},
+        "narrator_instruction": "The clerk stays where they are. The typing stops. For a long moment the floor feels like it is looking at one spot, and the spot is the clerk. Then the lamp comes back on.",
+        "sensory_cue": null,
+        "silence_duration_ms": 800,
+        "state_mutation": null,
+        "state_mutations": [
+          {
+            "op": "decrement",
+            "path": "sanity",
+            "value": 15
+          },
+          {
+            "op": "increment",
+            "path": "violations_count",
+            "value": 1
+          },
+          {
+            "op": "set",
+            "path": "rule_status.r4",
+            "value": "violated"
+          },
+          {
+            "op": "set",
+            "path": "cabin.lamp",
+            "value": "on"
+          },
+          {
+            "op": "set",
+            "path": "check.lamp",
+            "value": ""
+          }
+        ]
+      },
+      {
+        "condition_expression": {
+          "AND": {
+            "AND": {
+              "field": "shift_minutes",
+              "op": ">=",
+              "value": 0
+            },
+            "field": "seed.false_rule",
+            "op": "==",
+            "value": "r6"
+          },
+          "field": "check.lamp",
+          "op": "==",
+          "value": "moved"
+        },
+        "condition_id": "dd37f774-d13e-5e1d-932d-c990f845bf34",
+        "cut_ambient": true,
+        "is_one_shot": false,
+        "label": "H03 Lamp moved, R4 true",
+        "metadata": {},
+        "narrator_instruction": "The clerk moves. Somewhere behind them, something moves at the same time, and stops when they stop. The lamp comes back on.",
+        "sensory_cue": null,
+        "silence_duration_ms": 800,
+        "state_mutation": null,
+        "state_mutations": [
+          {
+            "op": "decrement",
+            "path": "sanity",
+            "value": 10
+          },
+          {
+            "op": "increment",
+            "path": "violations_count",
+            "value": 1
+          },
+          {
+            "op": "set",
+            "path": "rule_status.r4",
+            "value": "violated"
+          },
+          {
+            "op": "set",
+            "path": "cabin.lamp",
+            "value": "on"
+          },
+          {
+            "op": "set",
+            "path": "check.lamp",
+            "value": ""
+          }
+        ]
+      },
+      {
+        "condition_expression": {
+          "AND": {
+            "AND": {
+              "field": "shift_minutes",
+              "op": ">=",
+              "value": 0
+            },
+            "field": "seed.false_rule",
+            "op": "==",
+            "value": "r4"
+          },
+          "field": "check.lamp",
+          "op": "==",
+          "value": "moved"
+        },
+        "condition_id": "65dedf9e-7de7-55c2-9c07-5684dd91336e",
+        "cut_ambient": true,
+        "is_one_shot": false,
+        "label": "H04 Lamp moved, R4 false",
+        "metadata": {},
+        "narrator_instruction": "The clerk moves away down the floor. The lamp comes back on behind them.",
+        "sensory_cue": null,
+        "silence_duration_ms": 800,
+        "state_mutation": null,
+        "state_mutations": [
+          {
+            "op": "set",
+            "path": "cabin.lamp",
+            "value": "on"
+          },
+          {
+            "op": "set",
+            "path": "check.lamp",
+            "value": ""
+          }
+        ]
+      },
+      {
+        "condition_expression": {
+          "AND": {
+            "AND": {
+              "field": "shift_minutes",
+              "op": ">=",
+              "value": 0
+            },
+            "field": "seed.false_rule",
+            "op": "==",
+            "value": "r4"
+          },
+          "field": "check.lamp",
+          "op": "==",
+          "value": "entered"
+        },
+        "condition_id": "8d1f94d2-174d-5403-a730-bceeccf2bb1e",
+        "cut_ambient": true,
+        "is_one_shot": false,
+        "label": "H05 Lamp entered, R6 true",
+        "metadata": {},
+        "narrator_instruction": "The door gives. The cabin is empty and warm. The chair is pushed back as if someone just stood up. On the desk, a small amber light is on.",
+        "sensory_cue": null,
+        "silence_duration_ms": 800,
+        "state_mutation": null,
+        "state_mutations": [
+          {
+            "op": "set",
+            "path": "flags.cabin_entered",
+            "value": true
+          },
+          {
+            "op": "set",
+            "path": "current_location_id",
+            "value": "9d06b2a9-5180-5e2a-8675-d0b89e0ac60f"
+          },
+          {
+            "op": "set",
+            "path": "visited.cabin_14",
+            "value": true
+          },
+          {
+            "op": "set",
+            "path": "cabin.lamp",
+            "value": "on"
+          },
+          {
+            "op": "set",
+            "path": "check.lamp",
+            "value": ""
+          }
+        ]
+      },
+      {
+        "condition_expression": {
+          "AND": {
+            "AND": {
+              "field": "shift_minutes",
+              "op": ">=",
+              "value": 0
+            },
+            "field": "seed.false_rule",
+            "op": "==",
+            "value": "r6"
+          },
+          "field": "check.lamp",
+          "op": "==",
+          "value": "entered"
+        },
+        "condition_id": "3b7a5c30-a0ee-5664-ab8d-0e7a32817e6f",
+        "cut_ambient": true,
+        "is_one_shot": false,
+        "label": "H06 Lamp entered, R6 false",
+        "metadata": {},
+        "narrator_instruction": "The door gives. It is warm inside and very dark, and the dark is not empty. The clerk is back in the corridor without remembering the steps. The lamp is on again.",
+        "sensory_cue": null,
+        "silence_duration_ms": 800,
+        "state_mutation": null,
+        "state_mutations": [
+          {
+            "op": "decrement",
+            "path": "sanity",
+            "value": 25
+          },
+          {
+            "op": "increment",
+            "path": "violations_count",
+            "value": 1
+          },
+          {
+            "op": "set",
+            "path": "rule_status.r4",
+            "value": "violated"
+          },
+          {
+            "op": "set",
+            "path": "flags.cabin_entered",
+            "value": true
+          },
+          {
+            "op": "set",
+            "path": "current_location_id",
+            "value": "546190f3-c1fb-5f0f-8dd8-34dabc338da5"
+          },
+          {
+            "op": "set",
+            "path": "cabin.lamp",
+            "value": "on"
+          },
+          {
+            "op": "set",
+            "path": "check.lamp",
+            "value": ""
+          }
+        ]
+      },
+      {
+        "condition_expression": {
+          "AND": {
+            "field": "shift_minutes",
+            "op": ">=",
+            "value": 0
+          },
+          "field": "count.c1",
+          "op": "==",
+          "value": "timeout"
+        },
+        "condition_id": "a98b5752-f962-5eda-9172-2e938dec7d51",
+        "cut_ambient": true,
+        "is_one_shot": false,
+        "label": "H07 Count 1 timed out",
+        "metadata": {},
+        "narrator_instruction": "",
+        "sensory_cue": null,
+        "silence_duration_ms": 800,
+        "state_mutation": null,
+        "state_mutations": [
+          {
+            "op": "set",
+            "path": "count.c1",
+            "value": "left"
+          },
+          {
+            "op": "increment",
+            "path": "count.unsigned",
+            "value": 1
+          }
+        ]
+      },
+      {
+        "condition_expression": {
+          "AND": {
+            "field": "shift_minutes",
+            "op": ">=",
+            "value": 0
+          },
+          "field": "count.c2",
+          "op": "==",
+          "value": "timeout"
+        },
+        "condition_id": "d3f7f465-aa07-5a93-9268-b4f421dad4f2",
+        "cut_ambient": true,
+        "is_one_shot": false,
+        "label": "H08 Count 2 timed out",
+        "metadata": {},
+        "narrator_instruction": "",
+        "sensory_cue": null,
+        "silence_duration_ms": 800,
+        "state_mutation": null,
+        "state_mutations": [
+          {
+            "op": "set",
+            "path": "count.c2",
+            "value": "left"
+          },
+          {
+            "op": "increment",
+            "path": "count.unsigned",
+            "value": 1
+          }
+        ]
+      },
+      {
+        "condition_expression": {
+          "AND": {
+            "field": "shift_minutes",
+            "op": ">=",
+            "value": 0
+          },
+          "field": "count.c3",
+          "op": "==",
+          "value": "timeout"
+        },
+        "condition_id": "9a682fe8-f5f8-5a09-b74f-9e1c31148c24",
+        "cut_ambient": true,
+        "is_one_shot": false,
+        "label": "H09 Count 3 timed out",
+        "metadata": {},
+        "narrator_instruction": "",
+        "sensory_cue": null,
+        "silence_duration_ms": 800,
+        "state_mutation": null,
+        "state_mutations": [
+          {
+            "op": "set",
+            "path": "count.c3",
+            "value": "left"
+          },
+          {
+            "op": "increment",
+            "path": "count.unsigned",
+            "value": 1
+          }
+        ]
+      },
+      {
+        "condition_expression": {
+          "AND": {
+            "field": "shift_minutes",
+            "op": ">=",
+            "value": 0
+          },
+          "field": "count.reads_after_two",
+          "op": "==",
+          "value": 1
+        },
+        "condition_id": "4e0f1581-26e6-555c-91a5-979fc16ae2f2",
+        "cut_ambient": true,
+        "is_one_shot": true,
+        "label": "H10 Takeover line 1",
+        "metadata": {
+          "client_effect": {
+            "kind": "input_takeover",
+            "params": {
+              "lock_ms": 4500,
+              "text": "Get me out of here, Orr",
+              "type_ms_per_char": 60
+            }
+          }
+        },
+        "narrator_instruction": "",
+        "sensory_cue": null,
+        "silence_duration_ms": 800,
+        "state_mutation": null,
+        "state_mutations": []
+      },
+      {
+        "condition_expression": {
+          "AND": {
+            "field": "shift_minutes",
+            "op": ">=",
+            "value": 0
+          },
+          "field": "count.reads_after_two",
+          "op": "==",
+          "value": 2
+        },
+        "condition_id": "8551e8c2-baf7-5ba9-b06a-d12c914f8061",
+        "cut_ambient": true,
+        "is_one_shot": true,
+        "label": "H11 Takeover line 2",
+        "metadata": {
+          "client_effect": {
+            "kind": "input_takeover",
+            "params": {
+              "lock_ms": 5500,
+              "text": "I feel too much",
+              "type_ms_per_char": 60
+            }
+          }
+        },
+        "narrator_instruction": "",
+        "sensory_cue": null,
+        "silence_duration_ms": 800,
+        "state_mutation": null,
+        "state_mutations": []
+      },
+      {
+        "condition_expression": {
+          "AND": {
+            "field": "shift_minutes",
+            "op": ">=",
+            "value": 0
+          },
+          "field": "check.phone",
+          "op": "==",
+          "value": "picked_up"
+        },
+        "condition_id": "6b24ab98-c414-5a5e-bcff-cae21a79f6fc",
+        "cut_ambient": true,
+        "is_one_shot": true,
+        "label": "H12 Phone echo",
+        "metadata": {
+          "client_effect": {
+            "kind": "phone_echo",
+            "params": {
+              "delay_ms": 2500,
+              "record_ms": 6000
+            }
+          }
+        },
+        "narrator_instruction": "The clerk is holding the receiver. The line is open and quiet. Describe only the receiver, its weight, the cord, the lit lamp for line 14. Do not describe any voice or anything the clerk said.",
+        "sensory_cue": null,
+        "silence_duration_ms": 800,
+        "state_mutation": null,
+        "state_mutations": []
+      },
+      {
+        "condition_expression": {
+          "AND": {
+            "field": "shift_minutes",
+            "op": ">=",
+            "value": 0
+          },
+          "field": "visit.result",
+          "op": "==",
+          "value": "none"
+        },
+        "condition_id": "0b941db9-41e8-5122-a3fe-b3bd7e0314d5",
+        "cut_ambient": true,
+        "is_one_shot": false,
+        "label": "H13 Visitor unanswered",
+        "metadata": {},
+        "narrator_instruction": "",
+        "sensory_cue": null,
+        "silence_duration_ms": 800,
+        "state_mutation": null,
+        "state_mutations": [
+          {
+            "op": "increment",
+            "path": "count.wrong_entries",
+            "value": 1
+          },
+          {
+            "op": "set",
+            "path": "visit.pending",
+            "value": ""
+          }
+        ]
+      },
+      {
+        "condition_expression": {
+          "AND": {
+            "field": "shift_minutes",
+            "op": ">=",
+            "value": 0
+          },
+          "field": "check.phone",
+          "op": "in",
+          "value": [
+            "let_ring",
+            "timeout"
+          ]
+        },
+        "condition_id": "b4c0f8c0-6ca6-5e41-a5b5-ce760d811b1c",
+        "cut_ambient": true,
+        "is_one_shot": true,
+        "label": "H14 Phone let ring",
+        "metadata": {},
+        "narrator_instruction": "The phone rings out. The machine clicks and takes it. Its light blinks once and stops.",
+        "sensory_cue": null,
+        "silence_duration_ms": 800,
+        "state_mutation": null,
+        "state_mutations": [
+          {
+            "op": "set",
+            "path": "rule_status.r3",
+            "value": "intact"
+          }
+        ]
+      },
+      {
+        "condition_expression": {
+          "AND": {
+            "field": "shift_minutes",
+            "op": ">=",
+            "value": 0
+          },
+          "field": "check.phone",
+          "op": "==",
+          "value": "unplugged"
+        },
+        "condition_id": "1b884817-5df9-5cc1-a46b-1e3332e77428",
+        "cut_ambient": true,
+        "is_one_shot": true,
+        "label": "H15 Phone unplugged",
+        "metadata": {},
+        "narrator_instruction": "",
+        "sensory_cue": null,
+        "silence_duration_ms": 800,
+        "state_mutation": null,
+        "state_mutations": [
+          {
+            "op": "set",
+            "path": "rule_status.r3",
+            "value": "intact"
+          }
+        ]
+      },
+      {
+        "condition_expression": {
+          "AND": {
+            "field": "shift_minutes",
+            "op": ">=",
+            "value": 0
+          },
+          "field": "check.voicemail",
+          "op": "==",
+          "value": "yes"
+        },
+        "condition_id": "ea49912f-f73b-5cf5-988d-d87cd25f3be0",
+        "cut_ambient": true,
+        "is_one_shot": true,
+        "label": "H16 Voicemail played",
+        "metadata": {},
+        "narrator_instruction": "The clerk plays the answering machine message. Read it exactly: \"It's Eva. I'm sorry \u2014 I should have said this before I left. If you hear me on the stairs tonight, it won't be me. Don't answer it. Hum. Just hum, and keep humming until the lift comes. I mean it. Don't be late tomorrow.\"",
+        "sensory_cue": null,
+        "silence_duration_ms": 800,
+        "state_mutation": null,
+        "state_mutations": []
+      },
+      {
+        "condition_expression": {
+          "field": "visit.present",
+          "op": "!=",
+          "value": ""
+        },
+        "condition_id": "1bb3fe9f-8f8c-536e-ad2f-e688304bd793",
+        "cut_ambient": true,
+        "is_one_shot": false,
+        "label": "V01 Visitor turn count",
+        "metadata": {},
+        "narrator_instruction": "",
+        "sensory_cue": null,
+        "silence_duration_ms": 800,
+        "state_mutation": null,
+        "state_mutations": [
+          {
+            "op": "increment",
+            "path": "visit.turns_present",
+            "value": 1
+          }
+        ]
+      },
+      {
+        "condition_expression": {
+          "AND": {
+            "field": "visit.turns_present",
+            "op": "==",
+            "value": 2
+          },
+          "field": "visit.present",
+          "op": "==",
+          "value": "v1"
+        },
+        "condition_id": "15d635d9-49b8-56c7-8239-0b2c27a427b2",
+        "cut_ambient": true,
+        "is_one_shot": false,
+        "label": "V02a Margaret Hale present",
+        "metadata": {},
+        "narrator_instruction": "Margaret Hale is still at the desk. If the clerk speaks to them, they answer in one or two short lines, a little late, flat and polite. They never say why they came.",
+        "sensory_cue": null,
+        "silence_duration_ms": 800,
+        "state_mutation": null,
+        "state_mutations": []
+      },
+      {
+        "condition_expression": {
+          "AND": {
+            "field": "visit.turns_present",
+            "op": "==",
+            "value": 2
+          },
+          "field": "visit.present",
+          "op": "==",
+          "value": "v2"
+        },
+        "condition_id": "2cfcd7e9-0bd7-5a36-9b6c-c9d3a593de0f",
+        "cut_ambient": true,
+        "is_one_shot": false,
+        "label": "V02b Daniel Osei present",
+        "metadata": {},
+        "narrator_instruction": "Daniel Osei is still at the desk. If the clerk speaks to them, they answer in one or two short lines, a little late, flat and polite. They never say why they came.",
+        "sensory_cue": null,
+        "silence_duration_ms": 800,
+        "state_mutation": null,
+        "state_mutations": []
+      },
+      {
+        "condition_expression": {
+          "AND": {
+            "field": "visit.turns_present",
+            "op": "==",
+            "value": 2
+          },
+          "field": "visit.present",
+          "op": "==",
+          "value": "v3"
+        },
+        "condition_id": "e63a8c15-fa18-5130-8b20-d468ae45d4dd",
+        "cut_ambient": true,
+        "is_one_shot": false,
+        "label": "V02c Ruth Ellery present",
+        "metadata": {},
+        "narrator_instruction": "Ruth Ellery is still at the desk. If the clerk speaks to them, they answer in one or two short lines, a little late, flat and polite. They never say why they came.",
+        "sensory_cue": null,
+        "silence_duration_ms": 800,
+        "state_mutation": null,
+        "state_mutations": []
+      },
+      {
+        "condition_expression": {
+          "AND": {
+            "field": "visit.turns_present",
+            "op": ">=",
+            "value": 3
+          },
+          "field": "visit.present",
+          "op": "==",
+          "value": "v1"
+        },
+        "condition_id": "f33c4ccd-2c08-500d-8bad-b2d432c94542",
+        "cut_ambient": true,
+        "is_one_shot": false,
+        "label": "V03a Margaret Hale leaves",
+        "metadata": {},
+        "narrator_instruction": "Margaret Hale has gone. The elevator doors have closed behind them. Mention it once, in one plain sentence. Their folder is still on the desk.",
+        "sensory_cue": null,
+        "silence_duration_ms": 800,
+        "state_mutation": null,
+        "state_mutations": [
+          {
+            "op": "set",
+            "path": "visit.present",
+            "value": ""
+          },
+          {
+            "op": "set",
+            "path": "visit.turns_present",
+            "value": 0
+          }
+        ]
+      },
+      {
+        "condition_expression": {
+          "AND": {
+            "field": "visit.turns_present",
+            "op": ">=",
+            "value": 3
+          },
+          "field": "visit.present",
+          "op": "==",
+          "value": "v2"
+        },
+        "condition_id": "a7c5ae61-5305-504b-af8b-ad69be03e355",
+        "cut_ambient": true,
+        "is_one_shot": false,
+        "label": "V03b Daniel Osei leaves",
+        "metadata": {},
+        "narrator_instruction": "Daniel Osei has gone. The elevator doors have closed behind them. Mention it once, in one plain sentence. Their folder is still on the desk.",
+        "sensory_cue": null,
+        "silence_duration_ms": 800,
+        "state_mutation": null,
+        "state_mutations": [
+          {
+            "op": "set",
+            "path": "visit.present",
+            "value": ""
+          },
+          {
+            "op": "set",
+            "path": "visit.turns_present",
+            "value": 0
+          }
+        ]
+      },
+      {
+        "condition_expression": {
+          "AND": {
+            "field": "visit.turns_present",
+            "op": ">=",
+            "value": 3
+          },
+          "field": "visit.present",
+          "op": "==",
+          "value": "v3"
+        },
+        "condition_id": "cfe818c0-b806-592f-a740-2d54f921fe33",
+        "cut_ambient": true,
+        "is_one_shot": false,
+        "label": "V03c Ruth Ellery leaves",
+        "metadata": {},
+        "narrator_instruction": "Ruth Ellery has gone. The elevator doors have closed behind them. Mention it once, in one plain sentence. Their folder is still on the desk.",
+        "sensory_cue": null,
+        "silence_duration_ms": 800,
+        "state_mutation": null,
+        "state_mutations": [
+          {
+            "op": "set",
+            "path": "visit.present",
+            "value": ""
+          },
+          {
+            "op": "set",
+            "path": "visit.turns_present",
+            "value": 0
+          }
+        ]
+      },
+      {
+        "condition_expression": {
+          "AND": {
+            "field": "shift_minutes",
+            "op": ">=",
+            "value": 0
+          },
+          "field": "visit.result",
+          "op": "!=",
+          "value": ""
+        },
+        "condition_id": "b7fa017b-dce5-57d3-8edc-98b75254aebb",
+        "cut_ambient": true,
+        "is_one_shot": false,
+        "label": "V04 Log result consumed",
+        "metadata": {},
+        "narrator_instruction": "",
+        "sensory_cue": null,
+        "silence_duration_ms": 800,
+        "state_mutation": null,
+        "state_mutations": [
+          {
+            "op": "set",
+            "path": "visit.result",
+            "value": ""
+          }
+        ]
+      },
+      {
+        "condition_expression": {
+          "AND": {
+            "field": "rule_status.r2",
+            "op": "==",
+            "value": "intact"
+          },
+          "field": "current_location_id",
+          "op": "==",
+          "value": "546190f3-c1fb-5f0f-8dd8-34dabc338da5"
+        },
+        "condition_id": "d0bcb842-f494-5cf2-8d05-0906dd6eff2c",
+        "cut_ambient": true,
+        "is_one_shot": false,
+        "label": "P01 R2 active",
+        "metadata": {},
+        "narrator_instruction": "",
+        "sensory_cue": null,
+        "silence_duration_ms": 800,
+        "state_mutation": null,
+        "state_mutations": [
+          {
+            "op": "set",
+            "path": "rule_status.r2",
+            "value": "active_threat"
+          }
+        ]
+      },
+      {
+        "condition_expression": {
+          "field": "current_location_id",
+          "op": "==",
+          "value": "eae92684-0e83-5862-a76d-bf42c6401860"
+        },
+        "condition_id": "dcb19e30-4186-513e-8c74-95c25d8b742e",
+        "cut_ambient": true,
+        "is_one_shot": false,
+        "label": "P02a Alcove dwell",
+        "metadata": {},
+        "narrator_instruction": "",
+        "sensory_cue": null,
+        "silence_duration_ms": 800,
+        "state_mutation": null,
+        "state_mutations": [
+          {
+            "op": "increment",
+            "path": "dwell.alcove",
+            "value": 1
+          }
+        ]
+      },
+      {
+        "condition_expression": {
+          "AND": {
+            "field": "dwell.alcove",
+            "op": ">=",
+            "value": 1
+          },
+          "field": "current_location_id",
+          "op": "!=",
+          "value": "eae92684-0e83-5862-a76d-bf42c6401860"
+        },
+        "condition_id": "d2cb694a-4c76-5226-a5bf-32c1bfc08828",
+        "cut_ambient": true,
+        "is_one_shot": false,
+        "label": "P02b Alcove left",
+        "metadata": {},
+        "narrator_instruction": "",
+        "sensory_cue": null,
+        "silence_duration_ms": 800,
+        "state_mutation": null,
+        "state_mutations": [
+          {
+            "op": "set",
+            "path": "dwell.alcove",
+            "value": 0
+          }
+        ]
+      },
+      {
+        "condition_expression": {
+          "AND": {
+            "OR": {
+              "field": "rule_flags.r2",
+              "op": "==",
+              "value": true
+            },
+            "field": "dwell.alcove",
+            "op": ">=",
+            "value": 2
+          },
+          "field": "rule_status.r2",
+          "op": "!=",
+          "value": "violated"
+        },
+        "condition_id": "6e037fa6-7078-5008-9f1d-f99e13458c2d",
+        "cut_ambient": true,
+        "is_one_shot": true,
+        "label": "P02c R2 violated",
+        "metadata": {},
+        "narrator_instruction": "",
+        "sensory_cue": null,
+        "silence_duration_ms": 800,
+        "state_mutation": null,
+        "state_mutations": [
+          {
+            "op": "decrement",
+            "path": "sanity",
+            "value": 10
+          },
+          {
+            "op": "increment",
+            "path": "violations_count",
+            "value": 1
+          },
+          {
+            "op": "set",
+            "path": "rule_status.r2",
+            "value": "violated"
+          },
+          {
+            "op": "set",
+            "path": "dwell.alcove",
+            "value": 0
+          },
+          {
+            "op": "set",
+            "path": "rule_flags.r2",
+            "value": false
+          }
+        ]
+      },
+      {
+        "condition_expression": {
+          "AND": {
+            "AND": {
+              "field": "shift_minutes",
+              "op": ">=",
+              "value": 0
+            },
+            "field": "cabin.lamp",
+            "op": "==",
+            "value": "on"
+          },
+          "field": "current_location_id",
+          "op": "==",
+          "value": "ac40b660-1613-57fb-a044-35a71755220d"
+        },
+        "condition_id": "676d1ddb-237a-5ea5-acd9-c8b31aa805bd",
+        "cut_ambient": true,
+        "is_one_shot": false,
+        "label": "P03 R4 approach",
+        "metadata": {},
+        "narrator_instruction": "The cabin door is locked. Through the clear upper glass, on the desk inside, a small amber light is on. Nothing moves.",
+        "sensory_cue": null,
+        "silence_duration_ms": 800,
+        "state_mutation": null,
+        "state_mutations": [
+          {
+            "op": "decrement",
+            "path": "sanity",
+            "value": 15
+          },
+          {
+            "op": "increment",
+            "path": "violations_count",
+            "value": 1
+          },
+          {
+            "op": "set",
+            "path": "rule_status.r4",
+            "value": "violated"
+          },
+          {
+            "op": "set",
+            "path": "current_location_id",
+            "value": "546190f3-c1fb-5f0f-8dd8-34dabc338da5"
+          }
+        ]
+      },
+      {
+        "condition_expression": {
+          "AND": {
+            "field": "visited.last",
+            "op": "!=",
+            "value": "records_room"
+          },
+          "field": "current_location_id",
+          "op": "==",
+          "value": "1eae3995-e6f8-5539-b8b9-5f58324159e3"
+        },
+        "condition_id": "463c752f-f1fc-5cfd-8bf4-f66968179309",
+        "cut_ambient": true,
+        "is_one_shot": false,
+        "label": "P04 Records visit",
+        "metadata": {},
+        "narrator_instruction": "",
+        "sensory_cue": null,
+        "silence_duration_ms": 800,
+        "state_mutation": null,
+        "state_mutations": [
+          {
+            "op": "increment",
+            "path": "visited.records_room",
+            "value": 1
+          },
+          {
+            "op": "set",
+            "path": "visited.last",
+            "value": "records_room"
+          }
+        ]
+      },
+      {
+        "condition_expression": {
+          "AND": {
+            "field": "visited.last",
+            "op": "==",
+            "value": "records_room"
+          },
+          "field": "current_location_id",
+          "op": "!=",
+          "value": "1eae3995-e6f8-5539-b8b9-5f58324159e3"
+        },
+        "condition_id": "e6628b8d-e6d0-5c83-8aba-b9b34ebd657c",
+        "cut_ambient": true,
+        "is_one_shot": false,
+        "label": "P05 Records left",
+        "metadata": {},
+        "narrator_instruction": "",
+        "sensory_cue": null,
+        "silence_duration_ms": 800,
+        "state_mutation": null,
+        "state_mutations": [
+          {
+            "op": "set",
+            "path": "visited.last",
+            "value": "elsewhere"
+          }
+        ]
+      },
+      {
+        "condition_expression": {
+          "field": "current_location_id",
+          "op": "==",
+          "value": "431b498d-9409-59f9-8cd6-0d636d881640"
+        },
+        "condition_id": "e0731fe1-fc32-55e4-921a-e021b5c5707f",
+        "cut_ambient": true,
+        "is_one_shot": true,
+        "label": "P06 Print room entered",
+        "metadata": {},
+        "narrator_instruction": "",
+        "sensory_cue": null,
+        "silence_duration_ms": 800,
+        "state_mutation": null,
+        "state_mutations": [
+          {
+            "op": "set",
+            "path": "visited.print_room",
+            "value": true
+          }
+        ]
+      },
+      {
+        "condition_expression": {
+          "field": "current_location_id",
+          "op": "==",
+          "value": "4ad6e293-48f3-5342-9e7c-06711b7fff0d"
+        },
+        "condition_id": "d22f4df8-b5c6-5626-9d7c-df700c281b86",
+        "cut_ambient": true,
+        "is_one_shot": true,
+        "label": "P07 Elevator lobby entered",
+        "metadata": {},
+        "narrator_instruction": "",
+        "sensory_cue": null,
+        "silence_duration_ms": 800,
+        "state_mutation": null,
+        "state_mutations": [
+          {
+            "op": "set",
+            "path": "visited.elevator_lobby",
+            "value": true
+          }
+        ]
+      },
+      {
+        "condition_expression": {
+          "field": "current_location_id",
+          "op": "==",
+          "value": "9d06b2a9-5180-5e2a-8675-d0b89e0ac60f"
+        },
+        "condition_id": "838a710a-b932-5e24-91dd-0a59e90d461f",
+        "cut_ambient": true,
+        "is_one_shot": true,
+        "label": "P08 Cabin 14 entered",
+        "metadata": {},
+        "narrator_instruction": "",
+        "sensory_cue": null,
+        "silence_duration_ms": 800,
+        "state_mutation": null,
+        "state_mutations": [
+          {
+            "op": "set",
+            "path": "visited.cabin_14",
+            "value": true
+          }
+        ]
+      },
+      {
+        "condition_expression": {
+          "AND": {
+            "AND": {
+              "AND": {
+                "field": "shift_minutes",
+                "op": ">=",
+                "value": 0
+              },
+              "field": "fragments.act1",
+              "op": "==",
+              "value": ""
+            },
+            "field": "shift_minutes",
+            "op": "<",
+            "value": 140
+          },
+          "field": "visited.records_room",
+          "op": "==",
+          "value": 1
+        },
+        "condition_id": "74a06ac3-e5df-5f0c-8374-4d8642d5302b",
+        "cut_ambient": true,
+        "is_one_shot": true,
+        "label": "F01 Fragment f1",
+        "metadata": {},
+        "narrator_instruction": "As the clerk files, a folder falls open. One sheet inside. At the top: VIGIL \u2014 NIGHT 31,777. A name, a time, and one line: 'Held hand. Did not let go.' Quote it exactly. No comment.",
+        "sensory_cue": null,
+        "silence_duration_ms": 800,
+        "state_mutation": null,
+        "state_mutations": [
+          {
+            "op": "set",
+            "path": "fragments.act1",
+            "value": "f1"
+          }
+        ]
+      },
+      {
+        "condition_expression": {
+          "AND": {
+            "AND": {
+              "AND": {
+                "field": "shift_minutes",
+                "op": ">=",
+                "value": 0
+              },
+              "field": "fragments.act1",
+              "op": "==",
+              "value": ""
+            },
+            "field": "shift_minutes",
+            "op": "<",
+            "value": 140
+          },
+          "field": "check.drawer",
+          "op": "==",
+          "value": "yes"
+        },
+        "condition_id": "bb3dd186-8648-5834-9223-3b2724180809",
+        "cut_ambient": true,
+        "is_one_shot": true,
+        "label": "F02 Fragment f4",
+        "metadata": {},
+        "narrator_instruction": "In the drawer is a card from Tallis & Orr with the clerk's own name on it, dated ten years ago. Under Product it says Hush. Under Notes: 'Subscriber, age 9.' Quote it exactly. No comment.",
+        "sensory_cue": null,
+        "silence_duration_ms": 800,
+        "state_mutation": null,
+        "state_mutations": [
+          {
+            "op": "set",
+            "path": "fragments.act1",
+            "value": "f4"
+          }
+        ]
+      },
+      {
+        "condition_expression": {
+          "AND": {
+            "AND": {
+              "AND": {
+                "AND": {
+                  "field": "shift_minutes",
+                  "op": ">=",
+                  "value": 0
+                },
+                "field": "fragments.act2",
+                "op": "==",
+                "value": ""
+              },
+              "field": "shift_minutes",
+              "op": "<",
+              "value": 260
+            },
+            "field": "shift_minutes",
+            "op": ">=",
+            "value": 140
+          },
+          "field": "visited.records_room",
+          "op": ">=",
+          "value": 2
+        },
+        "condition_id": "63ac84e9-f200-53a6-8ddb-11163f7a203f",
+        "cut_ambient": true,
+        "is_one_shot": true,
+        "label": "F03 Fragment f2",
+        "metadata": {},
+        "narrator_instruction": "In the old wooden drawer at the back of Records are folders made of stiff punch cards, dated 1938, numbered from TF-0001. The first card has only one letter on it: 'T.' Describe it as old paperwork. No comment.",
+        "sensory_cue": null,
+        "silence_duration_ms": 800,
+        "state_mutation": null,
+        "state_mutations": [
+          {
+            "op": "set",
+            "path": "fragments.act2",
+            "value": "f2"
+          }
+        ]
+      },
+      {
+        "condition_expression": {
+          "AND": {
+            "AND": {
+              "AND": {
+                "AND": {
+                  "field": "shift_minutes",
+                  "op": ">=",
+                  "value": 0
+                },
+                "field": "fragments.act2",
+                "op": "==",
+                "value": ""
+              },
+              "field": "shift_minutes",
+              "op": "<",
+              "value": 260
+            },
+            "field": "shift_minutes",
+            "op": ">=",
+            "value": 140
+          },
+          "field": "visited.print_room",
+          "op": "==",
+          "value": true
+        },
+        "condition_id": "f74c1e82-ab41-54c8-b47a-e656bcc0f687",
+        "cut_ambient": true,
+        "is_one_shot": true,
+        "label": "F04 Fragment f3",
+        "metadata": {},
+        "narrator_instruction": "From the print-room window, every office tower in sight has one lit lamp on every floor. The clerk starts to count them and cannot finish. Do not give a number.",
+        "sensory_cue": null,
+        "silence_duration_ms": 800,
+        "state_mutation": null,
+        "state_mutations": [
+          {
+            "op": "set",
+            "path": "fragments.act2",
+            "value": "f3"
+          }
+        ]
+      },
+      {
+        "condition_expression": {
+          "AND": {
+            "AND": {
+              "AND": {
+                "field": "shift_minutes",
+                "op": ">=",
+                "value": 0
+              },
+              "field": "fragments.act3",
+              "op": "==",
+              "value": ""
+            },
+            "field": "shift_minutes",
+            "op": ">=",
+            "value": 260
+          },
+          "field": "check.voicemail",
+          "op": "==",
+          "value": "yes"
+        },
+        "condition_id": "0dd2e64c-9e60-5332-8ecb-f6b3eebf0d9a",
+        "cut_ambient": true,
+        "is_one_shot": true,
+        "label": "F05 Fragment f6",
+        "metadata": {},
+        "narrator_instruction": "After Eva's message the tape keeps running: forty seconds of other phones ringing somewhere very full, then, very faint, a voice: '\u2026it's off by one again.' Then the tape stops.",
+        "sensory_cue": null,
+        "silence_duration_ms": 800,
+        "state_mutation": null,
+        "state_mutations": [
+          {
+            "op": "set",
+            "path": "fragments.act3",
+            "value": "f6"
+          }
+        ]
+      },
+      {
+        "condition_expression": {
+          "AND": {
+            "AND": {
+              "AND": {
+                "field": "shift_minutes",
+                "op": ">=",
+                "value": 0
+              },
+              "field": "fragments.act3",
+              "op": "==",
+              "value": ""
+            },
+            "field": "shift_minutes",
+            "op": ">=",
+            "value": 260
+          },
+          "field": "visited.cabin_14",
+          "op": "==",
+          "value": true
+        },
+        "condition_id": "36cbae9b-6df8-562e-a814-4020418feb6f",
+        "cut_ambient": true,
+        "is_one_shot": true,
+        "label": "F06 Fragment f5",
+        "metadata": {},
+        "narrator_instruction": "On the cabin wall is a photograph: two men in front of a wall of old machines, labelled 'T. & O., Basement B, 1938.' One man's face is blurred, as if he moved. On the desk is a memo in an old hand: 'Keep it apart.' Quote both exactly. No comment.",
+        "sensory_cue": null,
+        "silence_duration_ms": 800,
+        "state_mutation": null,
+        "state_mutations": [
+          {
+            "op": "set",
+            "path": "fragments.act3",
+            "value": "f5"
+          }
+        ]
+      },
+      {
+        "condition_expression": {
+          "AND": {
+            "AND": {
+              "field": "shift_minutes",
+              "op": ">=",
+              "value": 0
+            },
+            "field": "fragments.poster",
+            "op": "==",
+            "value": "locked"
+          },
+          "field": "visited.elevator_lobby",
+          "op": "==",
+          "value": true
+        },
+        "condition_id": "bb146c45-bc64-576e-9f0c-4d24d992af84",
+        "cut_ambient": true,
+        "is_one_shot": true,
+        "label": "FP Poster",
+        "metadata": {
+          "authored_image_url": "http://localhost:8000/uploads/night-desk/truefeel-poster.png"
+        },
+        "narrator_instruction": "On the lobby wall is a framed poster. It is an advertisement. Describe it simply: a small wooden cabinet, like an old radio, with a round amber light on the front, on a plain pale background, and the words under it. Quote the large lines exactly: 'TrueFeel\u2122', 'Because some things should be felt properly.', 'We feel it with you. All of it.', 'I don't remember being afraid. \u2014 Margaret, 81', 'Vigil \u00b7 Kindred \u00b7 Hush \u00b7 Measure', 'TALLIS & ORR \u00b7 Since 1911', '4,317 Night Desks. One count. Thank you for keeping it.' The small print at the bottom runs off the edge of the frame. Do not comment on any of it.",
+        "sensory_cue": null,
+        "silence_duration_ms": 800,
+        "state_mutation": null,
+        "state_mutations": [
+          {
+            "op": "set",
+            "path": "fragments.poster",
+            "value": "shown"
+          }
+        ]
+      },
+      {
+        "condition_expression": {
+          "field": "shift_minutes",
+          "op": ">=",
+          "value": 60
+        },
+        "condition_id": "a92981f0-dab5-58ae-8a47-1af49cf2fb19",
+        "cut_ambient": true,
+        "is_one_shot": true,
+        "label": "D01 Passive drain at 60",
+        "metadata": {},
+        "narrator_instruction": "",
+        "sensory_cue": null,
+        "silence_duration_ms": 800,
+        "state_mutation": null,
+        "state_mutations": [
+          {
+            "op": "decrement",
+            "path": "sanity",
+            "value": 2
+          }
+        ]
+      },
+      {
+        "condition_expression": {
+          "field": "shift_minutes",
+          "op": ">=",
+          "value": 180
+        },
+        "condition_id": "45b9207e-a9d7-5e1c-8726-2f198bdb6b69",
+        "cut_ambient": true,
+        "is_one_shot": true,
+        "label": "D02 Passive drain at 180",
+        "metadata": {},
+        "narrator_instruction": "",
+        "sensory_cue": null,
+        "silence_duration_ms": 800,
+        "state_mutation": null,
+        "state_mutations": [
+          {
+            "op": "decrement",
+            "path": "sanity",
+            "value": 2
+          }
+        ]
+      },
+      {
+        "condition_expression": {
+          "field": "shift_minutes",
+          "op": ">=",
+          "value": 220
+        },
+        "condition_id": "1191f248-c626-5966-907f-c7ebc5829ab6",
+        "cut_ambient": true,
+        "is_one_shot": true,
+        "label": "D03 Passive drain at 220",
+        "metadata": {},
+        "narrator_instruction": "",
+        "sensory_cue": null,
+        "silence_duration_ms": 800,
+        "state_mutation": null,
+        "state_mutations": [
+          {
+            "op": "decrement",
+            "path": "sanity",
+            "value": 2
+          }
+        ]
+      },
+      {
+        "condition_expression": {
+          "field": "shift_minutes",
+          "op": ">=",
+          "value": 300
+        },
+        "condition_id": "1fe21d91-594a-5808-9126-261ecaf11664",
+        "cut_ambient": true,
+        "is_one_shot": true,
+        "label": "D04 Passive drain at 300",
+        "metadata": {},
+        "narrator_instruction": "",
+        "sensory_cue": null,
+        "silence_duration_ms": 800,
+        "state_mutation": null,
+        "state_mutations": [
+          {
+            "op": "decrement",
+            "path": "sanity",
+            "value": 3
+          }
+        ]
+      },
+      {
+        "condition_expression": {
+          "field": "shift_minutes",
+          "op": ">=",
+          "value": 380
+        },
+        "condition_id": "bfdcec0a-6d1b-57f9-b795-806d7ad4d28d",
+        "cut_ambient": true,
+        "is_one_shot": true,
+        "label": "D05 Passive drain at 380",
+        "metadata": {},
+        "narrator_instruction": "",
+        "sensory_cue": null,
+        "silence_duration_ms": 800,
+        "state_mutation": null,
+        "state_mutations": [
+          {
+            "op": "decrement",
+            "path": "sanity",
+            "value": 3
+          }
+        ]
+      },
+      {
+        "condition_expression": {
+          "field": "shift_minutes",
+          "op": "<",
+          "value": 140
+        },
+        "condition_id": "7ce37184-1dde-5ce7-b519-9845c125517f",
+        "cut_ambient": true,
+        "is_one_shot": false,
+        "label": "T01 Act 1 register",
+        "metadata": {},
+        "narrator_instruction": "Act 1, Handover. The clerk is learning the job. Keep it plain and practical. Oddities are small: a time that does not agree, a sound from the wrong floor. The cabin lamp is just a light at the end of the corridor.",
+        "sensory_cue": null,
+        "silence_duration_ms": 800,
+        "state_mutation": null,
+        "state_mutations": []
+      },
+      {
+        "condition_expression": {
+          "AND": {
+            "field": "shift_minutes",
+            "op": "<",
+            "value": 260
+          },
+          "field": "shift_minutes",
+          "op": ">=",
+          "value": 140
+        },
+        "condition_id": "159477db-a5c1-51dc-b229-a75afea9d89e",
+        "cut_ambient": true,
+        "is_one_shot": false,
+        "label": "T02 Act 2 register",
+        "metadata": {},
+        "narrator_instruction": "Act 2, The Floor. The rules start to disagree with each other and with the job. Ink, handwriting and the printer are where the rules come from; never say who wrote them. The building is bigger than one floor: sounds through the ceiling, lamps in other towers.",
+        "sensory_cue": null,
+        "silence_duration_ms": 800,
+        "state_mutation": null,
+        "state_mutations": []
+      },
+      {
+        "condition_expression": {
+          "field": "shift_minutes",
+          "op": ">=",
+          "value": 260
+        },
+        "condition_id": "8efa7380-bd77-5848-a67b-f29d73eeb367",
+        "cut_ambient": true,
+        "is_one_shot": false,
+        "label": "T03 Act 3 register",
+        "metadata": {},
+        "narrator_instruction": "Act 3, Close. The building is preparing for something at six, and the clerk is a small part of it. Sentences get shorter. Never say what is closing. Dawn is a relief that does not feel like rescue.",
+        "sensory_cue": null,
+        "silence_duration_ms": 800,
+        "state_mutation": null,
+        "state_mutations": []
+      },
+      {
+        "condition_expression": {
+          "field": "sanity",
+          "op": ">=",
+          "value": 75
+        },
+        "condition_id": "5f731057-c343-5421-bbd6-436c6a7c1518",
+        "cut_ambient": true,
+        "is_one_shot": false,
+        "label": "T11 Sanity tier Clear",
+        "metadata": {},
+        "narrator_instruction": "Plain and grounded. Oddities are noted flatly, like small faults in the building.",
+        "sensory_cue": null,
+        "silence_duration_ms": 800,
+        "state_mutation": null,
+        "state_mutations": []
+      },
+      {
+        "condition_expression": {
+          "AND": {
+            "field": "sanity",
+            "op": "<",
+            "value": 75
+          },
+          "field": "sanity",
+          "op": ">=",
+          "value": 50
+        },
+        "condition_id": "12183f8b-08eb-55f2-819c-e94b215f9cde",
+        "cut_ambient": true,
+        "is_one_shot": false,
+        "label": "T12 Sanity tier Frayed",
+        "metadata": {},
+        "narrator_instruction": "Attention catches on small things. Once per turn at most, a moment of doubt: a sound heard twice, a clock that seems off. Never confirmed.",
+        "sensory_cue": null,
+        "silence_duration_ms": 800,
+        "state_mutation": null,
+        "state_mutations": []
+      },
+      {
+        "condition_expression": {
+          "AND": {
+            "field": "sanity",
+            "op": "<",
+            "value": 50
+          },
+          "field": "sanity",
+          "op": ">=",
+          "value": 25
+        },
+        "condition_id": "53f4fd41-6041-539b-abee-bcf885f30b29",
+        "cut_ambient": true,
+        "is_one_shot": false,
+        "label": "T13 Sanity tier Paranoid",
+        "metadata": {},
+        "narrator_instruction": "Things at the edge of sight that are gone when looked at. Now and then the room disagrees with what the clerk did a minute ago. Never resolved.",
+        "sensory_cue": null,
+        "silence_duration_ms": 800,
+        "state_mutation": null,
+        "state_mutations": []
+      },
+      {
+        "condition_expression": {
+          "field": "sanity",
+          "op": "<",
+          "value": 25
+        },
+        "condition_id": "a9c15c46-a2fe-50f6-afd0-bfcd3ff23cc9",
+        "cut_ambient": true,
+        "is_one_shot": false,
+        "label": "T14 Sanity tier Unravelling",
+        "metadata": {},
+        "narrator_instruction": "Small contradictions with earlier narration. A sentence that repeats. Two senses that disagree. Stay calm and specific; the calm is the horror.",
+        "sensory_cue": null,
+        "silence_duration_ms": 800,
+        "state_mutation": null,
+        "state_mutations": []
+      },
+      {
+        "condition_expression": {
+          "AND": {
+            "field": "seed.false_rule",
+            "op": "==",
+            "value": "r4"
+          },
+          "field": "cabin.lamp",
+          "op": "==",
+          "value": "out"
+        },
+        "condition_id": "befcbddb-d479-5811-adae-ace0e95dc840",
+        "cut_ambient": true,
+        "is_one_shot": false,
+        "label": "T21 Tell: stillness unsafe",
+        "metadata": {},
+        "narrator_instruction": "While the lamp is out, the clerk hears slow typing begin only when they stand still, and stop when they move. Mention it once, as a sound.",
+        "sensory_cue": null,
+        "silence_duration_ms": 800,
+        "state_mutation": null,
+        "state_mutations": []
+      },
+      {
+        "condition_expression": {
+          "AND": {
+            "field": "seed.false_rule",
+            "op": "==",
+            "value": "r6"
+          },
+          "field": "cabin.lamp",
+          "op": "==",
+          "value": "out"
+        },
+        "condition_id": "e5bdd88e-aa2c-524d-afc0-876feaf6db37",
+        "cut_ambient": true,
+        "is_one_shot": false,
+        "label": "T22 Tell: entry unsafe",
+        "metadata": {},
+        "narrator_instruction": "While the lamp is out, the clerk hears footsteps one pace behind them, heading toward the cabin. They stop when the clerk stops. Mention it once, as a sound.",
+        "sensory_cue": null,
+        "silence_duration_ms": 800,
+        "state_mutation": null,
+        "state_mutations": []
+      },
+      {
+        "condition_expression": {
+          "field": "rule_status.r6",
+          "op": "==",
+          "value": "intact"
+        },
+        "condition_id": "7056672e-df37-5560-baf7-33f26e0140df",
+        "cut_ambient": true,
+        "is_one_shot": false,
+        "label": "T30 Rule 6 hand: leaning",
+        "metadata": {
+          "placement": "facts"
+        },
+        "narrator_instruction": "Rule 6 is written fast in blue ink, the letters leaning forward.",
+        "sensory_cue": null,
+        "silence_duration_ms": 800,
+        "state_mutation": null,
+        "state_mutations": []
+      },
+      {
+        "condition_expression": {
+          "field": "rule_status.r6_block",
+          "op": "==",
+          "value": "intact"
+        },
+        "condition_id": "4cc31553-692c-5b20-8a82-a0d192841474",
+        "cut_ambient": true,
+        "is_one_shot": false,
+        "label": "T31 Rule 6 hand: block",
+        "metadata": {
+          "placement": "facts"
+        },
+        "narrator_instruction": "Rule 6 is written in blue ink, the letters upright and separate, each one on its own.",
+        "sensory_cue": null,
+        "silence_duration_ms": 800,
+        "state_mutation": null,
+        "state_mutations": []
+      },
+      {
+        "condition_expression": {
+          "field": "flags.line14_lit",
+          "op": "==",
+          "value": true
+        },
+        "condition_id": "5ef0eaab-f2d7-540b-98c1-a09bd16e7246",
+        "cut_ambient": true,
+        "is_one_shot": false,
+        "label": "T32 Line 14 lit",
+        "metadata": {
+          "placement": "facts"
+        },
+        "narrator_instruction": "The lamp for line 14 on the desk phone stays lit.",
+        "sensory_cue": null,
+        "silence_duration_ms": 800,
+        "state_mutation": null,
+        "state_mutations": []
+      },
+      {
+        "condition_expression": {
+          "AND": {
+            "field": "shift_minutes",
+            "op": "<",
+            "value": 20
+          },
+          "field": "shift_minutes",
+          "op": ">=",
+          "value": 0
+        },
+        "condition_id": "39a1e8e6-6de0-5e60-9824-3faae08514c2",
+        "cut_ambient": true,
+        "is_one_shot": false,
+        "label": "T401 Ambient detail 1",
+        "metadata": {},
+        "narrator_instruction": "One small new detail for this turn, if there is room: A pipe knocks twice inside the wall, then stops. Say it once, in one short sentence. Do not mention it again later.",
+        "sensory_cue": null,
+        "silence_duration_ms": 800,
+        "state_mutation": null,
+        "state_mutations": []
+      },
+      {
+        "condition_expression": {
+          "AND": {
+            "field": "shift_minutes",
+            "op": "<",
+            "value": 40
+          },
+          "field": "shift_minutes",
+          "op": ">=",
+          "value": 20
+        },
+        "condition_id": "99b7c745-5508-5944-9a4e-071b9c863e0b",
+        "cut_ambient": true,
+        "is_one_shot": false,
+        "label": "T402 Ambient detail 2",
+        "metadata": {},
+        "narrator_instruction": "One small new detail for this turn, if there is room: The air from the vents smells of warm dust. Say it once, in one short sentence. Do not mention it again later.",
+        "sensory_cue": null,
+        "silence_duration_ms": 800,
+        "state_mutation": null,
+        "state_mutations": []
+      },
+      {
+        "condition_expression": {
+          "AND": {
+            "field": "shift_minutes",
+            "op": "<",
+            "value": 60
+          },
+          "field": "shift_minutes",
+          "op": ">=",
+          "value": 40
+        },
+        "condition_id": "58c6fc43-727e-5ce2-af7c-10ded70498a2",
+        "cut_ambient": true,
+        "is_one_shot": false,
+        "label": "T403 Ambient detail 3",
+        "metadata": {},
+        "narrator_instruction": "One small new detail for this turn, if there is room: A cold draft crosses your ankles and is gone. Say it once, in one short sentence. Do not mention it again later.",
+        "sensory_cue": null,
+        "silence_duration_ms": 800,
+        "state_mutation": null,
+        "state_mutations": []
+      },
+      {
+        "condition_expression": {
+          "AND": {
+            "field": "shift_minutes",
+            "op": "<",
+            "value": 80
+          },
+          "field": "shift_minutes",
+          "op": ">=",
+          "value": 60
+        },
+        "condition_id": "f990af7b-1a5e-5662-8470-4f04cd958573",
+        "cut_ambient": true,
+        "is_one_shot": false,
+        "label": "T404 Ambient detail 4",
+        "metadata": {},
+        "narrator_instruction": "One small new detail for this turn, if there is room: Far off, a door closes. Nobody walks past. Say it once, in one short sentence. Do not mention it again later.",
+        "sensory_cue": null,
+        "silence_duration_ms": 800,
+        "state_mutation": null,
+        "state_mutations": []
+      },
+      {
+        "condition_expression": {
+          "AND": {
+            "field": "shift_minutes",
+            "op": "<",
+            "value": 100
+          },
+          "field": "shift_minutes",
+          "op": ">=",
+          "value": 80
+        },
+        "condition_id": "6ebf932f-acbf-5f42-b7f4-d6fa19e461b1",
+        "cut_ambient": true,
+        "is_one_shot": false,
+        "label": "T405 Ambient detail 5",
+        "metadata": {},
+        "narrator_instruction": "One small new detail for this turn, if there is room: The ceiling lights hum a little higher for a second, then settle. Say it once, in one short sentence. Do not mention it again later.",
+        "sensory_cue": null,
+        "silence_duration_ms": 800,
+        "state_mutation": null,
+        "state_mutations": []
+      },
+      {
+        "condition_expression": {
+          "AND": {
+            "field": "shift_minutes",
+            "op": "<",
+            "value": 120
+          },
+          "field": "shift_minutes",
+          "op": ">=",
+          "value": 100
+        },
+        "condition_id": "1d2c57cf-8137-57ce-b48a-ede47a6fef2b",
+        "cut_ambient": true,
+        "is_one_shot": false,
+        "label": "T406 Ambient detail 6",
+        "metadata": {},
+        "narrator_instruction": "One small new detail for this turn, if there is room: Your pen is not where you left it. It is a hand's width to the left. Say it once, in one short sentence. Do not mention it again later.",
+        "sensory_cue": null,
+        "silence_duration_ms": 800,
+        "state_mutation": null,
+        "state_mutations": []
+      },
+      {
+        "condition_expression": {
+          "AND": {
+            "field": "shift_minutes",
+            "op": "<",
+            "value": 140
+          },
+          "field": "shift_minutes",
+          "op": ">=",
+          "value": 120
+        },
+        "condition_id": "cefe8be2-4085-5fbb-8605-47ce0e48f976",
+        "cut_ambient": true,
+        "is_one_shot": false,
+        "label": "T407 Ambient detail 7",
+        "metadata": {},
+        "narrator_instruction": "One small new detail for this turn, if there is room: Somewhere above you, a chair scrapes across a floor. Say it once, in one short sentence. Do not mention it again later.",
+        "sensory_cue": null,
+        "silence_duration_ms": 800,
+        "state_mutation": null,
+        "state_mutations": []
+      },
+      {
+        "condition_expression": {
+          "AND": {
+            "field": "shift_minutes",
+            "op": "<",
+            "value": 160
+          },
+          "field": "shift_minutes",
+          "op": ">=",
+          "value": 140
+        },
+        "condition_id": "ca480d44-561f-58da-810a-53733bde7621",
+        "cut_ambient": true,
+        "is_one_shot": false,
+        "label": "T408 Ambient detail 8",
+        "metadata": {},
+        "narrator_instruction": "One small new detail for this turn, if there is room: A phone rings once on another floor and stops. Say it once, in one short sentence. Do not mention it again later.",
+        "sensory_cue": null,
+        "silence_duration_ms": 800,
+        "state_mutation": null,
+        "state_mutations": []
+      },
+      {
+        "condition_expression": {
+          "AND": {
+            "field": "shift_minutes",
+            "op": "<",
+            "value": 180
+          },
+          "field": "shift_minutes",
+          "op": ">=",
+          "value": 160
+        },
+        "condition_id": "69629dec-885c-5583-9546-6f59944f140c",
+        "cut_ambient": true,
+        "is_one_shot": false,
+        "label": "T409 Ambient detail 9",
+        "metadata": {},
+        "narrator_instruction": "One small new detail for this turn, if there is room: Someone coughs far away. It sounds as if it came from below. Say it once, in one short sentence. Do not mention it again later.",
+        "sensory_cue": null,
+        "silence_duration_ms": 800,
+        "state_mutation": null,
+        "state_mutations": []
+      },
+      {
+        "condition_expression": {
+          "AND": {
+            "field": "shift_minutes",
+            "op": "<",
+            "value": 200
+          },
+          "field": "shift_minutes",
+          "op": ">=",
+          "value": 180
+        },
+        "condition_id": "c9b9970f-fcf5-5187-af3f-fa9e8d63270f",
+        "cut_ambient": true,
+        "is_one_shot": false,
+        "label": "T410 Ambient detail 10",
+        "metadata": {},
+        "narrator_instruction": "One small new detail for this turn, if there is room: The floor gives a small tick, like a building cooling down. Say it once, in one short sentence. Do not mention it again later.",
+        "sensory_cue": null,
+        "silence_duration_ms": 800,
+        "state_mutation": null,
+        "state_mutations": []
+      },
+      {
+        "condition_expression": {
+          "AND": {
+            "field": "shift_minutes",
+            "op": "<",
+            "value": 220
+          },
+          "field": "shift_minutes",
+          "op": ">=",
+          "value": 200
+        },
+        "condition_id": "0bc020af-e5d3-59a0-8dc7-d0b275d52e4b",
+        "cut_ambient": true,
+        "is_one_shot": false,
+        "label": "T411 Ambient detail 11",
+        "metadata": {},
+        "narrator_instruction": "One small new detail for this turn, if there is room: A page in the Log lifts at one corner, as if someone breathed on it. Say it once, in one short sentence. Do not mention it again later.",
+        "sensory_cue": null,
+        "silence_duration_ms": 800,
+        "state_mutation": null,
+        "state_mutations": []
+      },
+      {
+        "condition_expression": {
+          "AND": {
+            "field": "shift_minutes",
+            "op": "<",
+            "value": 240
+          },
+          "field": "shift_minutes",
+          "op": ">=",
+          "value": 220
+        },
+        "condition_id": "64b532a2-cafd-5670-a030-6a7bb4eb4f83",
+        "cut_ambient": true,
+        "is_one_shot": false,
+        "label": "T412 Ambient detail 12",
+        "metadata": {},
+        "narrator_instruction": "One small new detail for this turn, if there is room: The hum of the lights stops for a moment. Then it starts again. Say it once, in one short sentence. Do not mention it again later.",
+        "sensory_cue": null,
+        "silence_duration_ms": 800,
+        "state_mutation": null,
+        "state_mutations": []
+      },
+      {
+        "condition_expression": {
+          "AND": {
+            "field": "shift_minutes",
+            "op": "<",
+            "value": 260
+          },
+          "field": "shift_minutes",
+          "op": ">=",
+          "value": 240
+        },
+        "condition_id": "9dee1f6f-47db-568f-b9fc-2efcb25afa1a",
+        "cut_ambient": true,
+        "is_one_shot": false,
+        "label": "T413 Ambient detail 13",
+        "metadata": {},
+        "narrator_instruction": "One small new detail for this turn, if there is room: Out of sight, someone laughs once and is quiet. Say it once, in one short sentence. Do not mention it again later.",
+        "sensory_cue": null,
+        "silence_duration_ms": 800,
+        "state_mutation": null,
+        "state_mutations": []
+      },
+      {
+        "condition_expression": {
+          "AND": {
+            "field": "shift_minutes",
+            "op": "<",
+            "value": 280
+          },
+          "field": "shift_minutes",
+          "op": ">=",
+          "value": 260
+        },
+        "condition_id": "9b4bb5b3-4134-5199-8932-9980e524fe80",
+        "cut_ambient": true,
+        "is_one_shot": false,
+        "label": "T414 Ambient detail 14",
+        "metadata": {},
+        "narrator_instruction": "One small new detail for this turn, if there is room: Your hands feel cold. The room does not feel cold. Say it once, in one short sentence. Do not mention it again later.",
+        "sensory_cue": null,
+        "silence_duration_ms": 800,
+        "state_mutation": null,
+        "state_mutations": []
+      },
+      {
+        "condition_expression": {
+          "AND": {
+            "field": "shift_minutes",
+            "op": "<",
+            "value": 300
+          },
+          "field": "shift_minutes",
+          "op": ">=",
+          "value": 280
+        },
+        "condition_id": "fb8f3949-ffe9-50fc-b346-c9daf1788310",
+        "cut_ambient": true,
+        "is_one_shot": false,
+        "label": "T415 Ambient detail 15",
+        "metadata": {},
+        "narrator_instruction": "One small new detail for this turn, if there is room: The vents breathe out, then in, slower than before. Say it once, in one short sentence. Do not mention it again later.",
+        "sensory_cue": null,
+        "silence_duration_ms": 800,
+        "state_mutation": null,
+        "state_mutations": []
+      },
+      {
+        "condition_expression": {
+          "AND": {
+            "field": "shift_minutes",
+            "op": "<",
+            "value": 320
+          },
+          "field": "shift_minutes",
+          "op": ">=",
+          "value": 300
+        },
+        "condition_id": "8c5439da-6d7b-59e9-963b-e008d4da9967",
+        "cut_ambient": true,
+        "is_one_shot": false,
+        "label": "T416 Ambient detail 16",
+        "metadata": {},
+        "narrator_instruction": "One small new detail for this turn, if there is room: A drawer closes somewhere on the floor. Slowly. Say it once, in one short sentence. Do not mention it again later.",
+        "sensory_cue": null,
+        "silence_duration_ms": 800,
+        "state_mutation": null,
+        "state_mutations": []
+      },
+      {
+        "condition_expression": {
+          "AND": {
+            "field": "shift_minutes",
+            "op": "<",
+            "value": 340
+          },
+          "field": "shift_minutes",
+          "op": ">=",
+          "value": 320
+        },
+        "condition_id": "452fdd9f-22e9-5e04-810f-f3b244f6f677",
+        "cut_ambient": true,
+        "is_one_shot": false,
+        "label": "T417 Ambient detail 17",
+        "metadata": {},
+        "narrator_instruction": "One small new detail for this turn, if there is room: The air tastes of metal. Say it once, in one short sentence. Do not mention it again later.",
+        "sensory_cue": null,
+        "silence_duration_ms": 800,
+        "state_mutation": null,
+        "state_mutations": []
+      },
+      {
+        "condition_expression": {
+          "AND": {
+            "field": "shift_minutes",
+            "op": "<",
+            "value": 360
+          },
+          "field": "shift_minutes",
+          "op": ">=",
+          "value": 340
+        },
+        "condition_id": "5327bf6a-a646-5d94-885a-75fb496233db",
+        "cut_ambient": true,
+        "is_one_shot": false,
+        "label": "T418 Ambient detail 18",
+        "metadata": {},
+        "narrator_instruction": "One small new detail for this turn, if there is room: A lift cable creaks far off and goes quiet. Say it once, in one short sentence. Do not mention it again later.",
+        "sensory_cue": null,
+        "silence_duration_ms": 800,
+        "state_mutation": null,
+        "state_mutations": []
+      },
+      {
+        "condition_expression": {
+          "AND": {
+            "field": "shift_minutes",
+            "op": "<",
+            "value": 380
+          },
+          "field": "shift_minutes",
+          "op": ">=",
+          "value": 360
+        },
+        "condition_id": "7ca4e657-7f19-5dd3-ac03-e2672de58dc6",
+        "cut_ambient": true,
+        "is_one_shot": false,
+        "label": "T419 Ambient detail 19",
+        "metadata": {},
+        "narrator_instruction": "One small new detail for this turn, if there is room: The tick of a clock you cannot see seems very loud. Say it once, in one short sentence. Do not mention it again later.",
+        "sensory_cue": null,
+        "silence_duration_ms": 800,
+        "state_mutation": null,
+        "state_mutations": []
+      },
+      {
+        "condition_expression": {
+          "AND": {
+            "field": "shift_minutes",
+            "op": "<",
+            "value": 400
+          },
+          "field": "shift_minutes",
+          "op": ">=",
+          "value": 380
+        },
+        "condition_id": "21974540-87e5-52c8-81e9-8ae170fa2bff",
+        "cut_ambient": true,
+        "is_one_shot": false,
+        "label": "T420 Ambient detail 20",
+        "metadata": {},
+        "narrator_instruction": "One small new detail for this turn, if there is room: The lights flicker once, all together. Say it once, in one short sentence. Do not mention it again later.",
+        "sensory_cue": null,
+        "silence_duration_ms": 800,
+        "state_mutation": null,
+        "state_mutations": []
+      },
+      {
+        "condition_expression": {
+          "AND": {
+            "field": "shift_minutes",
+            "op": "<",
+            "value": 420
+          },
+          "field": "shift_minutes",
+          "op": ">=",
+          "value": 400
+        },
+        "condition_id": "0e7208ee-bf8b-53e5-a09b-17de8db0ac27",
+        "cut_ambient": true,
+        "is_one_shot": false,
+        "label": "T421 Ambient detail 21",
+        "metadata": {},
+        "narrator_instruction": "One small new detail for this turn, if there is room: Far down the floor, the dark looks a little thinner. Say it once, in one short sentence. Do not mention it again later.",
+        "sensory_cue": null,
+        "silence_duration_ms": 800,
+        "state_mutation": null,
+        "state_mutations": []
+      },
+      {
+        "condition_expression": {
+          "field": "shift_minutes",
+          "op": ">=",
+          "value": 0
+        },
+        "condition_id": "49692172-4061-5dd9-819d-1671e5f3e666",
+        "cut_ambient": true,
+        "is_one_shot": false,
+        "label": "N01 Never describe",
+        "metadata": {
+          "placement": "facts"
+        },
+        "narrator_instruction": "Never describe the inside of Cabin 14 beyond what a directive gives you.",
+        "sensory_cue": null,
+        "silence_duration_ms": 800,
+        "state_mutation": null,
+        "state_mutations": []
+      },
+      {
+        "condition_expression": {
+          "field": "shift_minutes",
+          "op": ">=",
+          "value": 0
+        },
+        "condition_id": "8ddadad3-8e53-533d-bad7-0558745518ad",
+        "cut_ambient": true,
+        "is_one_shot": false,
+        "label": "N02 Never describe",
+        "metadata": {
+          "placement": "facts"
+        },
+        "narrator_instruction": "Never say what the visitors are, or what the count measures.",
+        "sensory_cue": null,
+        "silence_duration_ms": 800,
+        "state_mutation": null,
+        "state_mutations": []
+      },
+      {
+        "condition_expression": {
+          "field": "shift_minutes",
+          "op": "<",
+          "value": 420
+        },
+        "condition_id": "819171ae-938c-5f89-9dbb-1d3646918d4d",
+        "cut_ambient": true,
+        "is_one_shot": false,
+        "label": "A01 Clock advance",
+        "metadata": {},
+        "narrator_instruction": "",
+        "sensory_cue": null,
+        "silence_duration_ms": 800,
+        "state_mutation": null,
+        "state_mutations": [
+          {
+            "op": "increment",
+            "path": "shift_minutes",
+            "value": 20
+          }
+        ]
+      }
+    ],
+    "scenario_minigames": [
+      {
+        "composure_config": {
+          "audio_profile": "hum",
+          "beats_to_win": 5,
+          "keys": [
+            "W",
+            "A",
+            "S",
+            "D"
+          ],
+          "max_strikes": 2,
+          "target_bpm": 55,
+          "texts": {
+            "instructions": "Hum until the elevator chimes.",
+            "lose_text": "You answer the voice.",
+            "start_text": "Begin",
+            "win_text": "You hum until the chime."
+          },
+          "tolerance_ms": 180,
+          "version": 1
+        },
+        "dodge_config": null,
+        "label": "The Hum",
+        "lockpick_config": null,
+        "lose_mutation": null,
+        "lose_mutations": [
+          {
+            "op": "decrement",
+            "path": "sanity",
+            "value": 25
+          },
+          {
+            "op": "set",
+            "path": "rule_status.r8",
+            "value": "violated"
+          },
+          {
+            "op": "set",
+            "path": "flags.hum",
+            "value": "done"
+          }
+        ],
+        "minigame_id": "522310c0-faa9-5c25-85cd-6b1da524a338",
+        "minigame_type": "rhythm_composure",
+        "narrator_instruction_template": "The clerk faced the stairwell voice by humming; the outcome is '{outcome_tag}'. If 'win': the clerk hummed through it, and the voice stopped mid-word when the elevator chimed. Narrate the silence settling. If 'lose' or 'timeout': the clerk answered. The voice finishes its sentence in the clerk's own tone. The elevator chimes late. Do not describe harm.",
+        "outcome_mode": "binary",
+        "priority": 0,
+        "tiered_outcomes": [],
+        "timeout_mutation": null,
+        "timeout_mutations": [
+          {
+            "op": "decrement",
+            "path": "sanity",
+            "value": 25
+          },
+          {
+            "op": "set",
+            "path": "rule_status.r8",
+            "value": "violated"
+          },
+          {
+            "op": "set",
+            "path": "flags.hum",
+            "value": "done"
+          }
+        ],
+        "trigger_condition_expression": {
+          "AND": {
+            "field": "flags.hum",
+            "op": "==",
+            "value": "idle"
+          },
+          "field": "events.stairwell",
+          "op": "==",
+          "value": true
+        },
+        "win_mutation": null,
+        "win_mutations": [
+          {
+            "op": "increment",
+            "path": "sanity",
+            "value": 5
+          },
+          {
+            "op": "set",
+            "path": "rule_status.r8",
+            "value": "intact"
+          },
+          {
+            "op": "set",
+            "path": "flags.hum",
+            "value": "done"
+          }
+        ]
+      }
+    ],
+    "setup_schema": [
+      {
+        "is_character_name": true,
+        "key": "character_name",
+        "label": "Your name"
+      }
+    ],
+    "sheet_rules": [
+      {
+        "corrupted_text": null,
+        "display_order": 0,
+        "initial_status": "intact",
+        "is_ai_flaggable": false,
+        "key": "r1",
+        "number": 1,
+        "rule_id": "b5697c5a-1124-5b53-ae4d-21a54f1d57fb",
+        "source_style": "typed",
+        "text": "Every visitor signs the Log. Record the time they give you, not the time on the wall."
+      },
+      {
+        "corrupted_text": null,
+        "display_order": 1,
+        "initial_status": "intact",
+        "is_ai_flaggable": true,
+        "key": "r2",
+        "number": 2,
+        "rule_id": "97c3f8d5-821b-5fa2-98ae-3b4d2fb4fd34",
+        "source_style": "typed",
+        "text": "Do not look into the glass of the vending machine in the east alcove."
+      },
+      {
+        "corrupted_text": null,
+        "display_order": 2,
+        "initial_status": "intact",
+        "is_ai_flaggable": false,
+        "key": "r3",
+        "number": 3,
+        "rule_id": "8bb7ed93-b6e5-5b11-9647-f860848e5fd2",
+        "source_style": "typed",
+        "text": "After 03:00, if the desk phone rings, let it ring. The machine will take it."
+      },
+      {
+        "corrupted_text": null,
+        "display_order": 3,
+        "initial_status": "intact",
+        "is_ai_flaggable": false,
+        "key": "r4",
+        "number": 4,
+        "rule_id": "88d9d320-a0fb-57b3-a461-65b6f03e5775",
+        "source_style": "typed",
+        "text": "Cabin 14 is occupied. Do not approach it. If its lamp goes out, remain where you are until it returns."
+      },
+      {
+        "corrupted_text": null,
+        "display_order": 4,
+        "initial_status": "unrevealed",
+        "is_ai_flaggable": false,
+        "key": "r6",
+        "number": 6,
+        "rule_id": "a819861e-a9c2-5351-93bc-7f693b8eb480",
+        "source_style": "ink",
+        "text": "(If the lamp is out, the door is unlocked. It is permitted to go in.)"
+      },
+      {
+        "corrupted_text": null,
+        "display_order": 5,
+        "initial_status": "unrevealed",
+        "is_ai_flaggable": false,
+        "key": "r6_block",
+        "number": 6,
+        "rule_id": "b1d81f42-ddf5-5c7d-9e4f-048fe9a7f322",
+        "source_style": "ink_block",
+        "text": "(If the lamp is out, the door is unlocked. It is permitted to go in.)"
+      },
+      {
+        "corrupted_text": null,
+        "display_order": 6,
+        "initial_status": "unrevealed",
+        "is_ai_flaggable": false,
+        "key": "r7",
+        "number": 7,
+        "rule_id": "dbbf239f-0b3c-52a8-8146-cfdc020e7d1e",
+        "source_style": "printed",
+        "text": "Anything the printer produces after 02:00 is not for you. Do not read it. Leave it in the tray."
+      },
+      {
+        "corrupted_text": null,
+        "display_order": 7,
+        "initial_status": "unrevealed",
+        "is_ai_flaggable": false,
+        "key": "r8",
+        "number": 8,
+        "rule_id": "840a85af-da22-528d-b132-e560dd21cf82",
+        "source_style": "spoken",
+        "text": "If you hear a voice you know from the stairwell, hum. Do not answer it. Hum until the elevator chimes."
+      }
+    ],
+    "state_schema": {
+      "cabin": {
+        "fields": {
+          "lamp": {
+            "initial": "on",
+            "narrator_fact": "Cabin 14 lamp",
+            "options": [
+              "on",
+              "out"
+            ],
+            "type": "enum"
+          }
+        },
+        "hidden": true,
+        "type": "object"
+      },
+      "check": {
+        "fields": {
+          "drawer": {
+            "initial": "",
+            "options": [
+              "",
+              "pending",
+              "yes",
+              "no"
+            ],
+            "type": "enum"
+          },
+          "lamp": {
+            "initial": "",
+            "options": [
+              "",
+              "pending",
+              "held_still",
+              "moved",
+              "entered",
+              "timeout"
+            ],
+            "type": "enum"
+          },
+          "phone": {
+            "initial": "",
+            "options": [
+              "",
+              "pending",
+              "let_ring",
+              "picked_up",
+              "unplugged",
+              "timeout"
+            ],
+            "type": "enum"
+          },
+          "voicemail": {
+            "initial": "",
+            "options": [
+              "",
+              "pending",
+              "yes",
+              "no"
+            ],
+            "type": "enum"
+          }
+        },
+        "hidden": true,
+        "type": "object"
+      },
+      "count": {
+        "fields": {
+          "c1": {
+            "initial": "",
+            "options": [
+              "",
+              "pending",
+              "signed",
+              "left",
+              "timeout"
+            ],
+            "type": "enum"
+          },
+          "c2": {
+            "initial": "",
+            "options": [
+              "",
+              "pending",
+              "signed",
+              "left",
+              "timeout"
+            ],
+            "type": "enum"
+          },
+          "c3": {
+            "initial": "",
+            "options": [
+              "",
+              "pending",
+              "signed",
+              "left",
+              "timeout"
+            ],
+            "type": "enum"
+          },
+          "difference": {
+            "initial": 1,
+            "max": 10,
+            "min": 1,
+            "type": "number"
+          },
+          "reads_after_two": {
+            "initial": 0,
+            "max": 2,
+            "min": 0,
+            "type": "number"
+          },
+          "unsigned": {
+            "initial": 0,
+            "max": 3,
+            "min": 0,
+            "type": "number"
+          },
+          "wrong_entries": {
+            "initial": 0,
+            "max": 9,
+            "min": 0,
+            "type": "number"
+          }
+        },
+        "hidden": true,
+        "type": "object"
+      },
+      "current_location_id": {
+        "entity_type": "location",
+        "type": "entity_ref"
+      },
+      "discovered_location_ids": {
+        "entity_type": "location",
+        "item_type": "entity_ref",
+        "type": "list"
+      },
+      "dwell": {
+        "fields": {
+          "alcove": {
+            "initial": 0,
+            "max": 99,
+            "min": 0,
+            "type": "number"
+          }
+        },
+        "hidden": true,
+        "type": "object"
+      },
+      "events": {
+        "fields": {
+          "elevator": {
+            "initial": false,
+            "type": "boolean"
+          },
+          "stairwell": {
+            "initial": false,
+            "type": "boolean"
+          }
+        },
+        "hidden": true,
+        "type": "object"
+      },
+      "flags": {
+        "fields": {
+          "cabin_entered": {
+            "initial": false,
+            "type": "boolean"
+          },
+          "escalations": {
+            "initial": 0,
+            "max": 99,
+            "min": 0,
+            "type": "number"
+          },
+          "hum": {
+            "initial": "idle",
+            "options": [
+              "idle",
+              "done"
+            ],
+            "type": "enum"
+          },
+          "line14_lit": {
+            "initial": false,
+            "type": "boolean"
+          }
+        },
+        "hidden": true,
+        "type": "object"
+      },
+      "fragments": {
+        "fields": {
+          "act1": {
+            "initial": "",
+            "options": [
+              "",
+              "f1",
+              "f2",
+              "f3",
+              "f4",
+              "f5",
+              "f6"
+            ],
+            "type": "enum"
+          },
+          "act2": {
+            "initial": "",
+            "options": [
+              "",
+              "f1",
+              "f2",
+              "f3",
+              "f4",
+              "f5",
+              "f6"
+            ],
+            "type": "enum"
+          },
+          "act3": {
+            "initial": "",
+            "options": [
+              "",
+              "f1",
+              "f2",
+              "f3",
+              "f4",
+              "f5",
+              "f6"
+            ],
+            "type": "enum"
+          },
+          "poster": {
+            "initial": "locked",
+            "options": [
+              "locked",
+              "shown"
+            ],
+            "type": "enum"
+          }
+        },
+        "hidden": true,
+        "type": "object"
+      },
+      "player": {
+        "fields": {
+          "inventory": {
+            "item_type": "entity_ref",
+            "type": "list"
+          }
+        },
+        "type": "object"
+      },
+      "rule_flags": {
+        "fields": {
+          "r2": {
+            "initial": false,
+            "type": "boolean"
+          }
+        },
+        "hidden": true,
+        "type": "object"
+      },
+      "rule_status": {
+        "fields": {
+          "r1": {
+            "initial": "intact",
+            "options": [
+              "unrevealed",
+              "intact",
+              "active_threat",
+              "violated",
+              "corrupted"
+            ],
+            "type": "enum"
+          },
+          "r2": {
+            "initial": "intact",
+            "options": [
+              "unrevealed",
+              "intact",
+              "active_threat",
+              "violated",
+              "corrupted"
+            ],
+            "type": "enum"
+          },
+          "r3": {
+            "initial": "intact",
+            "options": [
+              "unrevealed",
+              "intact",
+              "active_threat",
+              "violated",
+              "corrupted"
+            ],
+            "type": "enum"
+          },
+          "r4": {
+            "initial": "intact",
+            "options": [
+              "unrevealed",
+              "intact",
+              "active_threat",
+              "violated",
+              "corrupted"
+            ],
+            "type": "enum"
+          },
+          "r6": {
+            "initial": "unrevealed",
+            "options": [
+              "unrevealed",
+              "intact",
+              "active_threat",
+              "violated",
+              "corrupted"
+            ],
+            "type": "enum"
+          },
+          "r6_block": {
+            "initial": "unrevealed",
+            "options": [
+              "unrevealed",
+              "intact",
+              "active_threat",
+              "violated",
+              "corrupted"
+            ],
+            "type": "enum"
+          },
+          "r7": {
+            "initial": "unrevealed",
+            "options": [
+              "unrevealed",
+              "intact",
+              "active_threat",
+              "violated",
+              "corrupted"
+            ],
+            "type": "enum"
+          },
+          "r8": {
+            "initial": "unrevealed",
+            "options": [
+              "unrevealed",
+              "intact",
+              "active_threat",
+              "violated",
+              "corrupted"
+            ],
+            "type": "enum"
+          }
+        },
+        "hidden": true,
+        "type": "object"
+      },
+      "sanity": {
+        "display": {
+          "clamp_max": 100,
+          "clamp_min": 0,
+          "effects": {
+            "critical_below": 25,
+            "moderate_below": 50
+          },
+          "kind": "meter",
+          "label": "Sanity",
+          "tiers": [
+            {
+              "min": 75,
+              "name": "Clear"
+            },
+            {
+              "min": 50,
+              "name": "Frayed"
+            },
+            {
+              "min": 25,
+              "name": "Paranoid"
+            },
+            {
+              "name": "Unravelling"
+            }
+          ]
+        },
+        "initial": 85,
+        "label": "Sanity",
+        "max": 100,
+        "min": -100,
+        "type": "number"
+      },
+      "seed": {
+        "fields": {
+          "false_rule": {
+            "initial": "r6",
+            "initial_random": [
+              "r4",
+              "r6"
+            ],
+            "options": [
+              "r4",
+              "r6"
+            ],
+            "type": "enum"
+          }
+        },
+        "hidden": true,
+        "type": "object"
+      },
+      "shift_minutes": {
+        "display": {
+          "format": "12h",
+          "glitch": {
+            "below": 25,
+            "chance": 0.02,
+            "source": "sanity"
+          },
+          "kind": "clock",
+          "label": "Shift",
+          "start": "23:00"
+        },
+        "initial": 0,
+        "label": "Shift",
+        "max": 480,
+        "min": 0,
+        "type": "number"
+      },
+      "tension_tier": {
+        "display": {
+          "kind": "tier",
+          "label": "Tension",
+          "mood_map": {
+            "breaking": "combat",
+            "dread": "tension",
+            "tense": "tension",
+            "uneasy": "mystery"
+          },
+          "track_map": {
+            "breaking": "night-desk-music/breaking.mp3",
+            "dread": "night-desk-music/dread.mp3",
+            "tense": "night-desk-music/tense.mp3",
+            "uneasy": "night-desk-music/uneasy.mp3"
+          }
+        },
+        "initial": "uneasy",
+        "label": "Tension",
+        "options": [
+          "uneasy",
+          "tense",
+          "dread",
+          "breaking"
+        ],
+        "type": "enum"
+      },
+      "violations_count": {
+        "hidden": true,
+        "initial": 0,
+        "max": 99,
+        "min": 0,
+        "type": "number"
+      },
+      "visit": {
+        "fields": {
+          "pending": {
+            "initial": "",
+            "options": [
+              "",
+              "v1",
+              "v2",
+              "v3"
+            ],
+            "type": "enum"
+          },
+          "present": {
+            "initial": "",
+            "options": [
+              "",
+              "v1",
+              "v2",
+              "v3"
+            ],
+            "type": "enum"
+          },
+          "result": {
+            "initial": "",
+            "options": [
+              "",
+              "told",
+              "wall",
+              "other",
+              "rejected",
+              "none"
+            ],
+            "type": "enum"
+          },
+          "turns_present": {
+            "initial": 0,
+            "max": 99,
+            "min": 0,
+            "type": "number"
+          }
+        },
+        "hidden": true,
+        "type": "object"
+      },
+      "visited": {
+        "fields": {
+          "cabin_14": {
+            "initial": false,
+            "type": "boolean"
+          },
+          "elevator_lobby": {
+            "initial": false,
+            "type": "boolean"
+          },
+          "last": {
+            "initial": "night_desk",
+            "type": "string"
+          },
+          "print_room": {
+            "initial": false,
+            "type": "boolean"
+          },
+          "records_room": {
+            "initial": 0,
+            "max": 9,
+            "min": 0,
+            "type": "number"
+          }
+        },
+        "hidden": true,
+        "type": "object"
+      }
+    },
+    "tier_tracks": {
+      "breaking": "http://localhost:8000/uploads/night-desk-music/breaking.mp3",
+      "dread": "http://localhost:8000/uploads/night-desk-music/dread.mp3",
+      "tense": "http://localhost:8000/uploads/night-desk-music/tense.mp3",
+      "uneasy": "http://localhost:8000/uploads/night-desk-music/uneasy.mp3"
+    },
+    "visibility": "public",
+    "world_data": {
+      "duties": [
+        "Sign in visitors",
+        "File folders",
+        "Match the count (1:00 / 3:00 / 5:00)"
+      ],
+      "escalation_reply": "Acknowledged.",
+      "fallback_narration": "The lights hold their note. Nothing on the floor answers. The Log waits on the desk.",
+      "openingPrompt": "It is 10:58 on the last night of the year. The elevator opens on Floor 9 before you press the button.\n\nA woman in a grey coat is waiting at the night desk. \"the new clerk? I'm Eva Venn. You have three jobs tonight. Listen, because I'm leaving.\"\n\nShe taps a big book on the desk. \"This is the Log. When a visitor comes, they sign it. Ask them the time and write down what they say, even if the clock says something else.\"\n\nShe points to a grey folder in the tray. \"Visitors leave folders. Take each one to the Records room and file it by the number on the tab. That one's left over from me.\"\n\nShe holds up a printed slip with a number circled at the bottom. \"At one, three and five, the printer gives you a count. It should match the Log. It never does. It's always off by one. Write the difference on the form and sign it.\"\n\n\"What happens if I don't?\"\n\n\"Then the count is wrong at six, and someone comes up to fix it. You don't want that.\" She puts a typed sheet on top. \"These are the rules. Read them now.\"\n\nShe glances up at a small speaker above the desk, playing something soft. \"And that music. It won't stop. I've tried everything. Just leave it.\"\n\nShe walks to the stairs, even though the elevator is still open. \"Don't be late tomorrow.\"\n\nThe floor is dark. Only your desk lamp is on, and one other light: at the end of the long east corridor, a glass office called Cabin 14. A small brass sign by its door reads Mr. Orr is in.",
+      "presentation": {
+        "welcome_tape_id": "tallis-v1"
+      }
+    }
+  }
+}

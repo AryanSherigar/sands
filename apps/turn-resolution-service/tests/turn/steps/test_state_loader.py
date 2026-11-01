@@ -1,0 +1,105 @@
+"""Unit tests for state_loader.py, with the repository mocked."""
+
+import uuid
+from types import SimpleNamespace
+from unittest.mock import AsyncMock
+
+import pytest
+from app.exceptions.turn_exceptions import PlaythroughNotActiveError
+from app.turn.steps.state_loader import load_state
+
+
+async def test_load_state_returns_snapshot_and_state() -> None:
+    scenario_id = uuid.uuid4()
+    playthrough_repo = AsyncMock()
+    playthrough_repo.get_by_id.return_value = SimpleNamespace(
+        scenario_id=scenario_id,
+        scenario_snapshot={"narrator_persona": "A grim voice."},
+        state={"narrative": {}},
+        turn_count=3,
+        checkpoint="chapter_1",
+        is_playtest=True,
+        memory_publish_revision=None,
+    )
+
+    loaded = await load_state(uuid.uuid4(), playthrough_repo)
+
+    assert loaded.scenario_id == scenario_id
+    assert loaded.scenario_snapshot == {"narrator_persona": "A grim voice."}
+    assert loaded.turn_count == 3
+    assert loaded.checkpoint == "chapter_1"
+    assert loaded.is_playtest is True
+
+
+async def test_load_state_never_queries_scenario_repo_directly() -> None:
+    """Confirms ADR-8: only playthrough_repo is touched, never a Scenario read."""
+    playthrough_repo = AsyncMock()
+    playthrough_repo.get_by_id.return_value = SimpleNamespace(
+        scenario_id=uuid.uuid4(),
+        scenario_snapshot={},
+        state={},
+        turn_count=0,
+        checkpoint=None,
+        is_playtest=False,
+        memory_publish_revision=None,
+    )
+
+    await load_state(uuid.uuid4(), playthrough_repo)
+
+    playthrough_repo.get_by_id.assert_awaited_once()
+
+
+async def test_load_state_raises_when_playthrough_missing() -> None:
+    playthrough_repo = AsyncMock()
+    playthrough_repo.get_by_id.return_value = None
+
+    with pytest.raises(PlaythroughNotActiveError):
+        await load_state(uuid.uuid4(), playthrough_repo)
+
+
+async def test_load_state_deepcopies_playthrough_state() -> None:
+    original_state: dict[str, object] = {
+        "player": {"health": 100, "inventory": ["torch"]},
+        "discovered_location_ids": ["loc_1"],
+    }
+    playthrough_repo = AsyncMock()
+    playthrough_repo.get_by_id.return_value = SimpleNamespace(
+        scenario_id=uuid.uuid4(),
+        scenario_snapshot={},
+        state=original_state,
+        turn_count=1,
+        checkpoint=None,
+        is_playtest=False,
+        memory_publish_revision=None,
+    )
+
+    loaded = await load_state(uuid.uuid4(), playthrough_repo)
+
+    # Mutate loaded state deeply
+    player_dict = loaded.state.get("player")
+    assert isinstance(player_dict, dict)
+    player_dict["health"] = 50
+
+    inv_list = player_dict.get("inventory")
+    assert isinstance(inv_list, list)
+    inv_list.append("sword")
+
+    # Original state must be completely unaffected
+    assert original_state["player"] == {"health": 100, "inventory": ["torch"]}
+
+
+async def test_load_state_carries_pinned_memory_publish_revision() -> None:
+    playthrough_repo = AsyncMock()
+    playthrough_repo.get_by_id.return_value = SimpleNamespace(
+        scenario_id=uuid.uuid4(),
+        scenario_snapshot={},
+        state={},
+        turn_count=0,
+        checkpoint=None,
+        is_playtest=False,
+        memory_publish_revision=4,
+    )
+
+    loaded = await load_state(uuid.uuid4(), playthrough_repo)
+
+    assert loaded.memory_publish_revision == 4

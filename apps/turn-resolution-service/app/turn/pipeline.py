@@ -1481,6 +1481,8 @@ async def _generate_turn_narration_audio(
         str(narrator_voice),
         speaker_voice_pool.NPC_VOICE_POOL,
         settings.text_to_speech_timeout_seconds,
+        capture_speaker_timing=loaded_state.scenario_snapshot.get("genre_tags", [])[:1]
+        == ["Slice of Life"],
     )
 
 

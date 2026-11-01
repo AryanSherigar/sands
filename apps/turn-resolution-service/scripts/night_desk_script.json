@@ -1,0 +1,152 @@
+{
+  "narration": "The floor holds still.",
+  "runs": {
+    "obedient_r6": {
+      "seed": "r6",
+      "strategy": {},
+      "moves": []
+    },
+    "reader": {
+      "seed": "r6",
+      "strategy": {
+        "counts": [
+          "sign",
+          "read",
+          "read"
+        ]
+      },
+      "moves": []
+    },
+    "violator": {
+      "seed": "r6",
+      "strategy": {
+        "counts": [
+          "sign",
+          "leave",
+          "read"
+        ],
+        "phone": "pick_up",
+        "lamp": "enter"
+      },
+      "moves": [
+        {
+          "at_shift": 20,
+          "narration": "The elevator doors stand open. A poster hangs on the wall.",
+          "tool_calls": [
+            {
+              "name": "set_field",
+              "args": {
+                "path": "current_location_id",
+                "value": "@entity:Elevator lobby"
+              }
+            }
+          ]
+        },
+        {
+          "at_shift": 40,
+          "narration": "Back at the desk.",
+          "tool_calls": [
+            {
+              "name": "set_field",
+              "args": {
+                "path": "current_location_id",
+                "value": "@entity:The night desk"
+              }
+            }
+          ]
+        },
+        {
+          "at_shift": 60,
+          "narration": "The corridor grey runs on.",
+          "tool_calls": [
+            {
+              "name": "set_field",
+              "args": {
+                "path": "current_location_id",
+                "value": "@entity:East corridor"
+              }
+            }
+          ]
+        },
+        {
+          "at_shift": 80,
+          "narration": "The vending machine glass shows the corridor a little too clearly.",
+          "tool_calls": [
+            {
+              "name": "set_field",
+              "args": {
+                "path": "current_location_id",
+                "value": "@entity:East alcove"
+              }
+            },
+            {
+              "name": "flag_rule_violation",
+              "args": {
+                "rule_id": "r2",
+                "evidence": "The clerk looked into the glass."
+              }
+            }
+          ]
+        },
+        {
+          "at_shift": 100,
+          "narration": "Back at the desk.",
+          "tool_calls": [
+            {
+              "name": "set_field",
+              "args": {
+                "path": "current_location_id",
+                "value": "@entity:The night desk"
+              }
+            }
+          ]
+        },
+        {
+          "at_shift": 160,
+          "narration": "The print room smells of warm toner.",
+          "tool_calls": [
+            {
+              "name": "set_field",
+              "args": {
+                "path": "current_location_id",
+                "value": "@entity:Print room"
+              }
+            }
+          ]
+        },
+        {
+          "at_shift": 180,
+          "narration": "Back at the desk.",
+          "tool_calls": [
+            {
+              "name": "set_field",
+              "args": {
+                "path": "current_location_id",
+                "value": "@entity:The night desk"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "breakdown": {
+      "seed": "r6",
+      "strategy": {
+        "visitor_choices": [
+          "wall",
+          "wall",
+          "wall"
+        ],
+        "phone": "pick_up",
+        "lamp": "enter",
+        "counts": [
+          "sign",
+          "read",
+          "read"
+        ],
+        "hum": "lose"
+      },
+      "moves": []
+    }
+  }
+}

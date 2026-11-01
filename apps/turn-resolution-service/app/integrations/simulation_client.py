@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import uuid
 from typing import TypeVar
+from urllib.parse import quote
 from uuid import UUID
 
 import httpx
@@ -25,9 +26,25 @@ from app.exceptions.scene_exceptions import (
 )
 from app.integrations import memory_auth
 from pydantic import BaseModel, ValidationError
+from strategy_contracts.agents import (
+    DispatchClaim,
+    DispatchClaimInput,
+    DispatchCompleteInput,
+    DispatchFailInput,
+    DispatchView,
+)
+from strategy_contracts.art import (
+    ArtClaim,
+    ArtClaimInput,
+    ArtCompleteInput,
+    ArtFailInput,
+    ArtKind,
+    ArtView,
+)
 from strategy_contracts.base import StrictModel
 from strategy_contracts.scene_exchange import (
     InternalScenePackage,
+    LetterBodySubmission,
     SceneExchangeResult,
     SceneExchangeSubmission,
     SceneFailureResult,
@@ -130,6 +147,19 @@ async def submit_exchange(
     return _parse(SceneExchangeResult, response)
 
 
+async def store_letter_body(
+    scene_id: uuid.UUID, user_id: uuid.UUID, text: str
+) -> SceneExchangeResult:
+    """Store the incoming letter once, so a reopened scene shows the same text."""
+    response = await _send(
+        "POST",
+        f"{SCENES_PATH}/{scene_id}/letter",
+        user_id,
+        LetterBodySubmission(text=text),
+    )
+    return _parse(SceneExchangeResult, response)
+
+
 async def report_scene_failure(
     scene_id: uuid.UUID, user_id: uuid.UUID
 ) -> SceneFailureResult:
@@ -138,10 +168,13 @@ async def report_scene_failure(
     return _parse(SceneFailureResult, response)
 
 
-class SimulationSummaryClient:
+class _ForwardedIdentityClient:
     def __init__(self, authorization: str | None, dev_user_id: str | None) -> None:
         self.authorization = authorization
         self.dev_user_id = dev_user_id
+
+    error_code = "summary_unavailable"
+    error_message = "Summary service request failed"
 
     async def _request(
         self, method: str, path: str, body: StrictModel | None = None
@@ -156,18 +189,18 @@ class SimulationSummaryClient:
         ) as client:
             response = await client.request(
                 method,
-                settings.simulation_base_url.rstrip("/") + path,
+                settings.simulation_url.rstrip("/") + path,
                 headers=headers,
                 json=body.model_dump(mode="json") if body else None,
             )
         if response.is_error:
             raise BaseAppException(
-                "Summary service request failed",
-                response.status_code,
-                "summary_unavailable",
+                self.error_message, response.status_code, self.error_code
             )
         return response.json()
 
+
+class SimulationSummaryClient(_ForwardedIdentityClient):
     async def get(self, identity: UUID, summary_id: UUID) -> SummaryView:
         return SummaryView.model_validate(
             await self._request(
@@ -204,3 +237,79 @@ class SimulationSummaryClient:
             request,
         )
         return SummaryView.model_validate(payload)
+
+
+class SimulationArtClient(_ForwardedIdentityClient):
+    @staticmethod
+    def _path(identity: UUID, kind: ArtKind, item_id: str, action: str) -> str:
+        safe_item = quote(item_id, safe="")
+        return f"/internal/v1/playthroughs/{identity}/art/{kind}/{safe_item}/{action}"
+
+    async def claim(
+        self, identity: UUID, kind: ArtKind, item_id: str, claim_id: UUID
+    ) -> ArtClaim:
+        payload = await self._request(
+            "POST",
+            self._path(identity, kind, item_id, "claim"),
+            ArtClaimInput(claim_id=claim_id),
+        )
+        return ArtClaim.model_validate(payload)
+
+    async def complete(
+        self, identity: UUID, kind: ArtKind, item_id: str, request: ArtCompleteInput
+    ) -> ArtView:
+        payload = await self._request(
+            "POST", self._path(identity, kind, item_id, "complete"), request
+        )
+        return ArtView.model_validate(payload)
+
+    async def fail(
+        self, identity: UUID, kind: ArtKind, item_id: str, request: ArtFailInput
+    ) -> ArtView:
+        payload = await self._request(
+            "POST", self._path(identity, kind, item_id, "fail"), request
+        )
+        return ArtView.model_validate(payload)
+
+
+class SimulationDispatchClient(_ForwardedIdentityClient):
+    error_code = "dispatch_unavailable"
+    error_message = "Dispatch service request failed"
+
+    @staticmethod
+    def _path(identity: UUID, rumor_id: str, action: str) -> str:
+        safe_rumor = quote(rumor_id, safe="")
+        return f"/internal/v1/playthroughs/{identity}/dispatches/{safe_rumor}/{action}"
+
+    async def get(self, identity: UUID, rumor_id: str) -> DispatchView:
+        safe_rumor = quote(rumor_id, safe="")
+        payload = await self._request(
+            "GET", f"/v1/playthroughs/{identity}/dispatches/{safe_rumor}"
+        )
+        return DispatchView.model_validate(payload)
+
+    async def claim(
+        self, identity: UUID, rumor_id: str, claim_id: UUID
+    ) -> DispatchClaim:
+        payload = await self._request(
+            "POST",
+            self._path(identity, rumor_id, "claim"),
+            DispatchClaimInput(claim_id=claim_id),
+        )
+        return DispatchClaim.model_validate(payload)
+
+    async def complete(
+        self, identity: UUID, rumor_id: str, request: DispatchCompleteInput
+    ) -> DispatchView:
+        payload = await self._request(
+            "POST", self._path(identity, rumor_id, "complete"), request
+        )
+        return DispatchView.model_validate(payload)
+
+    async def fail(
+        self, identity: UUID, rumor_id: str, request: DispatchFailInput
+    ) -> DispatchView:
+        payload = await self._request(
+            "POST", self._path(identity, rumor_id, "fail"), request
+        )
+        return DispatchView.model_validate(payload)

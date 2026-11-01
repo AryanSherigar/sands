@@ -17,6 +17,8 @@ from app.routers import (
     memory_retry,
     scene,
     session,
+    strategy_art,
+    strategy_dispatches,
     strategy_summaries,
     turn,
     voice,
@@ -73,7 +75,9 @@ app.add_middleware(
 setup_error_handlers(app)
 app.include_router(turn.router)
 app.include_router(combat.router)
+app.include_router(strategy_art.router)
 app.include_router(strategy_summaries.router)
+app.include_router(strategy_dispatches.router)
 app.include_router(session.router)
 app.include_router(assistant.router)
 app.include_router(scene.router)
