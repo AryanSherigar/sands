@@ -1,6 +1,20 @@
+import pytest
 from app.config import get_settings
+from app.db.pool import close_pool, open_pool
+from app.main import create_app
 from app.services.health_service import HealthService, get_health_service
+from httpx import ASGITransport, AsyncClient
 from psycopg import AsyncConnection
+
+
+@pytest.fixture
+async def client():
+    await open_pool()
+    app = create_app()
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://testserver") as http:
+        yield http, app
+    await close_pool()
 
 
 async def test_health_ok_with_a_reachable_database(client) -> None:

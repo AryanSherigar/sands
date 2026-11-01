@@ -1,0 +1,185 @@
+{
+  "schema_version": 4,
+  "playthrough_id": "33333333-3333-3333-3333-333333333333",
+  "clock": {
+    "turn": 2,
+    "start_year": 1000,
+    "start_month": 3
+  },
+  "rng": {
+    "seed": 42
+  },
+  "regions": {
+    "ashford": {
+      "id": "ashford",
+      "owner_id": "house_ashford",
+      "population": 500,
+      "wealth": 40,
+      "manpower": 60,
+      "unrest": 10,
+      "garrison": 30,
+      "faith_id": "old_faith",
+      "improvements": [],
+      "governor_id": null,
+      "claimant_ids": [],
+      "occupation": null,
+      "conversion_turns_remaining": 0
+    },
+    "carrow_vale": {
+      "id": "carrow_vale",
+      "owner_id": "house_carrow",
+      "population": 500,
+      "wealth": 40,
+      "manpower": 60,
+      "unrest": 10,
+      "garrison": 30,
+      "faith_id": "old_faith",
+      "improvements": [],
+      "governor_id": null,
+      "claimant_ids": [],
+      "occupation": null,
+      "conversion_turns_remaining": 0
+    }
+  },
+  "factions": {
+    "house_ashford": {
+      "id": "house_ashford",
+      "leader_id": null,
+      "treasury": 140,
+      "stability": 60,
+      "war_exhaustion": 0,
+      "reputation": 0,
+      "tax_rate": "normal",
+      "loans": [],
+      "orders_remaining": 6,
+      "orders_debt": 0,
+      "credit_strikes": 0,
+      "turns_since_default": 0,
+      "stance": {
+        "option_id": null,
+        "chosen_turn": 0,
+        "requested_for_turn": null
+      },
+      "is_player": false,
+      "is_destroyed": false,
+      "intel": {}
+    },
+    "house_carrow": {
+      "id": "house_carrow",
+      "leader_id": null,
+      "treasury": 100,
+      "stability": 60,
+      "war_exhaustion": 0,
+      "reputation": 0,
+      "tax_rate": "normal",
+      "loans": [],
+      "orders_remaining": 6,
+      "orders_debt": 0,
+      "credit_strikes": 0,
+      "turns_since_default": 0,
+      "stance": {
+        "option_id": null,
+        "chosen_turn": 0,
+        "requested_for_turn": null
+      },
+      "is_player": true,
+      "is_destroyed": false,
+      "intel": {}
+    }
+  },
+  "leaders": {},
+  "governors": {},
+  "commanders": {},
+  "armies": {
+    "army_a": {
+      "id": "army_a",
+      "owner_id": "house_ashford",
+      "troops": {
+        "infantry": 100
+      },
+      "commander_id": null,
+      "morale": 70,
+      "location_id": "ashford",
+      "order": null,
+      "pay_level": "full",
+      "march": null,
+      "unpaid_turns": 0
+    },
+    "army_b": {
+      "id": "army_b",
+      "owner_id": "house_carrow",
+      "troops": {
+        "infantry": 100
+      },
+      "commander_id": null,
+      "morale": 70,
+      "location_id": "ashford",
+      "order": null,
+      "pay_level": "full",
+      "march": null,
+      "unpaid_turns": 0
+    }
+  },
+  "relations": [],
+  "truces": [],
+  "commitments": [],
+  "oathbreakers": [],
+  "plays": [],
+  "wars": [],
+  "outrage": [],
+  "prisoners": [],
+  "envoys": [],
+  "player_profile": {
+    "tactic_use_counts": {},
+    "formation_use_counts": {},
+    "wars_declared": 0,
+    "peace_deals": 0,
+    "promises_kept": 0,
+    "promises_broken": 0,
+    "mercy_acts": 0,
+    "cruelty_acts": 0,
+    "honest_statements": 0,
+    "deceit_statements": 0,
+    "tone_grade_total": 0,
+    "tone_grade_count": 0,
+    "pushed_region_counts": {}
+  },
+  "ruler": {
+    "name": "Valdren",
+    "portrait_url": null,
+    "trait_ids": [
+      "honorable",
+      "cautious"
+    ],
+    "ambition_ids": [
+      "ambition_peace"
+    ],
+    "backstory": "",
+    "stress": 0
+  },
+  "pending_events": [],
+  "pending_battles": [
+    {
+      "id": "battle_1",
+      "region_id": "ashford",
+      "attacker_army_ids": [
+        "army_a"
+      ],
+      "defender_army_ids": [
+        "army_b"
+      ],
+      "is_big": false,
+      "status": "awaiting_plan"
+    }
+  ],
+  "significance": {
+    "points": 0,
+    "last_summary_turn": 0
+  },
+  "progress": {
+    "phase": null,
+    "pending_scene_id": null
+  },
+  "counters": {},
+  "ending": null
+}

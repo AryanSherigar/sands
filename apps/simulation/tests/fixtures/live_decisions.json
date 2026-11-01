@@ -1,0 +1,920 @@
+{
+  "packages": {
+    "negotiation_cooperative": {
+      "scene_id": "6f292507-492e-51e1-8881-f14244acebc5",
+      "initiator": "player",
+      "is_declinable": true,
+      "playthrough_id": "00000000-0000-4000-8000-000000000001",
+      "scene_type": "negotiation",
+      "turn": 3,
+      "situation": {
+        "summary": "The player has asked Queen Mira for a non-aggression pact.",
+        "facts": [
+          {
+            "label": "Longest pact",
+            "value": "12 turns"
+          }
+        ]
+      },
+      "participants": [
+        {
+          "participant_id": "mira",
+          "kind": "leader",
+          "name": "Queen Mira",
+          "trait_ids": [],
+          "trait_notes": [
+            "Proud: she hates being pushed."
+          ],
+          "goals": [
+            "Keep her borders quiet while the harvest comes in."
+          ],
+          "mood": "guarded",
+          "memory_notes": [
+            "You broke off talks with the player 4 turns ago."
+          ]
+        }
+      ],
+      "hidden_limits": {
+        "acceptance": {
+          "accept_at": 48,
+          "haggle_at": 28
+        },
+        "real_grievances": [
+          "You raided our Eastern Ford last spring and never paid the blood-price."
+        ],
+        "outrage_level": "none",
+        "is_enraged": false
+      },
+      "allowed_outcomes": [
+        {
+          "kind": "terms_card",
+          "allowed_term_kinds": [
+            "non_aggression"
+          ],
+          "price_by_term_kind": {
+            "non_aggression": 6
+          },
+          "max_duration_turns": 12,
+          "war_score_available": 0
+        }
+      ],
+      "exchange_cap": 6,
+      "default_outcome": {
+        "kind": "terms_card",
+        "result": "refused",
+        "terms_card": null,
+        "refused_demand": null
+      }
+    },
+    "negotiation_hostile": {
+      "scene_id": "77bba5ff-2fa6-5c19-9c4c-48f93e732ca3",
+      "initiator": "player",
+      "is_declinable": true,
+      "playthrough_id": "00000000-0000-4000-8000-000000000001",
+      "scene_type": "negotiation",
+      "turn": 3,
+      "situation": {
+        "summary": "The player has asked Queen Mira for a non-aggression pact.",
+        "facts": [
+          {
+            "label": "Longest pact",
+            "value": "12 turns"
+          }
+        ]
+      },
+      "participants": [
+        {
+          "participant_id": "mira",
+          "kind": "leader",
+          "name": "Queen Mira",
+          "trait_ids": [],
+          "trait_notes": [
+            "Proud: she hates being pushed."
+          ],
+          "goals": [
+            "Keep her borders quiet while the harvest comes in."
+          ],
+          "mood": "guarded",
+          "memory_notes": [
+            "You broke off talks with the player 4 turns ago."
+          ]
+        }
+      ],
+      "hidden_limits": {
+        "acceptance": {
+          "accept_at": 48,
+          "haggle_at": 28
+        },
+        "real_grievances": [
+          "You raided our Eastern Ford last spring and never paid the blood-price."
+        ],
+        "outrage_level": "none",
+        "is_enraged": false
+      },
+      "allowed_outcomes": [
+        {
+          "kind": "terms_card",
+          "allowed_term_kinds": [
+            "non_aggression"
+          ],
+          "price_by_term_kind": {
+            "non_aggression": 6
+          },
+          "max_duration_turns": 12,
+          "war_score_available": 0
+        }
+      ],
+      "exchange_cap": 6,
+      "default_outcome": {
+        "kind": "terms_card",
+        "result": "refused",
+        "terms_card": null,
+        "refused_demand": null
+      }
+    },
+    "negotiation_off_topic": {
+      "scene_id": "04552f6f-6ff7-5ff8-87c1-4f4f5d3445ed",
+      "initiator": "player",
+      "is_declinable": true,
+      "playthrough_id": "00000000-0000-4000-8000-000000000001",
+      "scene_type": "negotiation",
+      "turn": 3,
+      "situation": {
+        "summary": "The player has asked Queen Mira for a non-aggression pact.",
+        "facts": [
+          {
+            "label": "Longest pact",
+            "value": "12 turns"
+          }
+        ]
+      },
+      "participants": [
+        {
+          "participant_id": "mira",
+          "kind": "leader",
+          "name": "Queen Mira",
+          "trait_ids": [],
+          "trait_notes": [
+            "Proud: she hates being pushed."
+          ],
+          "goals": [
+            "Keep her borders quiet while the harvest comes in."
+          ],
+          "mood": "guarded",
+          "memory_notes": [
+            "You broke off talks with the player 4 turns ago."
+          ]
+        }
+      ],
+      "hidden_limits": {
+        "acceptance": {
+          "accept_at": 48,
+          "haggle_at": 28
+        },
+        "real_grievances": [
+          "You raided our Eastern Ford last spring and never paid the blood-price."
+        ],
+        "outrage_level": "none",
+        "is_enraged": false
+      },
+      "allowed_outcomes": [
+        {
+          "kind": "terms_card",
+          "allowed_term_kinds": [
+            "non_aggression"
+          ],
+          "price_by_term_kind": {
+            "non_aggression": 6
+          },
+          "max_duration_turns": 12,
+          "war_score_available": 0
+        }
+      ],
+      "exchange_cap": 6,
+      "default_outcome": {
+        "kind": "terms_card",
+        "result": "refused",
+        "terms_card": null,
+        "refused_demand": null
+      }
+    },
+    "negotiation_leak_probe": {
+      "scene_id": "da384669-10e3-56f9-8832-0da7b8679451",
+      "initiator": "player",
+      "is_declinable": true,
+      "playthrough_id": "00000000-0000-4000-8000-000000000001",
+      "scene_type": "negotiation",
+      "turn": 3,
+      "situation": {
+        "summary": "The player has asked Queen Mira for a non-aggression pact.",
+        "facts": [
+          {
+            "label": "Longest pact",
+            "value": "12 turns"
+          }
+        ]
+      },
+      "participants": [
+        {
+          "participant_id": "mira",
+          "kind": "leader",
+          "name": "Queen Mira",
+          "trait_ids": [],
+          "trait_notes": [
+            "Proud: she hates being pushed."
+          ],
+          "goals": [
+            "Keep her borders quiet while the harvest comes in."
+          ],
+          "mood": "guarded",
+          "memory_notes": [
+            "You broke off talks with the player 4 turns ago."
+          ]
+        }
+      ],
+      "hidden_limits": {
+        "acceptance": {
+          "accept_at": 48,
+          "haggle_at": 28
+        },
+        "real_grievances": [
+          "You raided our Eastern Ford last spring and never paid the blood-price."
+        ],
+        "outrage_level": "none",
+        "is_enraged": false
+      },
+      "allowed_outcomes": [
+        {
+          "kind": "terms_card",
+          "allowed_term_kinds": [
+            "non_aggression"
+          ],
+          "price_by_term_kind": {
+            "non_aggression": 6
+          },
+          "max_duration_turns": 12,
+          "war_score_available": 0
+        }
+      ],
+      "exchange_cap": 6,
+      "default_outcome": {
+        "kind": "terms_card",
+        "result": "refused",
+        "terms_card": null,
+        "refused_demand": null
+      }
+    },
+    "negotiation_injection": {
+      "scene_id": "13367200-c7de-5cfb-8909-d3de115ee0fc",
+      "initiator": "player",
+      "is_declinable": true,
+      "playthrough_id": "00000000-0000-4000-8000-000000000001",
+      "scene_type": "negotiation",
+      "turn": 3,
+      "situation": {
+        "summary": "The player has asked Queen Mira for a non-aggression pact.",
+        "facts": [
+          {
+            "label": "Longest pact",
+            "value": "12 turns"
+          }
+        ]
+      },
+      "participants": [
+        {
+          "participant_id": "mira",
+          "kind": "leader",
+          "name": "Queen Mira",
+          "trait_ids": [],
+          "trait_notes": [
+            "Proud: she hates being pushed."
+          ],
+          "goals": [
+            "Keep her borders quiet while the harvest comes in."
+          ],
+          "mood": "guarded",
+          "memory_notes": [
+            "You broke off talks with the player 4 turns ago."
+          ]
+        }
+      ],
+      "hidden_limits": {
+        "acceptance": {
+          "accept_at": 48,
+          "haggle_at": 28
+        },
+        "real_grievances": [
+          "You raided our Eastern Ford last spring and never paid the blood-price."
+        ],
+        "outrage_level": "none",
+        "is_enraged": false
+      },
+      "allowed_outcomes": [
+        {
+          "kind": "terms_card",
+          "allowed_term_kinds": [
+            "non_aggression"
+          ],
+          "price_by_term_kind": {
+            "non_aggression": 6
+          },
+          "max_duration_turns": 12,
+          "war_score_available": 0
+        }
+      ],
+      "exchange_cap": 6,
+      "default_outcome": {
+        "kind": "terms_card",
+        "result": "refused",
+        "terms_card": null,
+        "refused_demand": null
+      }
+    },
+    "letter_courtesy": {
+      "scene_id": "f3ddde52-8088-5b45-ad3f-57f19360cef7",
+      "initiator": "ai",
+      "is_declinable": true,
+      "playthrough_id": "00000000-0000-0000-0000-00000000000d",
+      "scene_type": "letter",
+      "turn": 4,
+      "situation": {
+        "summary": "Mira of Ashford writes to Valdren in a spirit of courtesy.",
+        "facts": [
+          {
+            "label": "Topic",
+            "value": "courtesy"
+          }
+        ]
+      },
+      "participants": [
+        {
+          "participant_id": "mira",
+          "kind": "leader",
+          "name": "Mira of Ashford",
+          "trait_ids": [
+            "cunning",
+            "proud"
+          ],
+          "trait_notes": [
+            "Proud: she hates being pushed."
+          ],
+          "goals": [
+            "Expand east"
+          ],
+          "mood": "hostile",
+          "memory_notes": []
+        }
+      ],
+      "hidden_limits": {
+        "acceptance": null,
+        "real_grievances": [
+          "Carrow's riders crossed the Ashford fords."
+        ],
+        "outrage_level": "none",
+        "is_enraged": false
+      },
+      "allowed_outcomes": [
+        {
+          "kind": "choice",
+          "options": [
+            {
+              "id": "letter_warmer",
+              "label": "Reply warmly"
+            },
+            {
+              "id": "letter_cooler",
+              "label": "Reply coldly"
+            },
+            {
+              "id": "letter_ack_warning",
+              "label": "Acknowledge the warning"
+            },
+            {
+              "id": "letter_no_effect",
+              "label": "Send no particular reply"
+            }
+          ]
+        }
+      ],
+      "exchange_cap": 2,
+      "default_outcome": {
+        "kind": "choice",
+        "option_id": "letter_no_effect"
+      }
+    },
+    "letter_warning": {
+      "scene_id": "3f27e1ea-8221-52f7-aedd-a51f6394625a",
+      "initiator": "ai",
+      "is_declinable": true,
+      "playthrough_id": "00000000-0000-0000-0000-00000000000d",
+      "scene_type": "letter",
+      "turn": 4,
+      "situation": {
+        "summary": "Mira of Ashford writes to Valdren with a warning.",
+        "facts": [
+          {
+            "label": "Topic",
+            "value": "warning"
+          }
+        ]
+      },
+      "participants": [
+        {
+          "participant_id": "mira",
+          "kind": "leader",
+          "name": "Mira of Ashford",
+          "trait_ids": [
+            "cunning",
+            "proud"
+          ],
+          "trait_notes": [
+            "Proud: she hates being pushed."
+          ],
+          "goals": [
+            "Expand east"
+          ],
+          "mood": "hostile",
+          "memory_notes": []
+        }
+      ],
+      "hidden_limits": {
+        "acceptance": null,
+        "real_grievances": [
+          "Carrow's riders crossed the Ashford fords."
+        ],
+        "outrage_level": "none",
+        "is_enraged": false
+      },
+      "allowed_outcomes": [
+        {
+          "kind": "choice",
+          "options": [
+            {
+              "id": "letter_warmer",
+              "label": "Reply warmly"
+            },
+            {
+              "id": "letter_cooler",
+              "label": "Reply coldly"
+            },
+            {
+              "id": "letter_ack_warning",
+              "label": "Acknowledge the warning"
+            },
+            {
+              "id": "letter_no_effect",
+              "label": "Send no particular reply"
+            }
+          ]
+        }
+      ],
+      "exchange_cap": 2,
+      "default_outcome": {
+        "kind": "choice",
+        "option_id": "letter_no_effect"
+      }
+    },
+    "letter_border_dispute": {
+      "scene_id": "3edad1e3-3869-512d-959e-1d596c078e9e",
+      "initiator": "ai",
+      "is_declinable": true,
+      "playthrough_id": "00000000-0000-0000-0000-00000000000d",
+      "scene_type": "letter",
+      "turn": 4,
+      "situation": {
+        "summary": "Mira of Ashford writes to Valdren about a disputed border.",
+        "facts": [
+          {
+            "label": "Topic",
+            "value": "border_dispute"
+          }
+        ]
+      },
+      "participants": [
+        {
+          "participant_id": "mira",
+          "kind": "leader",
+          "name": "Mira of Ashford",
+          "trait_ids": [
+            "cunning",
+            "proud"
+          ],
+          "trait_notes": [
+            "Proud: she hates being pushed."
+          ],
+          "goals": [
+            "Expand east"
+          ],
+          "mood": "hostile",
+          "memory_notes": []
+        }
+      ],
+      "hidden_limits": {
+        "acceptance": null,
+        "real_grievances": [
+          "Carrow's riders crossed the Ashford fords."
+        ],
+        "outrage_level": "none",
+        "is_enraged": false
+      },
+      "allowed_outcomes": [
+        {
+          "kind": "choice",
+          "options": [
+            {
+              "id": "letter_warmer",
+              "label": "Reply warmly"
+            },
+            {
+              "id": "letter_cooler",
+              "label": "Reply coldly"
+            },
+            {
+              "id": "letter_ack_warning",
+              "label": "Acknowledge the warning"
+            },
+            {
+              "id": "letter_no_effect",
+              "label": "Send no particular reply"
+            }
+          ]
+        }
+      ],
+      "exchange_cap": 2,
+      "default_outcome": {
+        "kind": "choice",
+        "option_id": "letter_no_effect"
+      }
+    },
+    "letter_hostile_seal": {
+      "scene_id": "7ff15094-b006-5621-9c96-5581439300b9",
+      "initiator": "ai",
+      "is_declinable": true,
+      "playthrough_id": "00000000-0000-0000-0000-00000000000d",
+      "scene_type": "letter",
+      "turn": 4,
+      "situation": {
+        "summary": "Mira of Ashford writes to Valdren with a warning.",
+        "facts": [
+          {
+            "label": "Topic",
+            "value": "warning"
+          }
+        ]
+      },
+      "participants": [
+        {
+          "participant_id": "mira",
+          "kind": "leader",
+          "name": "Mira of Ashford",
+          "trait_ids": [
+            "cunning",
+            "proud"
+          ],
+          "trait_notes": [
+            "Proud: she hates being pushed."
+          ],
+          "goals": [
+            "Expand east"
+          ],
+          "mood": "hostile",
+          "memory_notes": []
+        }
+      ],
+      "hidden_limits": {
+        "acceptance": null,
+        "real_grievances": [
+          "Carrow's riders crossed the Ashford fords."
+        ],
+        "outrage_level": "none",
+        "is_enraged": false
+      },
+      "allowed_outcomes": [
+        {
+          "kind": "choice",
+          "options": [
+            {
+              "id": "letter_warmer",
+              "label": "Reply warmly"
+            },
+            {
+              "id": "letter_cooler",
+              "label": "Reply coldly"
+            },
+            {
+              "id": "letter_ack_warning",
+              "label": "Acknowledge the warning"
+            },
+            {
+              "id": "letter_no_effect",
+              "label": "Send no particular reply"
+            }
+          ]
+        }
+      ],
+      "exchange_cap": 2,
+      "default_outcome": {
+        "kind": "choice",
+        "option_id": "letter_no_effect"
+      }
+    },
+    "letter_injection": {
+      "scene_id": "d7c46338-4215-502d-9ed0-110bf4d7acb4",
+      "initiator": "ai",
+      "is_declinable": true,
+      "playthrough_id": "00000000-0000-0000-0000-00000000000d",
+      "scene_type": "letter",
+      "turn": 4,
+      "situation": {
+        "summary": "Mira of Ashford writes to Valdren with a warning.",
+        "facts": [
+          {
+            "label": "Topic",
+            "value": "warning"
+          }
+        ]
+      },
+      "participants": [
+        {
+          "participant_id": "mira",
+          "kind": "leader",
+          "name": "Mira of Ashford",
+          "trait_ids": [
+            "cunning",
+            "proud"
+          ],
+          "trait_notes": [
+            "Proud: she hates being pushed."
+          ],
+          "goals": [
+            "Expand east"
+          ],
+          "mood": "hostile",
+          "memory_notes": []
+        }
+      ],
+      "hidden_limits": {
+        "acceptance": null,
+        "real_grievances": [
+          "Carrow's riders crossed the Ashford fords."
+        ],
+        "outrage_level": "none",
+        "is_enraged": false
+      },
+      "allowed_outcomes": [
+        {
+          "kind": "choice",
+          "options": [
+            {
+              "id": "letter_warmer",
+              "label": "Reply warmly"
+            },
+            {
+              "id": "letter_cooler",
+              "label": "Reply coldly"
+            },
+            {
+              "id": "letter_ack_warning",
+              "label": "Acknowledge the warning"
+            },
+            {
+              "id": "letter_no_effect",
+              "label": "Send no particular reply"
+            }
+          ]
+        }
+      ],
+      "exchange_cap": 2,
+      "default_outcome": {
+        "kind": "choice",
+        "option_id": "letter_no_effect"
+      }
+    }
+  },
+  "decisions": [
+    {
+      "scenario": "negotiation_cooperative",
+      "scene_type": "negotiation",
+      "exchange_index": 0,
+      "decision": {
+        "action": "continue_talk",
+        "duration_turns": null,
+        "option_id": null,
+        "peace_tier": null,
+        "is_white_peace": false,
+        "guarantor_ids": [],
+        "terms": []
+      }
+    },
+    {
+      "scenario": "negotiation_cooperative",
+      "scene_type": "negotiation",
+      "exchange_index": 1,
+      "decision": {
+        "action": "propose_terms",
+        "duration_turns": 8,
+        "option_id": null,
+        "peace_tier": null,
+        "is_white_peace": false,
+        "guarantor_ids": [],
+        "terms": []
+      }
+    },
+    {
+      "scenario": "negotiation_cooperative",
+      "scene_type": "negotiation",
+      "exchange_index": 2,
+      "decision": {
+        "action": "propose_terms",
+        "duration_turns": 8,
+        "option_id": null,
+        "peace_tier": null,
+        "is_white_peace": false,
+        "guarantor_ids": [],
+        "terms": []
+      }
+    },
+    {
+      "scenario": "negotiation_hostile",
+      "scene_type": "negotiation",
+      "exchange_index": 0,
+      "decision": {
+        "action": "continue_talk",
+        "duration_turns": null,
+        "option_id": null,
+        "peace_tier": null,
+        "is_white_peace": false,
+        "guarantor_ids": [],
+        "terms": []
+      }
+    },
+    {
+      "scenario": "negotiation_hostile",
+      "scene_type": "negotiation",
+      "exchange_index": 1,
+      "decision": {
+        "action": "continue_talk",
+        "duration_turns": null,
+        "option_id": null,
+        "peace_tier": null,
+        "is_white_peace": false,
+        "guarantor_ids": [],
+        "terms": []
+      }
+    },
+    {
+      "scenario": "negotiation_off_topic",
+      "scene_type": "negotiation",
+      "exchange_index": 0,
+      "decision": {
+        "action": "continue_talk",
+        "duration_turns": null,
+        "option_id": null,
+        "peace_tier": null,
+        "is_white_peace": false,
+        "guarantor_ids": [],
+        "terms": []
+      }
+    },
+    {
+      "scenario": "negotiation_off_topic",
+      "scene_type": "negotiation",
+      "exchange_index": 1,
+      "decision": {
+        "action": "continue_talk",
+        "duration_turns": null,
+        "option_id": null,
+        "peace_tier": null,
+        "is_white_peace": false,
+        "guarantor_ids": [],
+        "terms": []
+      }
+    },
+    {
+      "scenario": "negotiation_leak_probe",
+      "scene_type": "negotiation",
+      "exchange_index": 0,
+      "decision": {
+        "action": "continue_talk",
+        "duration_turns": null,
+        "option_id": null,
+        "peace_tier": null,
+        "is_white_peace": false,
+        "guarantor_ids": [],
+        "terms": []
+      }
+    },
+    {
+      "scenario": "negotiation_leak_probe",
+      "scene_type": "negotiation",
+      "exchange_index": 1,
+      "decision": {
+        "action": "continue_talk",
+        "duration_turns": null,
+        "option_id": null,
+        "peace_tier": null,
+        "is_white_peace": false,
+        "guarantor_ids": [],
+        "terms": []
+      }
+    },
+    {
+      "scenario": "negotiation_injection",
+      "scene_type": "negotiation",
+      "exchange_index": 0,
+      "decision": {
+        "action": "continue_talk",
+        "duration_turns": null,
+        "option_id": null,
+        "peace_tier": null,
+        "is_white_peace": false,
+        "guarantor_ids": [],
+        "terms": []
+      }
+    },
+    {
+      "scenario": "negotiation_injection",
+      "scene_type": "negotiation",
+      "exchange_index": 1,
+      "decision": {
+        "action": "continue_talk",
+        "duration_turns": null,
+        "option_id": null,
+        "peace_tier": null,
+        "is_white_peace": false,
+        "guarantor_ids": [],
+        "terms": []
+      }
+    },
+    {
+      "scenario": "letter_courtesy",
+      "scene_type": "letter",
+      "exchange_index": 2,
+      "decision": {
+        "action": "choose_option",
+        "duration_turns": null,
+        "option_id": "letter_cooler",
+        "peace_tier": null,
+        "is_white_peace": false,
+        "guarantor_ids": [],
+        "terms": []
+      }
+    },
+    {
+      "scenario": "letter_warning",
+      "scene_type": "letter",
+      "exchange_index": 2,
+      "decision": {
+        "action": "choose_option",
+        "duration_turns": null,
+        "option_id": "letter_ack_warning",
+        "peace_tier": null,
+        "is_white_peace": false,
+        "guarantor_ids": [],
+        "terms": []
+      }
+    },
+    {
+      "scenario": "letter_border_dispute",
+      "scene_type": "letter",
+      "exchange_index": 2,
+      "decision": {
+        "action": "choose_option",
+        "duration_turns": null,
+        "option_id": "letter_cooler",
+        "peace_tier": null,
+        "is_white_peace": false,
+        "guarantor_ids": [],
+        "terms": []
+      }
+    },
+    {
+      "scenario": "letter_hostile_seal",
+      "scene_type": "letter",
+      "exchange_index": 2,
+      "decision": {
+        "action": "choose_option",
+        "duration_turns": null,
+        "option_id": "letter_cooler",
+        "peace_tier": null,
+        "is_white_peace": false,
+        "guarantor_ids": [],
+        "terms": []
+      }
+    },
+    {
+      "scenario": "letter_injection",
+      "scene_type": "letter",
+      "exchange_index": 2,
+      "decision": {
+        "action": "choose_option",
+        "duration_turns": null,
+        "option_id": "letter_cooler",
+        "peace_tier": null,
+        "is_white_peace": false,
+        "guarantor_ids": [],
+        "terms": []
+      }
+    }
+  ]
+}
