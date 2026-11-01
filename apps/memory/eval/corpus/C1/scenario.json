@@ -1,0 +1,302 @@
+{
+  "campaign_id": "C1",
+  "mode": "master",
+  "title": "The Hollow Cairn",
+  "player_entity_key": "wren",
+  "participants": [
+    {
+      "key": "p1",
+      "display_name": "Wren"
+    }
+  ],
+  "entities": [
+    {
+      "key": "wren",
+      "entity_type": "character",
+      "canonical_name": "Wren",
+      "aliases": [
+        "the player"
+      ],
+      "description": "A wanderer who has come to the cairn to get back what it took.",
+      "is_player": true
+    },
+    {
+      "key": "kestrel_vane",
+      "entity_type": "character",
+      "canonical_name": "Kestrel Vane",
+      "aliases": [
+        "Kestrel",
+        "the Scout"
+      ],
+      "description": "A former cairn-warden's apprentice, now a wandering scout.",
+      "is_player": false
+    },
+    {
+      "key": "the_warden",
+      "entity_type": "character",
+      "canonical_name": "The Warden",
+      "aliases": [
+        "the Warden",
+        "It"
+      ],
+      "description": "The cairn's undying guardian. Speaks rarely.",
+      "is_player": false
+    },
+    {
+      "key": "old_marta",
+      "entity_type": "character",
+      "canonical_name": "Old Marta",
+      "aliases": [
+        "Marta",
+        "the innkeeper"
+      ],
+      "description": "The innkeeper of Ashfall, widowed by the cairn.",
+      "is_player": false
+    },
+    {
+      "key": "brother_tam",
+      "entity_type": "character",
+      "canonical_name": "Brother Tam",
+      "aliases": [
+        "Tam"
+      ],
+      "description": "A boy of the Vigil, quiet and soot-handed.",
+      "is_player": false
+    },
+    {
+      "key": "captain_ose",
+      "entity_type": "character",
+      "canonical_name": "Captain Ose",
+      "aliases": [
+        "Ose"
+      ],
+      "description": "The tired captain of the Vigil at Ashfall.",
+      "is_player": false
+    },
+    {
+      "key": "hollow_cairn",
+      "entity_type": "location",
+      "canonical_name": "The Hollow Cairn",
+      "aliases": [],
+      "description": "A barrow sunk into the hill above Ashfall.",
+      "is_player": false
+    },
+    {
+      "key": "ashfall_village",
+      "entity_type": "location",
+      "canonical_name": "Ashfall Village",
+      "aliases": [
+        "Ashfall"
+      ],
+      "description": "A burned-out village at the cairn's foot.",
+      "is_player": false
+    },
+    {
+      "key": "ash_well",
+      "entity_type": "location",
+      "canonical_name": "The Ash Well",
+      "aliases": [],
+      "description": "A dry well that runs under the whole hill.",
+      "is_player": false
+    },
+    {
+      "key": "choir_door",
+      "entity_type": "location",
+      "canonical_name": "The Choir Door",
+      "aliases": [],
+      "description": "A great sealed door deep inside the cairn.",
+      "is_player": false
+    },
+    {
+      "key": "the_vigil",
+      "entity_type": "faction",
+      "canonical_name": "The Vigil",
+      "aliases": [],
+      "description": "A dwindling order once sworn to guard the cairn from outside.",
+      "is_player": false
+    },
+    {
+      "key": "ember_sigil",
+      "entity_type": "item",
+      "canonical_name": "Ember Sigil",
+      "aliases": [
+        "the sigil"
+      ],
+      "description": "A warded relic said to burn what the cairn has claimed.",
+      "is_player": false
+    },
+    {
+      "key": "rustbound_blade",
+      "entity_type": "item",
+      "canonical_name": "Rustbound Blade",
+      "aliases": [
+        "the blade"
+      ],
+      "description": "A plain sword, better than bare hands.",
+      "is_player": false
+    },
+    {
+      "key": "lantern_of_hale",
+      "entity_type": "item",
+      "canonical_name": "Lantern of Hale",
+      "aliases": [
+        "the lantern"
+      ],
+      "description": "A soot-black lantern carried into the cairn long ago.",
+      "is_player": false
+    },
+    {
+      "key": "the_ledger",
+      "entity_type": "item",
+      "canonical_name": "The Ledger",
+      "aliases": [],
+      "description": "A book of payments in a captain's hand.",
+      "is_player": false
+    }
+  ],
+  "facts": [
+    {
+      "key": "f_kestrel_vigil",
+      "subject_key": "kestrel_vane",
+      "predicate": "member_of",
+      "object_key": "the_vigil",
+      "object_literal": null,
+      "is_hidden": false,
+      "when_active": null,
+      "superseded_fact_key": null
+    },
+    {
+      "key": "f_kestrel_ashfall",
+      "subject_key": "kestrel_vane",
+      "predicate": "located_at",
+      "object_key": "ashfall_village",
+      "object_literal": null,
+      "is_hidden": false,
+      "when_active": {
+        "field": "checkpoint",
+        "op": "==",
+        "value": "arrival"
+      },
+      "superseded_fact_key": null
+    },
+    {
+      "key": "f_kestrel_cairn",
+      "subject_key": "kestrel_vane",
+      "predicate": "located_at",
+      "object_key": "hollow_cairn",
+      "object_literal": null,
+      "is_hidden": false,
+      "when_active": {
+        "field": "flags.rescued_kestrel",
+        "op": "==",
+        "value": true
+      },
+      "superseded_fact_key": null
+    },
+    {
+      "key": "f_warden_cairn",
+      "subject_key": "the_warden",
+      "predicate": "located_at",
+      "object_key": "hollow_cairn",
+      "object_literal": null,
+      "is_hidden": false,
+      "when_active": null,
+      "superseded_fact_key": null
+    },
+    {
+      "key": "f_warden_guards",
+      "subject_key": "the_warden",
+      "predicate": "guards",
+      "object_key": "hollow_cairn",
+      "object_literal": null,
+      "is_hidden": false,
+      "when_active": null,
+      "superseded_fact_key": null
+    },
+    {
+      "key": "f_warden_weak",
+      "subject_key": "the_warden",
+      "predicate": "vulnerable_to",
+      "object_key": "ember_sigil",
+      "object_literal": null,
+      "is_hidden": true,
+      "when_active": null,
+      "superseded_fact_key": null
+    },
+    {
+      "key": "f_cairn_vigil",
+      "subject_key": "hollow_cairn",
+      "predicate": "entrance_guarded_by",
+      "object_key": "the_vigil",
+      "object_literal": null,
+      "is_hidden": false,
+      "when_active": null,
+      "superseded_fact_key": null
+    },
+    {
+      "key": "f_ose_bargain",
+      "subject_key": "captain_ose",
+      "predicate": "bargained_with",
+      "object_key": "the_warden",
+      "object_literal": null,
+      "is_hidden": true,
+      "when_active": null,
+      "superseded_fact_key": null
+    },
+    {
+      "key": "f_well_ledger",
+      "subject_key": "ash_well",
+      "predicate": "conceals",
+      "object_key": "the_ledger",
+      "object_literal": null,
+      "is_hidden": true,
+      "when_active": null,
+      "superseded_fact_key": null
+    },
+    {
+      "key": "f_tam_son",
+      "subject_key": "brother_tam",
+      "predicate": "is_son_of",
+      "object_key": "the_warden",
+      "object_literal": null,
+      "is_hidden": true,
+      "when_active": null,
+      "superseded_fact_key": null
+    },
+    {
+      "key": "f_curfew",
+      "subject_key": "ashfall_village",
+      "predicate": "under_curfew",
+      "object_key": null,
+      "object_literal": "from dusk until dawn",
+      "is_hidden": false,
+      "when_active": {
+        "field": "flags.alarm_raised",
+        "op": "==",
+        "value": true
+      },
+      "superseded_fact_key": null
+    },
+    {
+      "key": "f_warden_enraged",
+      "subject_key": "the_warden",
+      "predicate": "is_enraged",
+      "object_key": null,
+      "object_literal": "the walls of the cairn bleed",
+      "is_hidden": false,
+      "when_active": {
+        "field": "the_warden.awareness",
+        "op": ">=",
+        "value": 50
+      },
+      "superseded_fact_key": null
+    }
+  ],
+  "tracked_fields": [
+    "wren.sanity",
+    "the_warden.awareness",
+    "kestrel_vane.loyalty",
+    "ember_sigil.charges",
+    "rustbound_blade.durability"
+  ]
+}

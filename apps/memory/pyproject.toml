@@ -1,0 +1,63 @@
+[project]
+name = "memory"
+version = "0.1.0"
+description = "Greenfield memory service for sands"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.110.0",
+    "uvicorn[standard]>=0.28.0",
+    "pydantic>=2.6.4",
+    "pydantic-settings>=2.2.1",
+    "psycopg[binary]>=3.3.6,<4",
+    "psycopg_pool>=3.2,<4",
+    "pgvector>=0.3.0",
+    "structlog>=24.1.0",
+    "google-genai>=1.0",
+    "anthropic[vertex]==1.13.0",
+    "google-auth>=2.30",
+    "requests>=2.32",
+    "tenacity>=9.2.1",
+    "procrastinate==3.10.0",
+]
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["app*"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "session"
+asyncio_default_test_loop_scope = "session"
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-m \"not live_embedding and not live_extraction and not live_eval\""
+markers = [
+    "live_embedding: gated smoke against the real embedding API; needs GOOGLE_CLOUD_API_KEY and spends money",
+    "live_extraction: gated smoke against the real extraction API; needs MUSE_API_KEY and spends money",
+    "live_eval: starts a scratch memory service on the dev Postgres server and calls real models; needs GOOGLE_CLOUD_API_KEY",
+]
+
+[tool.importlinter]
+root_packages = ["app", "eval"]
+
+[[tool.importlinter.contracts]]
+name = "Router -> Service -> Repository | Integration layering"
+type = "layers"
+layers = [
+    "app.main",
+    "app.routers",
+    "app.services",
+    "app.repositories | app.integrations",
+    "app.middleware",
+    "app.db | app.logging",
+    "app.models | app.exceptions | app.config",
+]
+
+[[tool.importlinter.contracts]]
+name = "Service code never imports evaluation tooling"
+type = "forbidden"
+source_modules = ["app"]
+forbidden_modules = ["eval"]

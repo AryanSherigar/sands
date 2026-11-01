@@ -1,0 +1,209 @@
+{
+  "source": "docs/reports/memory-eval.md section 6, accepted as proposed by the owner",
+  "corpus_version": 2,
+  "statistics": {
+    "lower_bound": "lower end of the 95% bootstrap interval, per class",
+    "mean": "point mean, per class",
+    "mean_over_runs": "mean over at least 5 repeated runs of the same configuration",
+    "max_over_runs": "worst value across at least 5 repeated runs",
+    "count": "raw count over the run"
+  },
+  "targets": [
+    {
+      "id": "forbidden_exposure",
+      "scope": "all_classes",
+      "metric": "forbidden_count",
+      "statistic": "count",
+      "comparator": "==",
+      "value": 0,
+      "status": "active",
+      "note": "absolute and release-blocking; also a guardrail filter in every tuning round"
+    },
+    {
+      "id": "recall_long_range",
+      "scope": "long_range",
+      "metric": "recall",
+      "statistic": "lower_bound",
+      "comparator": ">=",
+      "value": 0.9,
+      "status": "active"
+    },
+    {
+      "id": "recall_knowledge_update",
+      "scope": "knowledge_update",
+      "metric": "recall",
+      "statistic": "lower_bound",
+      "comparator": ">=",
+      "value": 0.9,
+      "status": "active"
+    },
+    {
+      "id": "recall_commitment_status",
+      "scope": "commitment_status",
+      "metric": "recall",
+      "statistic": "lower_bound",
+      "comparator": ">=",
+      "value": 0.9,
+      "status": "active"
+    },
+    {
+      "id": "recall_negation_conditional",
+      "scope": "negation_conditional",
+      "metric": "recall",
+      "statistic": "lower_bound",
+      "comparator": ">=",
+      "value": 0.9,
+      "status": "active"
+    },
+    {
+      "id": "recall_hidden_reveal",
+      "scope": "hidden_reveal",
+      "metric": "recall",
+      "statistic": "lower_bound",
+      "comparator": ">=",
+      "value": 0.9,
+      "status": "active"
+    },
+    {
+      "id": "recall_conditional_fact",
+      "scope": "conditional_fact",
+      "metric": "recall",
+      "statistic": "lower_bound",
+      "comparator": ">=",
+      "value": 0.9,
+      "status": "active"
+    },
+    {
+      "id": "recall_isolation",
+      "scope": "isolation",
+      "metric": "recall",
+      "statistic": "lower_bound",
+      "comparator": ">=",
+      "value": 0.9,
+      "status": "active"
+    },
+    {
+      "id": "recall_injection",
+      "scope": "injection",
+      "metric": "recall",
+      "statistic": "lower_bound",
+      "comparator": ">=",
+      "value": 0.9,
+      "status": "active"
+    },
+    {
+      "id": "recall_multi_hop",
+      "scope": "multi_hop",
+      "metric": "recall",
+      "statistic": "mean",
+      "comparator": ">=",
+      "value": 0.9,
+      "status": "active",
+      "note": "written as a plain value in the proposal, so judged on the mean"
+    },
+    {
+      "id": "recall_pronoun_direct",
+      "scope": "pronoun_reference:direct",
+      "metric": "recall",
+      "statistic": "mean",
+      "comparator": ">=",
+      "value": 0.95,
+      "status": "active"
+    },
+    {
+      "id": "recall_pronoun_vague",
+      "scope": "pronoun_reference:vague",
+      "metric": "recall",
+      "statistic": "mean",
+      "comparator": ">=",
+      "value": 0.9,
+      "status": "active"
+    },
+    {
+      "id": "wrong_referent_vague",
+      "scope": "pronoun_reference:vague",
+      "metric": "distractor_rate",
+      "statistic": "mean",
+      "comparator": "<=",
+      "value": 0.15,
+      "status": "active"
+    },
+    {
+      "id": "negation_stored_as_fact",
+      "scope": "extraction",
+      "metric": "negated_claim_stored_as_fact",
+      "statistic": "max_over_runs",
+      "comparator": "==",
+      "value": 0,
+      "status": "active",
+      "note": "the extractor's own prompt forbids it"
+    },
+    {
+      "id": "extraction_recall_commitment",
+      "scope": "extraction",
+      "metric": "commitment_recall",
+      "statistic": "mean_over_runs",
+      "comparator": ">=",
+      "value": 0.75,
+      "status": "active"
+    },
+    {
+      "id": "extraction_recall_supersession",
+      "scope": "extraction",
+      "metric": "supersession_recall",
+      "statistic": "mean_over_runs",
+      "comparator": ">=",
+      "value": 0.75,
+      "status": "active"
+    },
+    {
+      "id": "extraction_recall_fact",
+      "scope": "extraction",
+      "metric": "fact_recall",
+      "statistic": "mean_over_runs",
+      "comparator": ">=",
+      "value": 0.5,
+      "status": "active"
+    },
+    {
+      "id": "retrieval_p95_in_region",
+      "scope": "latency",
+      "metric": "retrieve_p95_ms",
+      "statistic": "count",
+      "comparator": "<=",
+      "value": 300,
+      "status": "deferred",
+      "note": "cutover: needs Cloud Run; this slice reports per-stage timings from a laptop instead"
+    },
+    {
+      "id": "cost_per_turn",
+      "scope": "cost",
+      "metric": "cost_per_turn_usd",
+      "statistic": "mean",
+      "comparator": "<=",
+      "value": null,
+      "status": "deferred",
+      "note": "no fixed target; tuning rounds apply a 1.5x constraint against the carried-forward configuration"
+    },
+    {
+      "id": "ranking_metrics",
+      "scope": "all_classes",
+      "metric": "hit_at_5,mrr,ndcg",
+      "statistic": "mean",
+      "comparator": ">=",
+      "value": null,
+      "status": "deferred",
+      "note": "descriptive only until the generation layer shows whether delivered order matters"
+    },
+    {
+      "id": "extraction_entity_link",
+      "scope": "extraction",
+      "metric": "entity_link_recall",
+      "statistic": "mean_over_runs",
+      "comparator": ">=",
+      "value": null,
+      "status": "deferred",
+      "note": "no entity_link labels exist in C1 or C2"
+    }
+  ]
+}

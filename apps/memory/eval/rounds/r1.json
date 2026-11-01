@@ -1,0 +1,31 @@
+{
+  "round_id": "r1",
+  "family": "extraction_prompt_validator",
+  "repeats": 5,
+  "base": {
+    "variant_id": "base",
+    "description": "Current service defaults: extraction_v1, no negated-predicate validator, gemini-3.5-flash-lite, batch 5, budget 2000, window 6"
+  },
+  "variants": [
+    {
+      "variant_id": "v1-val",
+      "description": "v1 prompt plus the validator that drops occurred facts whose predicate carries a negation",
+      "env": {"EXTRACTION_REJECT_NEGATED_PREDICATES": "true"}
+    },
+    {
+      "variant_id": "v3",
+      "description": "extraction_v3 prompt (narration-confirmed details, refused-change rule and example), validator off",
+      "env": {"EXTRACTION_PROMPT_VERSION": "extraction_v3"}
+    },
+    {
+      "variant_id": "v3-val",
+      "description": "extraction_v3 prompt plus the negated-predicate validator",
+      "env": {"EXTRACTION_PROMPT_VERSION": "extraction_v3", "EXTRACTION_REJECT_NEGATED_PREDICATES": "true"}
+    },
+    {
+      "variant_id": "v2-val",
+      "description": "extraction_v2 prompt plus the validator, kept as the known recall booster for comparison",
+      "env": {"EXTRACTION_PROMPT_VERSION": "extraction_v2", "EXTRACTION_REJECT_NEGATED_PREDICATES": "true"}
+    }
+  ]
+}

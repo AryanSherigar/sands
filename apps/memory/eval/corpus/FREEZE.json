@@ -1,0 +1,12 @@
+{
+  "version": "2",
+  "frozen_on": "2026-10-27",
+  "content_hashes": {
+    "C1": "864319e26bd7debf654f84428d162fc3be0940ecf75ab600ef076896919bbdf3",
+    "C2": "919bdf2a883f5a6db489cc4acfacd6c488d5c6be71329d9200455adb009f7d77"
+  },
+  "probe_counts": {
+    "C1": 37,
+    "C2": 64
+  }
+}
