@@ -138,6 +138,33 @@ async def stream_chat(
             yield chunk
 
 
+async def chat_completion(
+    system_prompt: str,
+    user_message: str,
+    response_format: dict[str, object] | None = None,
+    timeout_seconds: int | None = None,
+) -> str:
+    """Non-streaming chat completion returning raw content text."""
+    messages = [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": user_message},
+    ]
+    timeout = float(timeout_seconds or settings.narration_timeout_seconds)
+    kwargs: dict[str, object] = {
+        "model": settings.openai_compatible_model_name,
+        "messages": messages,
+        "timeout": timeout,
+        **_reasoning_kwargs(),
+    }
+    if response_format is not None:
+        kwargs["response_format"] = response_format
+    with _mapped_errors():
+        client = _get_client()
+        response = await client.chat.completions.create(**kwargs)  # type: ignore[arg-type]
+    choice = response.choices[0]
+    return choice.message.content or ""
+
+
 async def generate_with_tools(
     system_instruction: str,
     contents: list[types.Content],

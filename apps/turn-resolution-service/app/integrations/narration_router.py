@@ -56,6 +56,21 @@ async def stream_chat(
         yield chunk
 
 
+async def chat_completion(
+    system_prompt: str,
+    user_message: str,
+    response_format: dict[str, object] | None = None,
+    timeout_seconds: int | None = None,
+) -> str:
+    """Route non-streaming chat completion to the configured provider."""
+    return await openai_compatible_client.chat_completion(
+        system_prompt=system_prompt,
+        user_message=user_message,
+        response_format=response_format,
+        timeout_seconds=timeout_seconds,
+    )
+
+
 _RECORD_STATE_DIRECTIVE = (
     "Record the lasting state changes established by the narration above by "
     "calling the tools. Write no prose. If nothing durable changed, call no tool."
