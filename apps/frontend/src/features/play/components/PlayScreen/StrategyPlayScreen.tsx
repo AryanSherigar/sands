@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { usePlayStore } from "../../stores/play.store";
 import { useSimulationWorld } from "../../hooks/useSimulationWorld";
 import { useSimulationCommands } from "../../hooks/useSimulationCommands";
 import { useEndTurn } from "../../hooks/useEndTurn";
 import { useOrderPlanner } from "../../hooks/useOrderPlanner";
 import { useStrategyMap } from "../../hooks/useStrategyMap";
+import { useLiveLetter } from "../../hooks/useLiveLetter";
+import { useLiveJudgment } from "../../hooks/useLiveJudgment";
 import { useStrategyDiplomacy } from "../../hooks/useStrategyDiplomacy";
 import { useStrategySituations } from "../../hooks/useStrategySituations";
 import { useStrategyEvent } from "../../hooks/useStrategyEvent";
@@ -15,6 +17,16 @@ import { deriveOrdersBudget } from "../../lib/ordersBudget";
 import { buildSituationAnswer } from "../../lib/orderBuilders";
 import { buildPendingEventPackage } from "../../lib/pendingEventPackage";
 import { deriveTurnReport } from "../../lib/turnReportAdapter";
+import { prisonersToCaptives } from "../../lib/prisoner-captives";
+import { useStrategyAudio } from "../../hooks/useStrategyAudio";
+import { useHistoricalWorld } from "../../hooks/useHistoricalWorld";
+import { useRestoredTurnReport } from "../../hooks/useRestoredTurnReport";
+import { StrategyHistoryScrubber } from "../StrategyPlayScreen/hud/StrategyHistoryScrubber";
+import { useMapFocus } from "../../hooks/useMapFocus";
+import { usePendingEventNarratives } from "../../hooks/usePendingEventNarratives";
+import type { ReactZoomPanPinchRef } from "react-zoom-pan-pinch";
+import type { StrategyUIContext } from "@/shared/types/strategy-audio.types";
+import type { StrategyWorldSnapshot } from "../../types/strategyPlay.types";
 import { StrategyMapViewport } from "../StrategyPlayScreen/map/StrategyMapViewport";
 import { StrategyTopCanopy } from "../StrategyPlayScreen/hud/StrategyTopCanopy";
 import { StrategyLeftInspector } from "../StrategyPlayScreen/inspector/StrategyLeftInspector";
@@ -22,15 +34,28 @@ import { StrategyTurnReportDrawer } from "../StrategyPlayScreen/turnReport/Strat
 import { StrategyTurnReportLauncher } from "../StrategyPlayScreen/turnReport/StrategyTurnReportLauncher";
 import { StrategyRightDrawer } from "../StrategyPlayScreen/factions/StrategyRightDrawer";
 import { StrategySceneDialog } from "../StrategyPlayScreen/scene/StrategySceneDialog";
+import { StrategyJudgmentDialog } from "../StrategyPlayScreen/judgment/StrategyJudgmentDialog";
 import { StrategySituationsDrawer } from "../StrategyPlayScreen/situations/StrategySituationsDrawer";
 import { StrategySituationBanner } from "../StrategyPlayScreen/situations/StrategySituationBanner";
 import { StrategyEventDialog } from "../StrategyPlayScreen/events/StrategyEventDialog";
 import { StrategyOrdersTray } from "../StrategyPlayScreen/orders/StrategyOrdersTray";
 import { StrategyEndTurnModule } from "../StrategyPlayScreen/orders/StrategyEndTurnModule";
 import { StrategyNoticeBanner } from "../StrategyPlayScreen/orders/StrategyNoticeBanner";
+import { StrategyArmyGroupBar } from "../StrategyPlayScreen/orders/StrategyArmyGroupBar";
+import { DeclareWarForm } from "../StrategyPlayScreen/factions/DeclareWarForm";
+import { buildDeclareWarOrder } from "../../lib/orderBuilders";
+import { StrategyEndingDialog } from "../StrategyPlayScreen/ending/StrategyEndingDialog";
 import { StrategyBattleDecision } from "../StrategyPlayScreen/orders/StrategyBattleDecision";
+import { StrategyWarCouncilScreen } from "../StrategyWarCouncil";
+import { StrategyLetterDialog } from "../StrategyPlayScreen/letter/StrategyLetterDialog";
 import { DEFAULT_PREVIEW_WORLD } from "../StrategyPlayScreen/defaultPreviewWorld";
 import { FALLBACK_STRATEGY_MAP } from "../StrategyPlayScreen/fallbackStrategyMap";
+import { EMPTY_STRATEGY_MAP } from "../StrategyPlayScreen/emptyStrategyMap";
+import { StrategyMapSkeleton } from "../StrategyPlayScreen/map/StrategyMapSkeleton";
+import {
+  THREE_CROWNS_MAP,
+  THREE_CROWNS_WORLD,
+} from "../StrategyPlayScreen/threeCrownsDemo";
 import {
   StrategyErrorState,
   StrategyLoadingState,
@@ -108,15 +133,6 @@ function useTurnReportItemCount(): number {
   }, [latestReport]);
 }
 
-function useMapFocusObserver(mapDoc: MapDocument): void {
-  const mapFocusTarget = useStrategyPlayStore((s) => s.mapFocusTarget);
-  useEffect(() => {
-    if (!mapFocusTarget) return;
-    const region = mapDoc.regions.find((r) => r.id === mapFocusTarget.regionId);
-    if (!region) return;
-  }, [mapFocusTarget, mapDoc.regions]);
-}
-
 function pickNotice(
   world: CampaignWorldView,
   targetingAction: "move" | "attack" | undefined,
@@ -132,18 +148,52 @@ function pickNotice(
 
 export function StrategyPlayScreen() {
   const { id: playthroughId } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const [isReviewingEndedRealm, setIsReviewingEndedRealm] = useState(false);
+  const [mapControls, setMapControls] = useState<ReactZoomPanPinchRef | null>(null);
+  const [isTenRegionDemo, setIsTenRegionDemo] = useState(() => {
+    // NOTE: demo fixtures are for the preview route only; a real playthrough never reads them.
+    if (typeof window === "undefined" || playthroughId) return false;
+    const search = new URLSearchParams(window.location.search);
+    const demo = search.get("demo");
+    const scenario = search.get("scenario");
+    return (
+      demo === "10-region" ||
+      demo === "three-crowns" ||
+      scenario === "three-crowns-expanded"
+    );
+  });
+
+  const fallbackMap = isTenRegionDemo ? THREE_CROWNS_MAP : FALLBACK_STRATEGY_MAP;
+  const fallbackWorld = isTenRegionDemo ? THREE_CROWNS_WORLD : DEFAULT_PREVIEW_WORLD;
+
+  const isPlaythrough = Boolean(playthroughId);
   const scenarioId = usePlayStore((s) => s.playthrough?.scenario_id);
-  const { data: mapData } = useStrategyMap(scenarioId);
+  const { data: mapData, isLoading: isMapLoading } = useStrategyMap(scenarioId);
   const { data: world, isLoading, isError, refetch } = useSimulationWorld(playthroughId);
   const { cancelMutation } = useSimulationCommands(playthroughId);
 
-  const activeMapDoc = mapData ?? FALLBACK_STRATEGY_MAP;
-  const activeWorld = world ?? DEFAULT_PREVIEW_WORLD;
+  const activeMapDoc = isPlaythrough
+    ? (mapData ?? EMPTY_STRATEGY_MAP)
+    : (mapData ?? (scenarioId ? EMPTY_STRATEGY_MAP : fallbackMap));
+  const liveWorld = world ?? fallbackWorld;
+  const historyTurn = useStrategyPlayStore((s) => s.historyTurn);
+  const pendingWarTargetId = useStrategyPlayStore((s) => s.pendingWarTargetId);
+  const setPendingWarTarget = useStrategyPlayStore((s) => s.setPendingWarTarget);
+  const setHistoryTurn = useStrategyPlayStore((s) => s.setHistoryTurn);
+  const history = useHistoricalWorld(playthroughId, historyTurn);
+  const activeWorld = history.data ?? liveWorld;
+  const latestCompletedTurn = Math.max(0, liveWorld.turn - 1);
   const regionNames = useMemo(
     () => Object.fromEntries(activeMapDoc.regions.map((region) => [region.id, region.name])),
     [activeMapDoc.regions],
   );
+  const factionNames = useMemo(
+    () => Object.fromEntries(activeWorld.rivals.map((rival) => [rival.faction_id, rival.name])),
+    [activeWorld.rivals],
+  );
 
+  useRestoredTurnReport(playthroughId, liveWorld, regionNames);
   const { endTurn, isEndingTurn, errorInfo } = useEndTurn(playthroughId, regionNames);
   const { selectedEntity, selectedRegion, selectedArmy } = useStrategySelection(
     activeMapDoc,
@@ -156,6 +206,8 @@ export function StrategyPlayScreen() {
     regionNames,
   );
   const { eventPackage, resolveChoice } = useStrategyEvent(playthroughId, activeWorld);
+  const letter = useLiveLetter(playthroughId, activeWorld);
+  const judgment = useLiveJudgment(playthroughId, activeWorld);
   const [devEventPackage, setDevEventPackage] = useState<StrategyEventPackage | null>(null);
   const [reviewedEventId, setReviewedEventId] = useState<string | null>(null);
   const reviewedPackage = useMemo(
@@ -163,6 +215,7 @@ export function StrategyPlayScreen() {
     [activeWorld, reviewedEventId, regionNames],
   );
   const [isBannerDismissed, setIsBannerDismissed] = useState(false);
+  const [activeWarCouncilBattleId, setActiveWarCouncilBattleId] = useState<string | null>(null);
   const closeScene = useStrategyPlayStore((s) => s.closeScene);
 
   useEffect(() => {
@@ -171,9 +224,22 @@ export function StrategyPlayScreen() {
     };
   }, []);
 
+  useEffect(() => {
+    (
+      window as unknown as {
+        __TRIGGER_NEGOTIATION__: (sceneId?: string) => void;
+      }
+    ).__TRIGGER_NEGOTIATION__ = (id) => {
+      useStrategyPlayStore.getState().openScene(id ?? "preview-scene-1");
+    };
+  }, []);
+
   const activeEventPackage = eventPackage ?? reviewedPackage ?? devEventPackage;
 
   const selectEntity = useStrategyPlayStore((s) => s.selectEntity);
+  const groupArmyIds = useStrategyPlayStore((s) => s.groupArmyIds);
+  const toggleGroupArmy = useStrategyPlayStore((s) => s.toggleGroupArmy);
+  const clearGroupArmies = useStrategyPlayStore((s) => s.clearGroupArmies);
   const activeMapMode = useStrategyPlayStore((s) => s.activeMapMode);
   const setActiveMapMode = useStrategyPlayStore((s) => s.setActiveMapMode);
   const activeRightTab = useStrategyPlayStore((s) => s.activeRightTab);
@@ -188,9 +254,35 @@ export function StrategyPlayScreen() {
   const openSituations = useStrategyPlayStore((s) => s.openSituations);
   const closeSituations = useStrategyPlayStore((s) => s.closeSituations);
   const toggleSituations = useStrategyPlayStore((s) => s.toggleSituations);
+  const isTurnReportOpen = useStrategyPlayStore((s) => s.isTurnReportOpen);
   const turnReportItemCount = useTurnReportItemCount();
 
-  useMapFocusObserver(activeMapDoc);
+  const activeContext: StrategyUIContext = useMemo(() => {
+    if (letter.pkg && letter.isOpen) return "letter";
+    if (negotiation.sceneId && letter.isSceneTypeResolved && !letter.isLetterScene) return "negotiation";
+    if (activeEventPackage) return "event";
+    if (activeWorld?.status === "awaiting_battle_decision") return "war_council";
+    if (isTurnReportOpen) return "turn_report";
+    return "map";
+  }, [
+    letter.pkg,
+    letter.isOpen,
+    negotiation.sceneId,
+    letter.isSceneTypeResolved,
+    letter.isLetterScene,
+    activeEventPackage,
+    activeWorld?.status,
+    isTurnReportOpen,
+  ]);
+
+  useStrategyAudio({
+    worldState: activeWorld as unknown as StrategyWorldSnapshot,
+    uiContext: activeContext,
+    seed: playthroughId,
+  });
+
+  useMapFocus(activeMapDoc, mapControls);
+  usePendingEventNarratives(playthroughId, activeWorld.pending_events);
 
   useEffect(() => () => useStrategyPlayStore.getState().reset(), []);
 
@@ -212,6 +304,10 @@ export function StrategyPlayScreen() {
     }
     selectEntity(entity);
   };
+  const handleOpenTreasury = (): void => {
+    const currentTab = useStrategyPlayStore.getState().activeRightTab;
+    setActiveRightTab(currentTab === "treasury" ? null : "treasury");
+  };
   const budget = deriveOrdersBudget(activeWorld);
   const nextDate = deriveDate(activeWorld.clock, 1);
   const notice = pickNotice(
@@ -224,18 +320,48 @@ export function StrategyPlayScreen() {
   );
 
   return (
-    <main className="relative w-screen h-screen overflow-hidden bg-[#EFE4C8] select-none">
-      <StrategyMapViewport
-        document={activeMapDoc}
-        world={activeWorld}
-        selectedEntity={selectedEntity}
-        onSelectEntity={handleSelectEntity}
-        situations={situations}
-        onSelectSituation={(sitId, regId) => {
-          openSituations(sitId);
-          focusMapLocation(regId);
-          selectEntity({ type: "region", id: regId });
-        }}
+    <main className="strategy-surface relative w-screen h-screen overflow-hidden bg-[#EFE4C8] select-none">
+      {isPlaythrough && isMapLoading ? (
+        <StrategyMapSkeleton />
+      ) : (
+        <StrategyMapViewport
+          document={activeMapDoc}
+          world={activeWorld}
+          selectedEntity={selectedEntity}
+          onSelectEntity={handleSelectEntity}
+          situations={situations}
+          activeMapMode={activeMapMode}
+          onControlsReady={setMapControls}
+          groupArmyIds={groupArmyIds}
+          onToggleGroupArmy={toggleGroupArmy}
+          onSelectSituation={(sitId, regId) => {
+            openSituations(sitId);
+            focusMapLocation(regId);
+            selectEntity({ type: "region", id: regId });
+          }}
+        />
+      )}
+      {!playthroughId && (
+        <aside
+          aria-label="Demo scenario picker"
+          className="fixed bottom-0 left-1/2 -translate-x-1/2 z-50 hidden items-center gap-1.5 px-3 py-0.5 sm:flex bg-[#F5EEDC]/95 border border-[#D5C29D] rounded-t-md shadow-md text-xs font-serif pointer-events-auto"
+        >
+          <span className="text-[#6B5E4F] font-semibold">Demo Scenario:</span>
+          <button
+            type="button"
+            onClick={() => setIsTenRegionDemo((prev) => !prev)}
+            className="font-bold text-[#2A231C] underline decoration-[#9D8461] hover:text-[#7A2E1D]"
+          >
+            {isTenRegionDemo ? "10 Regions (Three Crowns Expanded)" : "4 Regions (Dunmere Vale)"}
+          </button>
+        </aside>
+      )}
+      <StrategyArmyGroupBar
+        count={groupArmyIds.length}
+        isTargeting={Boolean(planner.targeting)}
+        onMove={() => planner.handleGroupAction("move")}
+        onHalt={() => planner.handleGroupAction("halt")}
+        onClear={clearGroupArmies}
       />
       <StrategyTopCanopy
         world={activeWorld}
@@ -243,7 +369,24 @@ export function StrategyPlayScreen() {
         onSelectMapMode={setActiveMapMode}
         activeCrisesCount={activeCrisesCount}
         onToggleSituations={toggleSituations}
+        letterDispatchNumber={letter.dispatchNumber}
+        onOpenLetter={letter.handleOpen}
+        onOpenTreasury={handleOpenTreasury}
+        playthroughId={playthroughId}
+        isHistoryAvailable={Boolean(playthroughId) && latestCompletedTurn > 0}
+        isHistoryActive={historyTurn !== null}
+        onToggleHistory={() => setHistoryTurn(historyTurn === null ? latestCompletedTurn : null)}
       />
+      {historyTurn !== null ? (
+        <StrategyHistoryScrubber
+          latestTurn={latestCompletedTurn}
+          viewedTurn={historyTurn}
+          isLoading={history.isFetching}
+          hasFailed={history.isError}
+          onChangeTurn={setHistoryTurn}
+          onReturnToPresent={() => setHistoryTurn(null)}
+        />
+      ) : null}
       <StrategyLeftInspector
         selectedEntity={selectedEntity}
         region={selectedRegion}
@@ -252,18 +395,25 @@ export function StrategyPlayScreen() {
         onClose={() => selectEntity(null)}
         onAction={planner.handleInspectorAction}
       />
-      <StrategyTurnReportDrawer onContinue={() => endTurn()} />
+      <StrategyTurnReportDrawer />
       <StrategyRightDrawer
         playthroughId={playthroughId}
         rivals={activeWorld.rivals}
         diplomacy={negotiation.diplomacy}
         activeTab={activeRightTab}
         isPinned={isRightDrawerPinned}
+        world={activeWorld}
+        onSubmitOrder={planner.submitOrder}
+        regionNames={regionNames}
         onSelectTab={setActiveRightTab}
         onTogglePin={togglePinRightDrawer}
         onJumpToRegion={focusMapLocation}
       />
-      {playthroughId && negotiation.sceneId ? (
+      {negotiation.sceneId &&
+      letter.isSceneTypeResolved &&
+      !letter.isLetterScene &&
+      judgment.isSceneTypeResolved &&
+      !judgment.isJudgmentScene ? (
         <StrategySceneDialog
           playthroughId={playthroughId}
           sceneId={negotiation.sceneId}
@@ -307,6 +457,7 @@ export function StrategyPlayScreen() {
       {activeEventPackage && (
         <StrategyEventDialog
           isOpen={Boolean(activeEventPackage)}
+          playthroughId={playthroughId}
           eventPackage={activeEventPackage}
           onSelectOption={(optionId) => {
             if (eventPackage) void resolveChoice(optionId);
@@ -330,6 +481,31 @@ export function StrategyPlayScreen() {
           }}
         />
       )}
+      {judgment.pkg && (
+        <StrategyJudgmentDialog
+          isOpen={judgment.isOpen}
+          pkg={judgment.pkg}
+          liveText={judgment.liveText}
+          isStreaming={judgment.isStreaming}
+          failureMessage={judgment.failureMessage}
+          canRetryOpen={judgment.canRetryOpen}
+          onRetryOpen={judgment.handleRetryOpen}
+          onSpeak={judgment.handleSpeak}
+          onPronounce={judgment.handlePronounce}
+          onDismissReveal={judgment.handleDismissReveal}
+          onClose={judgment.handleClose}
+        />
+      )}
+      {letter.pkg && (
+        <StrategyLetterDialog
+          isOpen={letter.isOpen}
+          pkg={letter.pkg}
+          onSeal={letter.handleSeal}
+          onClose={letter.handleClose}
+          onRequestScribeDraft={letter.requestScribeDraft}
+          onDecline={letter.handleDecline}
+        />
+      )}
       {notice ? (
         <StrategyNoticeBanner
           message={notice}
@@ -341,22 +517,81 @@ export function StrategyPlayScreen() {
         ordersRemaining={budget.remaining}
         ordersTotal={budget.total}
         regionNames={regionNames}
+        factionNames={factionNames}
         onCancelOrder={(commandId) => cancelMutation.mutate(commandId)}
       />
       <StrategyTurnReportLauncher itemCount={turnReportItemCount} />
-      {playthroughId && activeWorld.status === "awaiting_battle_decision" && (
-        <StrategyBattleDecision playthroughId={playthroughId} world={activeWorld} regionNames={regionNames} />
+      {playthroughId && !activeWorld.ending && activeWorld.status === "awaiting_battle_decision" && (
+        <StrategyBattleDecision
+          playthroughId={playthroughId}
+          world={activeWorld}
+          regionNames={regionNames}
+          onTakeCommand={(battleId) => setActiveWarCouncilBattleId(battleId)}
+        />
       )}
-      {activeWorld.status === "awaiting_commands" && (
-        <button type="button" disabled={isEndingTurn} onClick={() => endTurn()} className="absolute bottom-28 left-1/2 z-40 -translate-x-1/2 rounded-md bg-[#46606E] px-5 py-3 text-white shadow-lg hover:bg-[#354F5A] focus-visible:outline focus-visible:outline-2 disabled:opacity-50">
-          {isEndingTurn ? "Resolving battle…" : "Advance battle round"}
-        </button>
+      {!activeWorld.ending && activeWorld.status === "awaiting_commands" && (
+        <div className="absolute bottom-28 left-1/2 z-30 -translate-x-1/2 flex items-center gap-3">
+          {activeWorld.battles?.some(
+            (b) => b.control_mode === "player" && b.status !== "resolved",
+          ) && (
+            <button
+              type="button"
+              onClick={() => {
+                const b = activeWorld.battles.find(
+                  (item) => item.control_mode === "player" && item.status !== "resolved",
+                );
+                if (b) setActiveWarCouncilBattleId(b.id);
+              }}
+              className="rounded-md bg-[#46606E] px-5 py-3 text-white shadow-lg hover:bg-[#354F5A] focus-visible:outline focus-visible:outline-2"
+            >
+              Open War Council
+            </button>
+          )}
+          <button
+            type="button"
+            disabled={isEndingTurn}
+            onClick={() => endTurn()}
+            className="rounded-md bg-[#46606E] px-5 py-3 text-white shadow-lg hover:bg-[#354F5A] focus-visible:outline focus-visible:outline-2 disabled:opacity-50"
+          >
+            {isEndingTurn ? "Resolving battle…" : "Advance battle round"}
+          </button>
+        </div>
       )}
+      {activeWarCouncilBattleId && playthroughId && (
+        <StrategyWarCouncilScreen
+          playthroughId={playthroughId}
+          battleId={activeWarCouncilBattleId}
+          regionNames={regionNames}
+          world={activeWorld}
+          heldCaptives={prisonersToCaptives(activeWorld.own_prisoners)}
+          onReturnToMap={() => setActiveWarCouncilBattleId(null)}
+        />
+      )}
+      {activeWorld.ending ? (
+        <StrategyEndingDialog
+          ending={activeWorld.ending}
+          isOpen={!isReviewingEndedRealm}
+          onReviewRealm={() => setIsReviewingEndedRealm(true)}
+          onLeave={() => navigate("/discover")}
+        />
+      ) : null}
+      {pendingWarTargetId ? (
+        <DeclareWarForm
+          targetName={activeWorld.rivals.find((rival) => rival.faction_id === pendingWarTargetId)?.name ?? pendingWarTargetId}
+          grounds={(activeWorld.usable_grounds ?? []).filter((ground) => ground.target_faction_id === pendingWarTargetId)}
+          regionNames={regionNames}
+          onSubmit={(groundId) => {
+            void planner.submitOrder(buildDeclareWarOrder(activeWorld.my_faction.id, pendingWarTargetId, groundId));
+            setPendingWarTarget(null);
+          }}
+          onCancel={() => setPendingWarTarget(null)}
+        />
+      ) : null}
       <StrategyEndTurnModule
         ordersRemaining={activeWorld.orders_remaining}
         nextSeason={`${nextDate.season} ${nextDate.year}`}
         isLoading={isEndingTurn}
-        isDisabled={!playthroughId || activeWorld.status === "awaiting_scene" || activeWorld.status === "awaiting_battle_decision" || activeWorld.status === "awaiting_commands"}
+        isDisabled={historyTurn !== null || Boolean(activeWorld.ending) || !playthroughId || activeWorld.status === "awaiting_scene" || activeWorld.status === "awaiting_battle_decision" || activeWorld.status === "awaiting_commands"}
         onEndTurn={() => endTurn()}
       />
     </main>

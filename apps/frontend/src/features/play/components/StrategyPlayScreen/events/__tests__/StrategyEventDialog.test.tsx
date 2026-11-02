@@ -1,5 +1,8 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
+import { http, HttpResponse } from "msw";
+import { server } from "@/test/msw/server";
+import { createQueryWrapper } from "@/test/queryWrapper";
 import { StrategyEventDialog } from "../StrategyEventDialog";
 import type { StrategyEventPackage } from "../../../../types/eventScene.types";
 
@@ -113,5 +116,92 @@ describe("StrategyEventDialog", () => {
       />
     );
     expect(container.firstChild).toBeNull();
+  });
+
+  describe("art", () => {
+    const basePackage: StrategyEventPackage = {
+      sceneId: "scene-2",
+      eventId: "evt_1",
+      category: "trouble",
+      title: "Grain riots",
+      subheading: "Carrow",
+      turnText: "Turn 2",
+      bodyProse: "Riots.",
+      causeQuote: "",
+      character: { name: "Lord", title: "Castellan", disposition: "Angry" },
+      choices: [{ id: "opt-1", label: "Release grain", effects: [] }],
+    };
+
+    function mockArt(kindSeen: (kind: string) => void) {
+      server.use(
+        http.post("*/trs/v1/strategy/playthroughs/pt-1/art", async ({ request }) => {
+          const body = (await request.json()) as { kind: string; item_id: string };
+          kindSeen(body.kind);
+          return HttpResponse.json({
+            kind: body.kind,
+            item_id: body.item_id,
+            status: "completed",
+            art_url: "https://cdn.test/a.webp",
+            error_code: null,
+            is_retryable: false,
+          });
+        }),
+      );
+    }
+
+    it("requests art with the uprising kind for an uprising source", async () => {
+      const kindSeen = vi.fn();
+      mockArt(kindSeen);
+      const Wrapper = createQueryWrapper();
+      render(
+        <Wrapper>
+          <StrategyEventDialog
+            isOpen={true}
+            playthroughId="pt-1"
+            eventPackage={{ ...basePackage, source: "uprising" }}
+            onSelectOption={vi.fn()}
+          />
+        </Wrapper>,
+      );
+      expect(await screen.findByRole("img", { name: /grain riots/i })).toBeInTheDocument();
+      expect(kindSeen).toHaveBeenCalledWith("uprising");
+    });
+
+    it("requests no art for a package without an event id", () => {
+      const kindSeen = vi.fn();
+      mockArt(kindSeen);
+      const Wrapper = createQueryWrapper();
+      render(
+        <Wrapper>
+          <StrategyEventDialog
+            isOpen={true}
+            playthroughId="pt-1"
+            eventPackage={{ ...basePackage, eventId: undefined }}
+            onSelectOption={vi.fn()}
+          />
+        </Wrapper>,
+      );
+      expect(kindSeen).not.toHaveBeenCalled();
+    });
+
+    it("keeps choices usable while art is loading", async () => {
+      server.use(
+        http.post("*/trs/v1/strategy/playthroughs/pt-1/art", () => new Promise(() => {})),
+      );
+      const onSelectOption = vi.fn();
+      const Wrapper = createQueryWrapper();
+      render(
+        <Wrapper>
+          <StrategyEventDialog
+            isOpen={true}
+            playthroughId="pt-1"
+            eventPackage={basePackage}
+            onSelectOption={onSelectOption}
+          />
+        </Wrapper>,
+      );
+      fireEvent.keyDown(window, { key: "1" });
+      expect(onSelectOption).toHaveBeenCalledWith("opt-1");
+    });
   });
 });

@@ -2,6 +2,7 @@ import React from "react";
 import { IconX } from "@tabler/icons-react";
 import { ProvinceCharterView } from "./ProvinceCharterView";
 import { ArmyRosterView } from "./ArmyRosterView";
+import { canBesiegeFrom } from "../../../lib/besiegeEligibility";
 import type { StrategyLeftInspectorProps } from "./StrategyLeftInspector.types";
 
 const DRAWER_BASE_CLASS =
@@ -47,6 +48,11 @@ export const StrategyLeftInspector: React.FC<StrategyLeftInspectorProps> = (
         <ArmyRosterView
           army={army}
           isOwnArmy={army.owner_id === world?.my_faction.id}
+          isAtWar={(() => {
+            const rival = world?.rivals.find((r) => r.faction_id === army.owner_id);
+            return rival?.relation === "war" || rival?.relation === "at_war";
+          })()}
+          canBesiege={world ? canBesiegeFrom(army, world) : false}
           onAction={onAction}
         />
       ) : null}

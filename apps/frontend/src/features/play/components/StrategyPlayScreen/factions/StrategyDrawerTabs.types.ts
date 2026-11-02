@@ -1,6 +1,8 @@
+import type { StrategyDrawerTab } from "../../../types/strategyDrawer.types";
+
 export interface StrategyDrawerTabsProps {
-  activeTab: "factions" | "chronicle" | "treasury" | null;
+  activeTab: StrategyDrawerTab | null;
   rivalsCount: number;
   obligationsCount?: number;
-  onSelectTab: (tab: "factions" | "chronicle" | "treasury" | null) => void;
+  onSelectTab: (tab: StrategyDrawerTab | null) => void;
 }

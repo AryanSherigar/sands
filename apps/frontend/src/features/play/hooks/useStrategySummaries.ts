@@ -83,13 +83,16 @@ export function useStrategySummaryStream(playthroughId?: string) {
     },
     onError: () => setError({ code: "summary_unavailable", message: "Chronicle could not be loaded. Try again.", is_retryable: true }),
   });
-  const start = useCallback((summary: StrategySummaryView) => {
+  const start = useCallback((summary: StrategySummaryView, chroniclerId?: string) => {
     if (!playthroughId || summary.status === "completed") return;
     setError(null);
     setStreaming({ summaryId: summary.summary_id, narration: "" });
     stream.start(
       getStrategySummaryStreamPath(playthroughId, summary.summary_id),
-      { client_request_id: generateClientActionId() },
+      {
+        client_request_id: generateClientActionId(),
+        chronicler_id: chroniclerId,
+      },
     );
   }, [playthroughId, stream]);
   const current = useMemo(

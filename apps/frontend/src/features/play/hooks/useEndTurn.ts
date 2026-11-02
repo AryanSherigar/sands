@@ -8,8 +8,10 @@ import { deriveTurnReport } from "../lib/turnReportAdapter";
 import { mergeTurnReport } from "../lib/turnReportMerge";
 import { logEvent } from "@/shared/lib/logger";
 import { useStrategyPlayStore } from "../stores/strategyPlay.store";
-import { DEFAULT_PREVIEW_WORLD } from "../components/StrategyPlayScreen/defaultPreviewWorld";
-import type { CampaignWorldView, MutationResponse } from "../types/simulation.types";
+import type {
+  CampaignWorldView,
+  MutationResponse,
+} from "../types/simulation.types";
 import type { TurnReportResponse } from "../types/turnReportApi.types";
 import { getWorldQueryKey, readCachedWorld } from "./useSimulationCommands";
 import { getStrategySummariesQueryKey } from "./useStrategySummaries";
@@ -29,40 +31,16 @@ async function resolveTurn(
   return latest;
 }
 
-function ensureWorldView(
-  world: CampaignWorldView | null | undefined,
-): CampaignWorldView | null {
-  if (!world) return null;
-  return {
-    ...DEFAULT_PREVIEW_WORLD,
-    ...world,
-    clock: {
-      ...DEFAULT_PREVIEW_WORLD.clock,
-      ...(world.clock ?? {}),
-    },
-    my_faction: {
-      ...DEFAULT_PREVIEW_WORLD.my_faction,
-      ...(world.my_faction ?? {}),
-      loans: world.my_faction?.loans ?? [],
-    },
-    armies: world.armies ?? DEFAULT_PREVIEW_WORLD.armies,
-    regions: world.regions ?? DEFAULT_PREVIEW_WORLD.regions,
-    rivals: world.rivals ?? DEFAULT_PREVIEW_WORLD.rivals,
-    battles: world.battles ?? DEFAULT_PREVIEW_WORLD.battles,
-  };
-}
-
 function buildFallbackWorld(
-  previousWorld: CampaignWorldView | null,
+  base: CampaignWorldView,
   latest: MutationResponse,
 ): CampaignWorldView {
-  const base = ensureWorldView(previousWorld) ?? DEFAULT_PREVIEW_WORLD;
   return {
     ...base,
     turn: latest.turn,
     wave: latest.wave,
     status: latest.status,
-    battles: latest.battles ?? base.battles ?? [],
+    battles: latest.battles ?? base.battles,
     world_version: latest.world_version,
     world_hash: latest.world_hash,
     orders_remaining: latest.orders_remaining,
@@ -76,13 +54,13 @@ function buildFallbackWorld(
 function resolveNextWorld(
   queryClient: QueryClient,
   playthroughId: string,
-  previousWorld: CampaignWorldView | null,
+  previousWorld: CampaignWorldView,
   latest: MutationResponse,
 ): CampaignWorldView {
   try {
     const cached = readCachedWorld(queryClient, playthroughId);
     if (cached.turn === latest.turn && cached.world_version === latest.world_version) {
-      return ensureWorldView(cached) ?? buildFallbackWorld(previousWorld, latest);
+      return cached;
     }
   } catch {
     // Cache unpopulated
@@ -104,13 +82,12 @@ async function fetchCompletedTurnReport(
 }
 
 function notifyTurnReport(
-  previousWorld: CampaignWorldView | null,
+  previousWorld: CampaignWorldView,
   nextWorld: CampaignWorldView,
   regionNames: Record<string, string>,
   apiReport: TurnReportResponse | null,
 ): void {
-  const prev = ensureWorldView(previousWorld);
-  const estimated = deriveTurnReport(prev, nextWorld, regionNames);
+  const estimated = deriveTurnReport(previousWorld, nextWorld, regionNames);
   const report = apiReport
     ? mergeTurnReport(estimated, apiReport, nextWorld, regionNames)
     : estimated;
@@ -119,6 +96,37 @@ function notifyTurnReport(
   if (useStrategyPlayStore.getState().autoShowTurnReport) {
     useStrategyPlayStore.getState().openTurnReport();
   }
+}
+
+interface EndTurnParams {
+  queryClient: QueryClient;
+  playthroughId: string;
+  regionNames: Record<string, string>;
+}
+
+async function executeEndTurn({
+  queryClient,
+  playthroughId,
+  regionNames,
+}: EndTurnParams): Promise<MutationResponse> {
+  const previousWorld = readCachedWorld(queryClient, playthroughId);
+  const guard = buildOperationGuard(previousWorld);
+  if (previousWorld.status === "awaiting_battle_decision") {
+    throw new Error("Choose whether to take command or delegate the battle first.");
+  }
+  const started = previousWorld.status === "awaiting_commands"
+    ? await advanceBattles(playthroughId, guard)
+    : await endTurn(playthroughId, guard);
+  const latest = await resolveTurn(playthroughId, started);
+  const nextWorld = resolveNextWorld(queryClient, playthroughId, previousWorld, latest);
+  const apiReport = await fetchCompletedTurnReport(playthroughId, latest);
+  if (latest.status === "turn_completed") {
+    notifyTurnReport(previousWorld, nextWorld, regionNames, apiReport);
+  }
+  queryClient.setQueryData<CampaignWorldView>(getWorldQueryKey(playthroughId), (current) =>
+    current && current.world_version > nextWorld.world_version ? current : nextWorld,
+  );
+  return latest;
 }
 
 export function useEndTurn(
@@ -135,22 +143,7 @@ export function useEndTurn(
   const endTurnMutation = useMutation({
     mutationFn: async (): Promise<MutationResponse> => {
       if (!playthroughId) throw new Error(MISSING_PLAYTHROUGH_MESSAGE);
-      const previousWorld = readCachedWorld(queryClient, playthroughId);
-      const guard = buildOperationGuard(previousWorld);
-      if (previousWorld.status === "awaiting_battle_decision") {
-        throw new Error("Choose whether to take command or delegate the battle first.");
-      }
-      const started = previousWorld.status === "awaiting_commands"
-        ? await advanceBattles(playthroughId, guard)
-        : await endTurn(playthroughId, guard);
-      const latest = await resolveTurn(playthroughId, started);
-      const nextWorld = resolveNextWorld(queryClient, playthroughId, previousWorld, latest);
-      const apiReport = await fetchCompletedTurnReport(playthroughId, latest);
-      if (latest.status === "turn_completed") {
-        notifyTurnReport(previousWorld, nextWorld, regionNames, apiReport);
-      }
-      queryClient.setQueryData(getWorldQueryKey(playthroughId), nextWorld);
-      return latest;
+      return executeEndTurn({ queryClient, playthroughId, regionNames });
     },
     onSettled: invalidateWorld,
   });

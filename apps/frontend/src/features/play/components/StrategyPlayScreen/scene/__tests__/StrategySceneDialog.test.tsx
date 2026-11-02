@@ -1,246 +1,505 @@
-import { http, HttpResponse } from "msw";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { server } from "@/test/msw/server";
+import { useSceneDialog } from "../../../../hooks/useSceneDialog";
+import { useSimulationWorld } from "../../../../hooks/useSimulationWorld";
 import { StrategySceneDialog } from "../StrategySceneDialog";
-import type { SceneMessageCallbacks } from "../../../../lib/scene-stream";
-import type { SceneViewResponse, TermsCard } from "../../../../types/scene.types";
 
-const streamMock = vi.hoisted(() => ({
-  callbacks: null as SceneMessageCallbacks | null,
-  start: vi.fn(),
-}));
+vi.mock("../../../../hooks/useSceneDialog");
+vi.mock("../../../../hooks/useSimulationWorld");
 
-vi.mock("../../../../lib/scene-stream", () => ({
-  startSceneMessage: (sceneId: string, text: string, callbacks: SceneMessageCallbacks) => {
-    streamMock.callbacks = callbacks;
-    streamMock.start(sceneId, text);
-    return vi.fn();
-  },
-}));
+const mockUseSceneDialog = vi.mocked(useSceneDialog);
+const mockUseSimulationWorld = vi.mocked(useSimulationWorld);
 
-const PLAYTHROUGH_ID = "p1";
-const SCENE_ID = "s1";
-const SCENE_URL = `*/simulation/v1/playthroughs/${PLAYTHROUGH_ID}/scenes/${SCENE_ID}`;
-const WORLD = { world_version: 7, turn: 4, wave: 0, status: "awaiting_scene" };
-
-const CARD: TermsCard = {
-  proposer_id: "house_carrow",
-  counterpart_id: "house_ashford",
-  terms: [
-    { kind: "non_aggression", faction_a: "house_carrow", faction_b: "house_ashford", duration_turns: 8 },
-  ],
-  is_confirmed_by_player: false,
-  is_confirmed_by_counterpart: true,
-};
-
-function buildScene(overrides: Partial<SceneViewResponse> = {}): SceneViewResponse {
-  return {
-    scene_id: SCENE_ID,
+describe("StrategySceneDialog Full Stage", () => {
+  const baseScene = {
+    scene_id: "scene-1",
     scene_type: "negotiation",
-    status: "opened",
+    status: "opened" as const,
     turn: 4,
-    situation: { summary: "Valdren seeks a pact with Mira.", facts: [] },
-    participants: [{ participant_id: "mira", kind: "leader", name: "Mira of Ashford", trait_ids: [] }],
-    transcript: [{ sequence: 1, player_text: "Peace?", leader_text: "Perhaps." }],
+    is_declinable: true,
+    situation: { summary: "Valdren frontier disputes.", facts: [] },
+    participants: [
+      {
+        participant_id: "mira",
+        kind: "leader",
+        name: "Queen Mira",
+        trait_ids: ["cautious"],
+      },
+    ],
+    transcript: [
+      {
+        sequence: 1,
+        player_text: "Let us discuss peace.",
+        leader_text: "State your concessions.",
+      },
+    ],
     exchanges_remaining: 5,
-    pending_proposal: null,
+    pending_proposal: {
+      proposer_id: "mira",
+      counterpart_id: "aldric",
+      is_confirmed_by_player: false,
+      is_confirmed_by_counterpart: true,
+      terms: [
+        {
+          kind: "non_aggression" as const,
+          faction_a: "mira",
+          faction_b: "aldric",
+          duration_turns: 3,
+        },
+      ],
+    },
+    pending_proposal_sequence: 1,
     outcome: null,
-    ...overrides,
   };
-}
 
-function renderDialog(onClose = vi.fn()) {
-  const client = new QueryClient({
-    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
-  });
-  client.setQueryData(["simulation-world", PLAYTHROUGH_ID], WORLD);
-  render(
-    <QueryClientProvider client={client}>
-      <StrategySceneDialog playthroughId={PLAYTHROUGH_ID} sceneId={SCENE_ID} onClose={onClose} />
-    </QueryClientProvider>,
-  );
-  return { onClose };
-}
+  const baseWorld = {
+    ruler: { name: "King Alden IV" },
+    my_faction: {
+      id: "f-valenreach",
+      name: "Valenreach",
+      treasury: 450,
+      total_levies: 12500,
+    },
+    rivals: [
+      {
+        faction_id: "mira",
+        name: "Dunmere",
+        leader_name: "Queen Mira",
+        relation: "peace",
+      },
+    ],
+  };
 
-function serveScene(scene: SceneViewResponse) {
-  server.use(http.get(SCENE_URL, () => HttpResponse.json(scene)));
-}
-
-describe("StrategySceneDialog", () => {
   beforeEach(() => {
-    streamMock.callbacks = null;
-    streamMock.start.mockClear();
+    vi.clearAllMocks();
+    mockUseSimulationWorld.mockReturnValue({
+      data: baseWorld,
+    } as unknown as ReturnType<typeof useSimulationWorld>);
   });
 
-  it("reopens an open scene with its transcript and exchanges left", async () => {
-    serveScene(buildScene());
-    renderDialog();
-    expect(await screen.findByText("Peace?")).toBeInTheDocument();
-    expect(screen.getByText("Perhaps.")).toBeInTheDocument();
-    expect(screen.getByText("Valdren seeks a pact with Mira.")).toBeInTheDocument();
-    expect(screen.getByText("5 exchanges left")).toBeInTheDocument();
-    expect(screen.queryByRole("status")).not.toBeInTheDocument();
-  });
+  it("renders stage with dossier, chamber, console, and allows signing terms", () => {
+    const handleDecide = vi.fn();
+    const handleSend = vi.fn();
 
-  it("streams the reply, then shows the recorded exchange from the server", async () => {
-    let reads = 0;
-    server.use(
-      http.get(SCENE_URL, () => {
-        reads += 1;
-        const transcript =
-          reads === 1
-            ? []
-            : [{ sequence: 1, player_text: "Ten turns?", leader_text: "Eight, no fewer." }];
-        return HttpResponse.json(buildScene({ transcript, exchanges_remaining: 6 - reads + 1 }));
-      }),
-    );
-    renderDialog();
-    const box = await screen.findByLabelText("Your words");
-    fireEvent.change(box, { target: { value: "Ten turns?" } });
-    fireEvent.click(screen.getByRole("button", { name: "Speak" }));
-    expect(streamMock.start).toHaveBeenCalledWith(SCENE_ID, "Ten turns?");
-    expect(await screen.findByText("Ten turns?")).toBeInTheDocument();
-    act(() => streamMock.callbacks?.onNarration("Eight, "));
-    act(() => streamMock.callbacks?.onNarration("no fewer."));
-    expect(screen.getByText("Eight, no fewer.")).toBeInTheDocument();
-    await act(async () => streamMock.callbacks?.onDone());
-    await waitFor(() => expect(reads).toBeGreaterThan(1));
-    expect(await screen.findByText("Eight, no fewer.")).toBeInTheDocument();
-  });
-
-  it("shows a stream failure and keeps the box usable", async () => {
-    serveScene(buildScene());
-    renderDialog();
-    const box = await screen.findByLabelText("Your words");
-    fireEvent.change(box, { target: { value: "Hello" } });
-    fireEvent.click(screen.getByRole("button", { name: "Speak" }));
-    act(() => streamMock.callbacks?.onFailure("The scene could not continue."));
-    expect(await screen.findByRole("alert")).toHaveTextContent("The scene could not continue.");
-    expect(screen.getByLabelText("Your words")).toBeEnabled();
-  });
-
-  it("shows the outcome when repeated failures ended the scene by default", async () => {
-    let reads = 0;
-    server.use(
-      http.get(SCENE_URL, () => {
-        reads += 1;
-        return HttpResponse.json(
-          reads === 1
-            ? buildScene()
-            : buildScene({
-                status: "defaulted",
-                outcome: { kind: "terms_card", result: "refused" },
-              }),
-        );
-      }),
-    );
-    renderDialog();
-    const box = await screen.findByLabelText("Your words");
-    fireEvent.change(box, { target: { value: "Hello" } });
-    fireEvent.click(screen.getByRole("button", { name: "Speak" }));
-    act(() => streamMock.callbacks?.onFailure("The scene could not continue and has ended."));
-    expect(await screen.findByRole("status")).toHaveTextContent("The pact was refused.");
-  });
-
-  it("confirms the pending terms with the operation guard and the card's sequence", async () => {
-    serveScene(buildScene({ pending_proposal: CARD, pending_proposal_sequence: 3 }));
-    let body: Record<string, unknown> | null = null;
-    server.use(
-      http.post(`${SCENE_URL}/decision`, async ({ request }) => {
-        body = (await request.json()) as Record<string, unknown>;
-        return HttpResponse.json({ status: "planning" });
-      }),
-    );
-    renderDialog();
-    fireEvent.click(await screen.findByRole("button", { name: "Sign the pact" }));
-    await waitFor(() => expect(body).not.toBeNull());
-    expect(body).toMatchObject({
-      is_confirmed: true,
-      proposal_sequence: 3,
-      expected_world_version: 7,
-      expected_turn: 4,
-      expected_wave: 0,
+    mockUseSceneDialog.mockReturnValue({
+      scene: baseScene,
+      isFinished: false,
+      isBusy: false,
+      stream: {
+        reply: "",
+        pendingPlayerText: null,
+        isStreaming: false,
+        failureMessage: null,
+        sendMessage: handleSend,
+      },
+      decision: {
+        decide: handleDecide,
+        isDeciding: false,
+        errorMessage: null,
+      },
     });
-    expect(typeof (body as unknown as { operation_id: string }).operation_id).toBe("string");
+
+    render(<StrategySceneDialog playthroughId="pt-1" sceneId="scene-1" onClose={vi.fn()} />);
+
+    expect(screen.getByText(/Peace Talks with Queen Mira/i)).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Queen Mira" })).toBeInTheDocument();
+    expect(screen.getByText(/State your concessions/i)).toBeInTheDocument();
+    expect(screen.getByText("King Alden IV")).toBeInTheDocument();
+
+    // Toggle drawer via Offer button
+    fireEvent.click(screen.getByRole("button", { name: /^offer$/i }));
+    expect(screen.getByText("On the Table")).toBeInTheDocument();
+
+    // Sign the pact
+    const signBtn = screen.getByRole("button", { name: /sign the pact/i });
+    fireEvent.click(signBtn);
+    expect(handleDecide).toHaveBeenCalledWith({
+      isConfirmed: true,
+      proposalSequence: 1,
+    });
   });
 
-  it("leaves the table as a declined decision", async () => {
-    serveScene(buildScene());
-    let body: Record<string, unknown> | null = null;
-    server.use(
-      http.post(`${SCENE_URL}/decision`, async ({ request }) => {
-        body = (await request.json()) as Record<string, unknown>;
-        return HttpResponse.json({ status: "planning" });
-      }),
+  it("shows the grudges the leader has voiced, and none before", () => {
+    const dialogState = {
+      isFinished: false,
+      isBusy: false,
+      stream: {
+        reply: "",
+        pendingPlayerText: null,
+        isStreaming: false,
+        failureMessage: null,
+        sendMessage: vi.fn(),
+      },
+      decision: { decide: vi.fn(), isDeciding: false, errorMessage: null },
+    };
+    mockUseSceneDialog.mockReturnValue({ ...dialogState, scene: baseScene });
+    const { rerender } = render(
+      <StrategySceneDialog playthroughId="pt-1" sceneId="scene-1" onClose={vi.fn()} />,
     );
-    renderDialog();
-    fireEvent.click(await screen.findByRole("button", { name: "Leave the table" }));
-    await waitFor(() => expect(body).toMatchObject({ is_confirmed: false }));
+    expect(screen.queryByRole("region", { name: /held against you/i })).not.toBeInTheDocument();
+
+    mockUseSceneDialog.mockReturnValue({
+      ...dialogState,
+      scene: {
+        ...baseScene,
+        voiced_grudges: [
+          {
+            text: "You broke the truce.",
+            band: "burning" as const,
+            is_inherited: true,
+            predecessor_name: "King Aldric",
+          },
+        ],
+      },
+    });
+    rerender(<StrategySceneDialog playthroughId="pt-1" sceneId="scene-1" onClose={vi.fn()} />);
+
+    expect(screen.getByText("You broke the truce.")).toBeInTheDocument();
+    expect(screen.getByText(/inherited from King Aldric/i)).toBeInTheDocument();
   });
 
-  it("labels an offer from a rival and lets the player decline it", async () => {
-    serveScene(buildScene({ initiator: "ai", is_declinable: true }));
-    renderDialog();
-    expect(await screen.findByText("Incoming offer")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Leave the table" })).toBeInTheDocument();
+  it("allows submitting player dialogue via the console", () => {
+    const handleSend = vi.fn();
+
+    mockUseSceneDialog.mockReturnValue({
+      scene: baseScene,
+      isFinished: false,
+      isBusy: false,
+      stream: {
+        reply: "",
+        pendingPlayerText: null,
+        isStreaming: false,
+        failureMessage: null,
+        sendMessage: handleSend,
+      },
+      decision: {
+        decide: vi.fn(),
+        isDeciding: false,
+        errorMessage: null,
+      },
+    });
+
+    render(<StrategySceneDialog playthroughId="pt-1" sceneId="scene-1" onClose={vi.fn()} />);
+
+    const input = screen.getByPlaceholderText(/speak to the ruler/i);
+    fireEvent.change(input, { target: { value: "We seek a lasting truce." } });
+
+    const speakBtn = screen.getByRole("button", { name: /^speak$/i });
+    fireEvent.click(speakBtn);
+
+    expect(handleSend).toHaveBeenCalledWith("We seek a lasting truce.");
   });
 
-  it("offers no way out of a forced scene", async () => {
-    serveScene(buildScene({ initiator: "ai", is_declinable: false, pending_proposal: CARD }));
-    renderDialog();
-    expect(await screen.findByRole("button", { name: "Sign the pact" })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Decline" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Leave the table" })).not.toBeInTheDocument();
+  it("allows breaking talks from console with confirmation", () => {
+    const handleDecide = vi.fn();
+
+    mockUseSceneDialog.mockReturnValue({
+      scene: baseScene,
+      isFinished: false,
+      isBusy: false,
+      stream: {
+        reply: "",
+        pendingPlayerText: null,
+        isStreaming: false,
+        failureMessage: null,
+        sendMessage: vi.fn(),
+      },
+      decision: {
+        decide: handleDecide,
+        isDeciding: false,
+        errorMessage: null,
+      },
+    });
+
+    render(<StrategySceneDialog playthroughId="pt-1" sceneId="scene-1" onClose={vi.fn()} />);
+
+    fireEvent.click(screen.getByRole("button", { name: /break talks/i }));
+    expect(screen.getByText(/Are you sure you want to walk away/i)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /confirm break talks/i }));
+    expect(handleDecide).toHaveBeenCalledWith({ isConfirmed: false });
   });
 
-  it("explains that the terms changed when the card was replaced", async () => {
-    serveScene(buildScene({ pending_proposal: CARD, pending_proposal_sequence: 1 }));
-    server.use(
-      http.post(`${SCENE_URL}/decision`, () =>
-        HttpResponse.json({ detail: "the terms changed", code: "terms_changed" }, { status: 409 }),
-      ),
-    );
-    const { onClose } = renderDialog();
-    fireEvent.click(await screen.findByRole("button", { name: "Sign the pact" }));
-    expect(await screen.findByRole("alert")).toHaveTextContent(
-      "The terms changed while you were reading.",
-    );
-    expect(onClose).not.toHaveBeenCalled();
+  it("calls onClose when exiting a finished scene from the header", () => {
+    const handleClose = vi.fn();
+
+    mockUseSceneDialog.mockReturnValue({
+      scene: baseScene,
+      isFinished: true,
+      isBusy: false,
+      stream: {
+        reply: "",
+        pendingPlayerText: null,
+        isStreaming: false,
+        failureMessage: null,
+        sendMessage: vi.fn(),
+      },
+      decision: {
+        decide: vi.fn(),
+        isDeciding: false,
+        errorMessage: null,
+      },
+    });
+
+    render(<StrategySceneDialog playthroughId="pt-1" sceneId="scene-1" onClose={handleClose} />);
+
+    fireEvent.click(screen.getByRole("button", { name: /exit to encampment/i }));
+    expect(handleClose).toHaveBeenCalledTimes(1);
   });
 
-  it("reports a rejected decision without closing", async () => {
-    serveScene(buildScene({ pending_proposal: CARD }));
-    server.use(
-      http.post(`${SCENE_URL}/decision`, () =>
-        HttpResponse.json({ detail: "scene already resolved", code: "invalid_lifecycle" }, { status: 409 }),
-      ),
-    );
-    const { onClose } = renderDialog();
-    fireEvent.click(await screen.findByRole("button", { name: "Sign the pact" }));
-    expect(await screen.findByRole("alert")).toHaveTextContent("scene already resolved");
-    expect(onClose).not.toHaveBeenCalled();
+  it("keeps the header exit disabled until the scene is finished", () => {
+    const handleClose = vi.fn();
+
+    mockUseSceneDialog.mockReturnValue({
+      scene: baseScene,
+      isFinished: false,
+      isBusy: false,
+      stream: {
+        reply: "",
+        pendingPlayerText: null,
+        isStreaming: false,
+        failureMessage: null,
+        sendMessage: vi.fn(),
+      },
+      decision: {
+        decide: vi.fn(),
+        isDeciding: false,
+        errorMessage: null,
+      },
+    });
+
+    render(<StrategySceneDialog playthroughId="pt-1" sceneId="scene-1" onClose={handleClose} />);
+
+    expect(screen.getByRole("button", { name: /exit to encampment/i })).toBeDisabled();
+    expect(handleClose).not.toHaveBeenCalled();
   });
 
-  it("shows the outcome of a finished scene and closes on request", async () => {
-    serveScene(
-      buildScene({
+  it("renders ratification overlay when isFinished is true", () => {
+    const handleClose = vi.fn();
+
+    mockUseSceneDialog.mockReturnValue({
+      scene: {
+        ...baseScene,
         status: "resolved",
-        outcome: { kind: "terms_card", result: "agreed", terms_card: CARD },
-      }),
-    );
-    const { onClose } = renderDialog();
-    expect(await screen.findByRole("status")).toHaveTextContent("The pact is sealed.");
-    expect(screen.queryByLabelText("Your words")).not.toBeInTheDocument();
-    fireEvent.click(screen.getAllByRole("button", { name: "Close" })[0]);
-    expect(onClose).toHaveBeenCalled();
+        outcome: {
+          kind: "terms_card",
+          result: "agreed",
+          terms_card: baseScene.pending_proposal,
+        },
+      },
+      isFinished: true,
+      isBusy: false,
+      stream: {
+        reply: "",
+        pendingPlayerText: null,
+        isStreaming: false,
+        failureMessage: null,
+        sendMessage: vi.fn(),
+      },
+      decision: {
+        decide: vi.fn(),
+        isDeciding: false,
+        errorMessage: null,
+      },
+    });
+
+    render(<StrategySceneDialog playthroughId="pt-1" sceneId="scene-1" onClose={handleClose} />);
+
+    expect(screen.getByText("Treaty Sealed & Ratified")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /return to campaign map/i }));
+    expect(handleClose).toHaveBeenCalledTimes(1);
   });
 
-  it("renders nothing for a scene that is not a negotiation", async () => {
-    serveScene(buildScene({ scene_type: "event" }));
-    renderDialog();
-    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
-    expect(screen.queryByText("Valdren seeks a pact with Mira.")).not.toBeInTheDocument();
+  it("returns null when scene is missing or not negotiation", () => {
+    mockUseSceneDialog.mockReturnValue({
+      scene: undefined,
+      isFinished: false,
+      isBusy: false,
+      stream: {
+        reply: "",
+        pendingPlayerText: null,
+        isStreaming: false,
+        failureMessage: null,
+        sendMessage: vi.fn(),
+      },
+      decision: {
+        decide: vi.fn(),
+        isDeciding: false,
+        errorMessage: null,
+      },
+    });
+
+    const { container } = render(
+      <StrategySceneDialog playthroughId="pt-1" sceneId="scene-1" onClose={vi.fn()} />,
+    );
+    expect(container.firstChild).toBeNull();
+  });
+
+  it("renders peace scene with peace conference header and peace terms in treaty drawer", () => {
+    const handleDecide = vi.fn();
+    const peaceScene = {
+      ...baseScene,
+      scene_type: "peace",
+      pending_proposal: {
+        proposer_id: "mira",
+        counterpart_id: "aldric",
+        is_confirmed_by_player: false,
+        is_confirmed_by_counterpart: true,
+        terms: [
+          {
+            kind: "peace" as const,
+            faction_a: "mira",
+            faction_b: "aldric",
+            tier: "medium" as const,
+            duration_turns: 16,
+            guarantor_ids: ["Dunmere League"],
+          },
+          {
+            kind: "pay_gold" as const,
+            payer_id: "aldric",
+            payee_id: "mira",
+            amount: 150,
+          },
+          {
+            kind: "tribute" as const,
+            payer_id: "aldric",
+            payee_id: "mira",
+            gold_per_turn: 25,
+            duration_turns: 8,
+          },
+          {
+            kind: "cede_region" as const,
+            from_faction_id: "aldric",
+            to_faction_id: "mira",
+            region_id: "reg-vale",
+            region_name: "Green Vale",
+          },
+          {
+            kind: "release_prisoners" as const,
+            holder_id: "mira",
+            recipient_id: "aldric",
+            prisoner_ids: ["pris-1"],
+            ransom_gold: 50,
+          },
+          {
+            kind: "hostage" as const,
+            giver_id: "aldric",
+            holder_id: "mira",
+            leader_id: "lord-edward",
+            character_name: "Lord Edward",
+            duration_turns: 10,
+          },
+        ],
+      },
+    };
+
+    mockUseSceneDialog.mockReturnValue({
+      scene: peaceScene,
+      isFinished: false,
+      isBusy: false,
+      stream: {
+        reply: "",
+        pendingPlayerText: null,
+        isStreaming: false,
+        failureMessage: null,
+        sendMessage: vi.fn(),
+      },
+      decision: {
+        decide: handleDecide,
+        isDeciding: false,
+        errorMessage: null,
+      },
+    });
+
+    render(<StrategySceneDialog playthroughId="pt-1" sceneId="scene-peace" onClose={vi.fn()} />);
+
+    expect(screen.getByText(/Peace Conference with Queen Mira/i)).toBeInTheDocument();
+
+    // Toggle drawer via Offer button
+    fireEvent.click(screen.getByRole("button", { name: /^offer$/i }));
+    expect(screen.getByText("On the Table")).toBeInTheDocument();
+
+    // Verify rich terms rendered in drawer
+    expect(screen.getByText(/Medium/i)).toBeInTheDocument();
+    expect(screen.getByText(/150g/i)).toBeInTheDocument();
+    expect(screen.getByText(/25g/i)).toBeInTheDocument();
+    expect(screen.getByText(/Green Vale/i)).toBeInTheDocument();
+    expect(screen.getByText(/ransom of 50g/i)).toBeInTheDocument();
+    expect(screen.getByText(/Lord Edward/i)).toBeInTheDocument();
+  });
+
+  it("renders emergency escape hatch when scene type is unsupported in awaiting_scene", () => {
+    mockUseSimulationWorld.mockReturnValue({
+      data: {
+        ...baseWorld,
+        status: "awaiting_scene",
+      },
+    } as unknown as ReturnType<typeof useSimulationWorld>);
+
+    const handleDecide = vi.fn();
+    mockUseSceneDialog.mockReturnValue({
+      scene: {
+        ...baseScene,
+        scene_type: "unsupported_unknown_scene" as unknown as typeof baseScene.scene_type,
+      },
+      isFinished: false,
+      isBusy: false,
+      stream: {
+        reply: "",
+        pendingPlayerText: null,
+        isStreaming: false,
+        failureMessage: null,
+        sendMessage: vi.fn(),
+      },
+      decision: {
+        decide: handleDecide,
+        isDeciding: false,
+        errorMessage: null,
+      },
+    });
+
+    render(<StrategySceneDialog playthroughId="pt-1" sceneId="scene-1" onClose={vi.fn()} />);
+
+    expect(screen.getByText("Conference Unavailable")).toBeInTheDocument();
+    const escapeButton = screen.getByRole("button", { name: /Break Talks & Resume Campaign/i });
+    expect(escapeButton).toBeInTheDocument();
+    fireEvent.click(escapeButton);
+    expect(handleDecide).toHaveBeenCalledWith({ isConfirmed: false });
+  });
+
+  it("renders emergency escape hatch when scene fails to load in awaiting_scene", () => {
+    mockUseSimulationWorld.mockReturnValue({
+      data: {
+        ...baseWorld,
+        status: "awaiting_scene",
+      },
+    } as unknown as ReturnType<typeof useSimulationWorld>);
+
+    const handleDecide = vi.fn();
+    mockUseSceneDialog.mockReturnValue({
+      scene: undefined,
+      isFinished: false,
+      isBusy: false,
+      stream: {
+        reply: "",
+        pendingPlayerText: null,
+        isStreaming: false,
+        failureMessage: null,
+        sendMessage: vi.fn(),
+      },
+      decision: {
+        decide: handleDecide,
+        isDeciding: false,
+        errorMessage: null,
+      },
+    });
+
+    render(<StrategySceneDialog playthroughId="pt-1" sceneId="scene-err" onClose={vi.fn()} />);
+
+    expect(screen.getByText("Conference Unavailable")).toBeInTheDocument();
+    const escapeButton = screen.getByRole("button", { name: /Break Talks & Resume Campaign/i });
+    expect(escapeButton).toBeInTheDocument();
+    fireEvent.click(escapeButton);
+    expect(handleDecide).toHaveBeenCalledWith({ isConfirmed: false });
   });
 });

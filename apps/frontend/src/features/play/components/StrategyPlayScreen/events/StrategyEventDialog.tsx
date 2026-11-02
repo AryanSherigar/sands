@@ -9,6 +9,7 @@ import {
   IconMoodSmile,
   IconUser,
 } from "@tabler/icons-react";
+import { StrategyArtSlot } from "../art/StrategyArtSlot";
 import type { StrategyEventDialogProps } from "./StrategyEventDialog.types";
 import type { EventChoice, StrategyEventPackage } from "../../../types/eventScene.types";
 
@@ -23,6 +24,7 @@ function formatCost(cost: number): string {
 
 export const StrategyEventDialog: React.FC<StrategyEventDialogProps> = ({
   isOpen,
+  playthroughId,
   eventPackage,
   onSelectOption,
   onCancelQueued,
@@ -144,6 +146,17 @@ export const StrategyEventDialog: React.FC<StrategyEventDialogProps> = ({
             </p>
           )}
         </div>
+
+        {playthroughId && eventPackage.eventId ? (
+          <div className="mb-4">
+            <StrategyArtSlot
+              playthroughId={playthroughId}
+              kind={eventPackage.source ?? "event"}
+              itemId={eventPackage.eventId}
+              altText={eventPackage.title}
+            />
+          </div>
+        ) : null}
 
         {/* Character & Vignette Section */}
         <div className="flex items-center justify-between p-3 rounded-lg bg-parchment-base/90 border border-on-surface/10 shadow-sm mb-4">

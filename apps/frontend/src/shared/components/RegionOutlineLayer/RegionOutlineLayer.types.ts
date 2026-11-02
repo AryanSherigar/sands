@@ -8,6 +8,7 @@ export interface RegionOutlineLayerProps {
   selectedIds: string[];
   /** Fill class per region id; regions without an entry keep the default tint cycle. */
   regionFillClasses?: Record<string, string>;
+  regionStrokeClasses?: Record<string, string>;
   showNeighborLinks?: boolean;
   onRegionClick?: (regionId: string, event: MouseEvent<SVGPathElement>) => void;
 }

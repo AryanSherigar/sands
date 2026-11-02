@@ -1,13 +1,16 @@
 import React from "react";
+import { MarchRouteLayer } from "./MarchRouteLayer";
+import { buildMarchRoutes } from "../../../lib/marchRoutes";
 import { RegionOutlineLayer } from "@/shared/components/RegionOutlineLayer/RegionOutlineLayer";
 import type { MapRegion } from "@/shared/types/strategy-map.types";
-import { buildOwnershipFillClasses } from "../../../lib/ownershipStyles";
+import { buildOwnershipFillClasses, buildRegionStrokeClasses } from "../../../lib/ownershipStyles";
 import type { ArmyView, CampaignWorldView } from "../../../types/simulation.types";
 import type { SelectedEntity } from "../../../stores/strategyPlay.types";
 import type { StrategyMapCanvasProps } from "./StrategyMap.types";
 import { SettlementPin } from "./pins/SettlementPin";
 import { ArmyBannerPin } from "./pins/ArmyBannerPin";
 import { CrisisAlertPin } from "./pins/CrisisAlertPin";
+import { SiegeStatusPin } from "./pins/SiegeStatusPin";
 import { StrategySituationPins } from "./StrategySituationPins";
 
 const ARMY_PIN_STACK_OFFSET_PX = 34;
@@ -26,6 +29,14 @@ function computeTroopCount(army: ArmyView): number {
   return 0;
 }
 
+interface ArmyGroupControls {
+  armyIds: string[];
+  onToggle: (armyId: string) => void;
+}
+
+const NO_GROUP: string[] = [];
+const NOOP_TOGGLE = (): void => undefined;
+
 function renderArmyPin(
   army: ArmyView,
   region: MapRegion,
@@ -33,6 +44,7 @@ function renderArmyPin(
   selectedEntity: SelectedEntity | null | undefined,
   onSelectEntity: (entity: SelectedEntity | null) => void,
   stackIndex: number,
+  group: ArmyGroupControls,
 ): React.ReactElement {
   const isHostile = army.owner_id !== myFactionId;
   const isSelected = selectedEntity?.type === "army" && selectedEntity.id === army.army_id;
@@ -50,9 +62,22 @@ function renderArmyPin(
       }}
       isHostile={isHostile}
       isSelected={isSelected}
-      onClick={(id) => onSelectEntity({ type: "army", id })}
+      isGrouped={group.armyIds.includes(army.army_id)}
+      onClick={(id, isAdditive) =>
+        isAdditive && !isHostile ? group.onToggle(id) : onSelectEntity({ type: "army", id })
+      }
     />
   );
+}
+
+function isArmyVisible(
+  army: ArmyView,
+  myFactionId: string,
+  worldRegionMap: Map<string, CampaignWorldView["regions"][number]>,
+): boolean {
+  if (army.owner_id === myFactionId) return true;
+  const worldRegion = worldRegionMap.get(army.location_id);
+  return worldRegion?.visibility !== "fogged";
 }
 
 function renderMapArmies(
@@ -61,19 +86,23 @@ function renderMapArmies(
   myFactionId: string | undefined,
   selectedEntity: SelectedEntity | null | undefined,
   onSelectEntity: (entity: SelectedEntity | null) => void,
+  worldRegions: CampaignWorldView["regions"] | undefined,
+  group: ArmyGroupControls,
 ): React.ReactElement[] {
   if (!armies || !myFactionId) return [];
   const regionMap = new Map(regions.map((r) => [r.id, r]));
+  const worldRegionMap = new Map((worldRegions ?? []).map((r) => [r.region_id, r]));
   const pins: React.ReactElement[] = [];
   const armiesPerRegion = new Map<string, number>();
 
   for (const army of armies) {
+    if (!isArmyVisible(army, myFactionId, worldRegionMap)) continue;
     const region = regionMap.get(army.location_id);
     if (!region) continue;
     const stackIndex = armiesPerRegion.get(region.id) ?? 0;
     armiesPerRegion.set(region.id, stackIndex + 1);
     pins.push(
-      renderArmyPin(army, region, myFactionId, selectedEntity, onSelectEntity, stackIndex),
+      renderArmyPin(army, region, myFactionId, selectedEntity, onSelectEntity, stackIndex, group),
     );
   }
   return pins;
@@ -102,6 +131,7 @@ function renderSettlementPins(
 function renderCrisisAlerts(
   regions: MapRegion[],
   worldRegions: CampaignWorldView["regions"] | undefined,
+  myFactionId: string | undefined,
 ): React.ReactElement[] {
   if (!worldRegions) return [];
   const regionMap = new Map(regions.map((r) => [r.id, r]));
@@ -110,6 +140,7 @@ function renderCrisisAlerts(
   for (const item of worldRegions) {
     const unrest = item.detail?.unrest ?? 0;
     if (unrest < UNREST_CRISIS_THRESHOLD) continue;
+    if (item.owner_id !== myFactionId && item.visibility === "fogged") continue;
     const region = regionMap.get(item.region_id);
     if (!region) continue;
     alerts.push(
@@ -123,6 +154,26 @@ function renderCrisisAlerts(
   return alerts;
 }
 
+function describeSiegeStatus(item: CampaignWorldView["regions"][number]): string | null {
+  if (item.occupation) return "Occupied";
+  if (item.siege) return `Siege ${item.siege.progress}%`;
+  return null;
+}
+
+function renderSiegePins(
+  regions: MapRegion[],
+  worldRegions: CampaignWorldView["regions"] | undefined,
+): React.ReactElement[] {
+  if (!worldRegions) return [];
+  const regionMap = new Map(regions.map((r) => [r.id, r]));
+  return worldRegions.flatMap((item) => {
+    const label = describeSiegeStatus(item);
+    const region = regionMap.get(item.region_id);
+    if (!label || !region) return [];
+    return [<SiegeStatusPin key={`siege-${region.id}`} coords={region.label_point} label={label} />];
+  });
+}
+
 export const StrategyMapCanvas: React.FC<StrategyMapCanvasProps> = ({
   document,
   world,
@@ -130,13 +181,20 @@ export const StrategyMapCanvas: React.FC<StrategyMapCanvasProps> = ({
   onSelectEntity,
   situations,
   onSelectSituation,
+  activeMapMode,
+  groupArmyIds = NO_GROUP,
+  onToggleGroupArmy,
 }) => {
   const selectedRegionIds = selectedEntity?.type === "region" ? [selectedEntity.id] : [];
   const handleBackgroundClick = () => onSelectEntity(null);
   const handleRegionClick = (id: string) => onSelectEntity({ type: "region", id });
   const regionFillClasses =
     world && world.regions.length > 0
-      ? buildOwnershipFillClasses(world.regions, world.my_faction.id)
+      ? buildOwnershipFillClasses(world.regions, world.my_faction.id, activeMapMode)
+      : undefined;
+  const regionStrokeClasses =
+    world && world.regions.length > 0
+      ? buildRegionStrokeClasses(world.regions, world.my_faction.id, activeMapMode)
       : undefined;
 
   const centroids = React.useMemo(
@@ -148,6 +206,11 @@ export const StrategyMapCanvas: React.FC<StrategyMapCanvasProps> = ({
         ]),
       ),
     [document.regions],
+  );
+
+  const marchRoutes = React.useMemo(
+    () => buildMarchRoutes(document.regions, world?.armies, world?.queued_orders),
+    [document.regions, world?.armies, world?.queued_orders],
   );
 
   return (
@@ -175,8 +238,10 @@ export const StrategyMapCanvas: React.FC<StrategyMapCanvasProps> = ({
           targetSize={{ width: document.width, height: document.height }}
           selectedIds={selectedRegionIds}
           regionFillClasses={regionFillClasses}
+          regionStrokeClasses={regionStrokeClasses}
           onRegionClick={handleRegionClick}
         />
+        <MarchRouteLayer routes={marchRoutes} />
         {situations && situations.length > 0 && (
           <StrategySituationPins
             situations={situations}
@@ -196,8 +261,11 @@ export const StrategyMapCanvas: React.FC<StrategyMapCanvasProps> = ({
         world?.my_faction?.id,
         selectedEntity,
         onSelectEntity,
+        world?.regions,
+        { armyIds: groupArmyIds, onToggle: onToggleGroupArmy ?? NOOP_TOGGLE },
       )}
-      {renderCrisisAlerts(document.regions, world?.regions)}
+      {renderCrisisAlerts(document.regions, world?.regions, world?.my_faction?.id)}
+      {renderSiegePins(document.regions, world?.regions)}
     </div>
   );
 };

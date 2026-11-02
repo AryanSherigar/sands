@@ -8,7 +8,7 @@ function renderUnspentBadge(count: number) {
     return null;
   }
   return (
-    <div className="px-2.5 py-1.5 rounded-lg bg-[#F7F0DC]/95 border border-[#3A3128]/20 text-[10px] text-[#72787C]">
+    <div className="hidden sm:block px-2.5 py-1.5 rounded-lg bg-[#F7F0DC]/95 border border-[#3A3128]/20 text-[10px] text-[#72787C]">
       <span className="font-bold text-[#221A12]">{count}</span> unspent
     </div>
   );
@@ -79,12 +79,12 @@ export const StrategyEndTurnModule: React.FC<StrategyEndTurnModuleProps> = ({
         type="button"
         disabled={isLoading || isDisabled}
         onClick={handleEndTurn}
-        className="px-5 py-2.5 rounded-xl bg-[#D2A94A] hover:bg-[#C49B3D] text-[#221A12] font-bold shadow-lg border border-[#3A3128]/20 active:translate-y-0.5 transition-all flex items-center gap-2 disabled:opacity-50 cursor-pointer"
+        className="px-5 py-2.5 rounded-xl bg-[#D2A94A] hover:bg-[#C49B3D] text-[#221A12] font-bold shadow-lg border border-[#3A3128]/20 active:translate-y-0.5 transition flex items-center gap-2 disabled:opacity-50 cursor-pointer"
       >
         <div className="flex flex-col text-left leading-tight">
           <span className="font-serif text-base tracking-wide">{actionText}</span>
           {nextSeason ? (
-            <span className="text-[9px] uppercase font-bold tracking-wider opacity-85">
+            <span className="hidden sm:block text-[9px] uppercase font-bold tracking-wider opacity-85">
               Advances {MONTHS_PER_TURN} mos · {nextSeason}
             </span>
           ) : null}

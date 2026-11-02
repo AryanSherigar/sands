@@ -104,6 +104,16 @@ describe("Turn Report Subcomponents", () => {
     expect(screen.getByText("+112g")).toBeInTheDocument();
     expect(screen.getByText("-96g")).toBeInTheDocument();
     expect(screen.getByText("+16g")).toBeInTheDocument();
+    expect(screen.queryByText("(Estimated)")).not.toBeInTheDocument();
+  });
+
+  it("renders EconomyLedgerCard with (Estimated) badge when isEstimated is true", () => {
+    const lines: EconomyLedgerLine[] = [
+      { label: "Tax Income", amount: 112, category: "tax" },
+    ];
+    render(<EconomyLedgerCard lines={lines} netGold={112} isEstimated />);
+    expect(screen.getByText("Seasonal Ledger")).toBeInTheDocument();
+    expect(screen.getByText("(Estimated)")).toBeInTheDocument();
   });
 
   it("renders ReportItemCard with badge and action", () => {

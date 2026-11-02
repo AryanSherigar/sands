@@ -19,52 +19,117 @@ const getStabilityColorClass = (delta: number): string => {
   return "text-[#7A6F62]";
 };
 
-export const QuickStatsTicker: React.FC<QuickStatsTickerProps> = ({ stats }) => {
-  const goldClass = getGoldColorClass(stats.netGold);
-  const stabClass = getStabilityColorClass(stats.stabilityDelta);
+interface NetGoldCellProps {
+  netGold: number;
+}
+
+const NetGoldCell: React.FC<NetGoldCellProps> = ({ netGold }) => (
+  <div className="flex min-w-0 flex-col">
+    <span className="text-[11px] font-serif uppercase tracking-wider text-[#7A6F62]">
+      Net Gold
+    </span>
+    <span
+      className={`text-sm font-semibold font-mono ${getGoldColorClass(netGold)}`}
+    >
+      {formatGold(netGold)}
+    </span>
+  </div>
+);
+
+interface CasualtiesCellProps {
+  totalCasualties: number;
+}
+
+const CasualtiesCell: React.FC<CasualtiesCellProps> = ({ totalCasualties }) => (
+  <div className="flex min-w-0 flex-col">
+    <span className="text-[11px] font-serif uppercase tracking-wider text-[#7A6F62]">
+      Casualties
+    </span>
+    <span className="text-sm font-semibold font-mono text-[#A8483E]">
+      {totalCasualties.toLocaleString()}
+    </span>
+  </div>
+);
+
+interface StabilityCellProps {
+  stability: number;
+  delta: number;
+  isEstimated?: boolean;
+}
+
+const StabilityCell: React.FC<StabilityCellProps> = ({
+  stability,
+  delta,
+  isEstimated,
+}) => (
+  <div className="flex min-w-0 flex-col">
+    <span className="text-[11px] font-serif uppercase tracking-wider text-[#7A6F62]">
+      Stability
+    </span>
+    <div className="flex flex-wrap items-baseline gap-x-1">
+      <span className="text-sm font-semibold font-mono text-[#3A3128]">
+        {stability}%
+      </span>
+      <span
+        className={`text-xs font-mono font-medium ${getStabilityColorClass(delta)}`}
+      >
+        {formatStabilityDelta(delta)}
+      </span>
+      {isEstimated ? (
+        <span className="text-[10px] italic text-[#7A6F62]">[Estimated]</span>
+      ) : null}
+    </div>
+  </div>
+);
+
+interface ManpowerCellProps {
+  manpower: number;
+  isEstimated?: boolean;
+}
+
+const ManpowerCell: React.FC<ManpowerCellProps> = ({
+  manpower,
+  isEstimated,
+}) => (
+  <div className="flex min-w-0 flex-col">
+    <span className="text-[11px] font-serif uppercase tracking-wider text-[#7A6F62]">
+      Manpower
+    </span>
+    <div className="flex flex-wrap items-baseline gap-x-1">
+      <span className="text-sm font-semibold font-mono text-[#3A3128]">
+        {manpower.toLocaleString()}
+      </span>
+      {isEstimated ? (
+        <span className="text-[10px] italic text-[#7A6F62]">[Estimated]</span>
+      ) : null}
+    </div>
+  </div>
+);
+
+export const QuickStatsTicker: React.FC<QuickStatsTickerProps> = ({
+  stats,
+  estimatedSections,
+}) => {
+  const isEstimatedStability = Boolean(
+    estimatedSections?.includes("stability_delta"),
+  );
+  const isEstimatedManpower = Boolean(
+    estimatedSections?.includes("manpower_delta"),
+  );
 
   return (
     <div className="grid grid-cols-4 gap-2 p-2 bg-[#F3EAD3]/60 rounded-lg border border-[#3A3128]/15">
-      <div className="flex flex-col">
-        <span className="text-[11px] font-serif uppercase tracking-wider text-[#7A6F62]">
-          Net Gold
-        </span>
-        <span className={`text-sm font-semibold font-mono ${goldClass}`}>
-          {formatGold(stats.netGold)}
-        </span>
-      </div>
-
-      <div className="flex flex-col">
-        <span className="text-[11px] font-serif uppercase tracking-wider text-[#7A6F62]">
-          Casualties
-        </span>
-        <span className="text-sm font-semibold font-mono text-[#A8483E]">
-          {stats.totalCasualties.toLocaleString()}
-        </span>
-      </div>
-
-      <div className="flex flex-col">
-        <span className="text-[11px] font-serif uppercase tracking-wider text-[#7A6F62]">
-          Stability
-        </span>
-        <div className="flex items-baseline gap-1">
-          <span className="text-sm font-semibold font-mono text-[#3A3128]">
-            {stats.stability}%
-          </span>
-          <span className={`text-xs font-mono font-medium ${stabClass}`}>
-            {formatStabilityDelta(stats.stabilityDelta)}
-          </span>
-        </div>
-      </div>
-
-      <div className="flex flex-col">
-        <span className="text-[11px] font-serif uppercase tracking-wider text-[#7A6F62]">
-          Manpower
-        </span>
-        <span className="text-sm font-semibold font-mono text-[#3A3128]">
-          {stats.manpower.toLocaleString()}
-        </span>
-      </div>
+      <NetGoldCell netGold={stats.netGold} />
+      <CasualtiesCell totalCasualties={stats.totalCasualties} />
+      <StabilityCell
+        stability={stats.stability}
+        delta={stats.stabilityDelta}
+        isEstimated={isEstimatedStability}
+      />
+      <ManpowerCell
+        manpower={stats.manpower}
+        isEstimated={isEstimatedManpower}
+      />
     </div>
   );
 };

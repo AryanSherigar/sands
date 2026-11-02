@@ -1,6 +1,6 @@
 import React from "react";
 import { IconX } from "@tabler/icons-react";
-import { describeOrder, type RegionNameLookup } from "../../../lib/orderSummary";
+import { describeOrder, type FactionNameLookup, type RegionNameLookup } from "../../../lib/orderSummary";
 import type { QueuedOrderView } from "../../../types/simulation.types";
 import type { StrategyOrdersTrayProps } from "./StrategyOrders.types";
 
@@ -19,6 +19,7 @@ function renderOrderItem(
   order: QueuedOrderView,
   onCancelOrder: (commandId: string) => void,
   regionNames?: RegionNameLookup,
+  factionNames?: FactionNameLookup,
 ) {
   const handleCancel = () => onCancelOrder(order.id);
 
@@ -28,7 +29,7 @@ function renderOrderItem(
       className="px-2.5 py-1 rounded-lg bg-[#FBEBDE]/70 border border-[#3A3128]/10 flex items-center gap-2"
     >
       <div className="flex flex-col leading-tight">
-        <span className="text-[10px] font-bold text-[#221A12]">{describeOrder(order.order, regionNames)}</span>
+        <span className="text-[10px] font-bold text-[#221A12]">{describeOrder(order.order, regionNames, factionNames)}</span>
         <span className="text-[9px] text-[#72787C]">{order.cost} {order.cost === 1 ? "mandate" : "mandates"}</span>
       </div>
       {order.is_cancellable && (
@@ -58,13 +59,14 @@ export const StrategyOrdersTray: React.FC<StrategyOrdersTrayProps> = ({
   ordersRemaining = 0,
   ordersTotal = ordersRemaining,
   regionNames,
+  factionNames,
   onCancelOrder,
 }) => {
   return (
-    <div className="fixed bottom-4 left-4 z-40 flex items-center gap-2 pointer-events-auto">
-      <div className="flex items-center gap-1.5 bg-[#F7F0DC]/95 backdrop-blur-xl p-1.5 rounded-xl border border-[#3A3128]/20 shadow-lg">
+    <div className="fixed bottom-20 left-4 right-4 z-30 flex items-center gap-2 pointer-events-auto sm:bottom-4 sm:right-auto">
+      <div className="flex max-w-full items-center gap-1.5 overflow-x-auto bg-[#F7F0DC]/95 backdrop-blur-xl p-1.5 rounded-xl border border-[#3A3128]/20 shadow-lg">
         {renderTrayHeader(orders.length)}
-        {orders.map((order) => renderOrderItem(order, onCancelOrder, regionNames))}
+        {orders.map((order) => renderOrderItem(order, onCancelOrder, regionNames, factionNames))}
         {renderRemainingMandates(ordersRemaining, ordersTotal)}
       </div>
     </div>

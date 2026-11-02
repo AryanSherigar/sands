@@ -5,8 +5,7 @@ export const FALLBACK_STRATEGY_MAP: MapDocument = {
   source: "manual",
   width: 1600,
   height: 900,
-  image_url:
-    "https://lh3.googleusercontent.com/aida/AEtjO1XiwZoEAVB5Car35_06iCD25KBtRBUDPKGOuN_4SGl60ujVzikg-X6qX3rrUvheVEotFcvzjjjRnzL0AL1eJ87vJCOHFPwQHgHkLhJ3NXQHd96pbsq6Uh1bpD9sridDLOoFk9uLf02Ucir9jjIu1SsbPV0pikQCIEKu3TjhWtzkGrkX0zyUX5pfJ40c7DFLEGr6M8N42d1TZWc6PDcK0XffJcYVTHTK7DTl6RR1AsA6U23_YBf2E3Y7PhUV",
+  image_url: "",
   regions: [
     {
       id: "reg-dunmere",

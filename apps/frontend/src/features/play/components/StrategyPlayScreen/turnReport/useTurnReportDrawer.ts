@@ -27,48 +27,55 @@ const calculateCounts = (report: StrategyTurnReportData): ReportCategoryCounts =
   };
 };
 
+const useEscapeKeyClose = (isOpen: boolean, onClose: () => void): void => {
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, onClose]);
+};
+
+const useTurnReportStoreState = () => ({
+  isTurnReportOpen: useStrategyPlayStore((state) => state.isTurnReportOpen),
+  latestReport: useStrategyPlayStore((state) => state.latestReport),
+  activeReportFilter: useStrategyPlayStore((state) => state.activeReportFilter),
+  autoShowTurnReport: useStrategyPlayStore((state) => state.autoShowTurnReport),
+  closeTurnReport: useStrategyPlayStore((state) => state.closeTurnReport),
+  setAutoShowTurnReport: useStrategyPlayStore((state) => state.setAutoShowTurnReport),
+  setActiveReportFilter: useStrategyPlayStore((state) => state.setActiveReportFilter),
+  focusMapLocation: useStrategyPlayStore((state) => state.focusMapLocation),
+});
+
 export const useTurnReportDrawer = (
   onContinue?: () => void,
   onFocusMap?: (regionId: string) => void,
 ): UseTurnReportDrawerResult => {
-  const isTurnReportOpen = useStrategyPlayStore((state) => state.isTurnReportOpen);
-  const latestReport = useStrategyPlayStore((state) => state.latestReport);
-  const activeReportFilter = useStrategyPlayStore((state) => state.activeReportFilter);
-  const autoShowTurnReport = useStrategyPlayStore((state) => state.autoShowTurnReport);
-  const closeTurnReport = useStrategyPlayStore((state) => state.closeTurnReport);
-  const setAutoShowTurnReport = useStrategyPlayStore((state) => state.setAutoShowTurnReport);
-  const setActiveReportFilter = useStrategyPlayStore((state) => state.setActiveReportFilter);
-  const focusMapLocation = useStrategyPlayStore((state) => state.focusMapLocation);
-
-  useEffect(() => {
-    if (!isTurnReportOpen) return;
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") closeTurnReport();
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isTurnReportOpen, closeTurnReport]);
+  const store = useTurnReportStoreState();
+  useEscapeKeyClose(store.isTurnReportOpen, store.closeTurnReport);
 
   const counts = useMemo(
-    () => (latestReport ? calculateCounts(latestReport) : EMPTY_COUNTS),
-    [latestReport],
+    () => (store.latestReport ? calculateCounts(store.latestReport) : EMPTY_COUNTS),
+    [store.latestReport],
   );
 
   return {
-    isTurnReportOpen,
-    latestReport,
-    activeReportFilter,
-    autoShowTurnReport,
+    isTurnReportOpen: store.isTurnReportOpen,
+    latestReport: store.latestReport,
+    activeReportFilter: store.activeReportFilter,
+    autoShowTurnReport: store.autoShowTurnReport,
     counts,
-    handleClose: closeTurnReport,
-    handleSelectFilter: setActiveReportFilter,
-    handleToggleAutoShow: setAutoShowTurnReport,
+    handleClose: store.closeTurnReport,
+    handleSelectFilter: store.setActiveReportFilter,
+    handleToggleAutoShow: store.setAutoShowTurnReport,
     handleFocusMap: (regionId: string) => {
-      focusMapLocation(regionId);
+      store.focusMapLocation(regionId);
       onFocusMap?.(regionId);
     },
     handleContinue: () => {
-      closeTurnReport();
+      store.closeTurnReport();
       onContinue?.();
     },
   };

@@ -4,4 +4,5 @@ export interface StrategyBattleDecisionProps {
   playthroughId: string;
   world: CampaignWorldView;
   regionNames: Record<string, string>;
+  onTakeCommand?: (battleId: string) => void;
 }

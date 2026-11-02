@@ -1,8 +1,14 @@
-import React from "react";
+import React, { useState } from "react";
+import { StrategyConfirmDialog } from "../ui/StrategyConfirmDialog";
 import type { ArmyRosterViewProps } from "./ArmyRosterView.types";
-import type { TroopType } from "../../../types/simulation.types";
+import type { PayLevel, TroopType } from "../../../types/simulation.types";
 
 const FALLBACK_COMMANDER = "Royal Host";
+
+const PAY_LEVELS: { level: PayLevel; label: string }[] = [
+  { level: "full", label: "Full Pay" },
+  { level: "reduced", label: "Reduced Pay" },
+];
 
 interface HeaderProps {
   commanderName?: string | null;
@@ -34,6 +40,42 @@ const ArmyTroopList: React.FC<TroopListProps> = ({ troops }) => (
   </div>
 );
 
+interface PayToggleProps {
+  armyId: string;
+  currentPayLevel: PayLevel;
+  onAction?: ArmyRosterViewProps["onAction"];
+}
+
+const PayToggle: React.FC<PayToggleProps> = ({ armyId, currentPayLevel, onAction }) => {
+  const handleClick = (level: PayLevel): void => {
+    if (level === currentPayLevel) return;
+    onAction?.({ type: "set_pay", armyId, payLevel: level });
+  };
+
+  return (
+    <div className="px-3 pb-2 flex gap-1">
+      {PAY_LEVELS.map(({ level, label }) => {
+        const isActive = level === currentPayLevel;
+        return (
+          <button
+            key={level}
+            type="button"
+            aria-pressed={isActive}
+            onClick={() => handleClick(level)}
+            className={`flex-1 py-1 rounded text-xs font-bold transition-colors ${
+              isActive
+                ? "bg-[#46606E] text-white"
+                : "bg-[#F5E5D8] border border-[#3A3128]/15 text-[#221A12] hover:bg-[#F0E0D2]"
+            }`}
+          >
+            {label}
+          </button>
+        );
+      })}
+    </div>
+  );
+};
+
 interface ActionButtonProps {
   label: string;
   isPrimary?: boolean;
@@ -56,10 +98,11 @@ const ActionButton: React.FC<ActionButtonProps> = ({ label, isPrimary, onClick }
 
 interface ActionsProps {
   armyId: string;
+  canBesiege?: boolean;
   onAction?: ArmyRosterViewProps["onAction"];
 }
 
-const ArmyActionButtons: React.FC<ActionsProps> = ({ armyId, onAction }) => {
+const ArmyActionButtons: React.FC<ActionsProps> = ({ armyId, canBesiege, onAction }) => {
   const handleMoveClick = (): void => {
     onAction?.({ type: "move", armyId });
   };
@@ -69,12 +112,31 @@ const ArmyActionButtons: React.FC<ActionsProps> = ({ armyId, onAction }) => {
   const handleHaltClick = (): void => {
     onAction?.({ type: "halt", armyId });
   };
+  const handleBesiegeClick = (): void => {
+    onAction?.({ type: "besiege", armyId });
+  };
+
+  const [isConfirmingDisband, setIsConfirmingDisband] = useState(false);
+  const handleConfirmDisband = (): void => {
+    setIsConfirmingDisband(false);
+    onAction?.({ type: "disband", armyId });
+  };
 
   return (
     <div className="p-3 border-t border-[#72787C]/30 grid grid-cols-3 gap-1.5">
       <ActionButton label="Move" isPrimary onClick={handleMoveClick} />
       <ActionButton label="Attack" onClick={handleAttackClick} />
+      {canBesiege ? <ActionButton label="Besiege" onClick={handleBesiegeClick} /> : null}
       <ActionButton label="Halt" onClick={handleHaltClick} />
+      <ActionButton label="Disband" onClick={() => setIsConfirmingDisband(true)} />
+      <StrategyConfirmDialog
+        isOpen={isConfirmingDisband}
+        title="Disband this army?"
+        message="The army is dissolved and its troops leave your service. This cannot be undone."
+        confirmLabel="Disband"
+        onConfirm={handleConfirmDisband}
+        onCancel={() => setIsConfirmingDisband(false)}
+      />
     </div>
   );
 };
@@ -82,11 +144,33 @@ const ArmyActionButtons: React.FC<ActionsProps> = ({ armyId, onAction }) => {
 export const ArmyRosterView: React.FC<ArmyRosterViewProps> = ({
   army,
   isOwnArmy = true,
+  isAtWar = false,
+  canBesiege = false,
   onAction,
 }) => (
   <div className="flex flex-col gap-3">
     <ArmyRosterHeader commanderName={army.commander_name} />
     {army.troops ? <ArmyTroopList troops={army.troops} /> : null}
-    {isOwnArmy ? <ArmyActionButtons armyId={army.army_id} onAction={onAction} /> : null}
+    {isOwnArmy ? (
+      <PayToggle
+        armyId={army.army_id}
+        currentPayLevel={army.pay_level ?? "full"}
+        onAction={onAction}
+      />
+    ) : null}
+    {isOwnArmy ? (
+      <ArmyActionButtons armyId={army.army_id} canBesiege={canBesiege} onAction={onAction} />
+    ) : null}
+    {!isOwnArmy && !isAtWar && army.owner_id ? (
+      <div className="p-3 border-t border-[#72787C]/30 grid grid-cols-1 gap-1.5">
+        <button
+          type="button"
+          className="py-1.5 px-2 rounded bg-[#A8483E] text-white text-xs font-bold hover:opacity-90 cursor-pointer"
+          onClick={() => onAction?.({ type: "declare_war", targetFactionId: army.owner_id })}
+        >
+          Declare War
+        </button>
+      </div>
+    ) : null}
   </div>
 );

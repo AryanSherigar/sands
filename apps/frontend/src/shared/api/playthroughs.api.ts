@@ -43,6 +43,7 @@ export interface PlaythroughResponse {
   state: Record<string, unknown>;
   checkpoint: string | null;
   turn_count: number;
+  narrative_turn_count?: number;
   status: string;
   scenario_version: number;
   scenario_snapshot: Record<string, unknown>;

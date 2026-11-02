@@ -96,6 +96,39 @@ describe("SceneOutcomeBanner", () => {
     fireEvent.click(screen.getByRole("button", { name: "Close" }));
     expect(onClose).toHaveBeenCalledTimes(1);
   });
+
+  it("displays tone indicator when refused_demand is present", () => {
+    render(
+      <SceneOutcomeBanner
+        outcome={{
+          kind: "terms_card",
+          result: "refused",
+          refused_demand: {
+            terms_card: {
+              proposer_id: "fac_player",
+              counterpart_id: "fac_rival",
+              terms: [],
+              is_confirmed_by_player: false,
+              is_confirmed_by_counterpart: false,
+            },
+            tone_grade: 4,
+          },
+        }}
+        onClose={vi.fn()}
+      />,
+    );
+    expect(screen.getByTestId("tone-indicator")).toHaveTextContent("Tone: Harsh");
+  });
+
+  it("displays outrage indicator when ruler walks out", () => {
+    render(
+      <SceneOutcomeBanner
+        outcome={{ kind: "terms_card", result: "walked_out" }}
+        onClose={vi.fn()}
+      />,
+    );
+    expect(screen.getByTestId("outrage-indicator")).toHaveTextContent("Outraged");
+  });
 });
 
 describe("SceneTranscript", () => {

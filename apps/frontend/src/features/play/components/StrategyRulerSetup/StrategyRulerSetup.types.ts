@@ -60,6 +60,7 @@ export interface PlayableFactionInfo {
 
 export interface StrategySetupMapProps {
   mapDoc?: MapDocument | null;
+  regionOwners?: Record<string, string>;
   factions: PlayableFactionInfo[];
   activeFactionId: string;
   onSelectFaction: (factionId: string) => void;
@@ -80,4 +81,6 @@ export interface StrategyRealmExplorerProps {
   activeFactionId: string;
   onSelectFaction: (factionId: string) => void;
   mapDoc?: MapDocument | null;
+  regionOwners?: Record<string, string>;
+  startYear?: number;
 }

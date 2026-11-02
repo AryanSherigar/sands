@@ -69,7 +69,7 @@ export const StrategySituationsDrawer: React.FC<StrategySituationsDrawerProps> =
   return (
     <aside
       aria-label="Situations Drawer"
-      className="fixed top-14 right-0 bottom-0 w-[520px] max-w-full bg-parchment-panel/95 backdrop-blur-xl shadow-2xl border-l border-on-surface/15 z-30 flex flex-col overflow-hidden transition-transform duration-300"
+      className="fixed top-14 right-0 bottom-0 w-[520px] max-w-full bg-parchment-panel/95 backdrop-blur-xl shadow-2xl border-l border-on-surface/15 z-40 flex flex-col overflow-hidden transition-transform duration-300"
     >
       {/* Header */}
       <header className="p-5 pb-4 bg-parchment-panel/60 border-b border-on-surface/10">

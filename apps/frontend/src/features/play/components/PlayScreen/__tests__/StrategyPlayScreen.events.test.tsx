@@ -25,6 +25,15 @@ vi.mock("../../../hooks/useSimulationWorld", () => ({
     refetch: vi.fn(),
   }),
 }));
+vi.mock("../../../hooks/useRestoredTurnReport", () => ({
+  useRestoredTurnReport: () => undefined,
+}));
+vi.mock("../../../hooks/useHistoricalWorld", () => ({
+  useHistoricalWorld: () => ({ data: undefined, isFetching: false, isError: false }),
+}));
+vi.mock("../../../hooks/usePendingEventNarratives", () => ({
+  usePendingEventNarratives: vi.fn(),
+}));
 vi.mock("../../../hooks/useEndTurn", () => ({
   useEndTurn: () => ({ endTurn: vi.fn(), isEndingTurn: false, errorInfo: null }),
 }));
@@ -38,12 +47,47 @@ vi.mock("../../../hooks/useSimulationCommands", () => ({
 vi.mock("../../../hooks/useStrategyEvent", () => ({
   useStrategyEvent: () => ({ eventPackage: null, isResolving: false, resolveChoice: vi.fn() }),
 }));
+vi.mock("../../../hooks/useLiveLetter", () => ({
+  useLiveLetter: () => ({
+    pkg: null,
+    isOpen: false,
+    isLetterScene: false,
+    isSceneTypeResolved: true,
+    dispatchNumber: undefined,
+    failureMessage: null,
+    handleOpen: vi.fn(),
+    handleClose: vi.fn(),
+    handleSeal: vi.fn(),
+    handleDecline: vi.fn(),
+    requestScribeDraft: vi.fn(),
+  }),
+}));
+
+vi.mock("../../../hooks/useLiveJudgment", () => ({
+  useLiveJudgment: () => ({
+    pkg: null,
+    isOpen: false,
+    isJudgmentScene: false,
+    isSceneTypeResolved: true,
+    isStreaming: false,
+    liveText: "",
+    failureMessage: null,
+    handleSpeak: vi.fn(),
+    handlePronounce: vi.fn(),
+    handleDismissReveal: vi.fn(),
+    handleClose: vi.fn(),
+  }),
+}));
+
 vi.mock("../../../hooks/useStrategyDiplomacy", () => ({
   useStrategyDiplomacy: () => ({
     diplomacy: { pacts: [], isProposalAvailable: false, onProposeTerms: vi.fn() },
     sceneId: null,
     errorMessage: null,
   }),
+}));
+vi.mock("../../../hooks/useStrategyArt", () => ({
+  useStrategyArt: () => ({ artUrl: null, isLoading: false }),
 }));
 vi.mock("../../../hooks/useStrategyMap", () => ({
   useStrategyMap: () => ({ data: null, isLoading: false, isError: false }),

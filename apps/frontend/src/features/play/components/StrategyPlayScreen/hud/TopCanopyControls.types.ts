@@ -5,4 +5,5 @@ export interface TopCanopyControlsProps {
   world?: CampaignWorldView;
   activeMapMode?: StrategyMapMode;
   onSelectMapMode?: (mode: StrategyMapMode) => void;
+  onOpenTreasury?: () => void;
 }

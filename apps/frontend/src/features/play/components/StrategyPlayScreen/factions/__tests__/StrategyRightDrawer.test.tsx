@@ -18,7 +18,12 @@ const mockRivals = [
 ];
 
 const mockWorld = {
+  world_version: 1,
   turn: 1,
+  wave: 0,
+  status: "planning",
+  battles: [],
+  queued_orders: [],
   orders_remaining: 3,
   my_faction: {
     id: "f-1",
@@ -77,6 +82,37 @@ describe("StrategyRightDrawer", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /pin/i }));
     expect(onTogglePin).toHaveBeenCalled();
+  });
+
+  it("selects the dispatches tab", () => {
+    const onSelectTab = vi.fn();
+    renderDrawer(
+      <StrategyRightDrawer
+        rivals={mockRivals}
+        activeTab="factions"
+        isPinned={false}
+        onSelectTab={onSelectTab}
+        onTogglePin={vi.fn()}
+        onJumpToRegion={vi.fn()}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: /dispatches/i }));
+    expect(onSelectTab).toHaveBeenCalledWith("dispatches");
+  });
+
+  it("renders the dispatches panel when its tab is active", () => {
+    renderDrawer(
+      <StrategyRightDrawer
+        playthroughId="pt-1"
+        rivals={mockRivals}
+        activeTab="dispatches"
+        isPinned={false}
+        onSelectTab={vi.fn()}
+        onTogglePin={vi.fn()}
+        onJumpToRegion={vi.fn()}
+      />,
+    );
+    expect(screen.getByText(/dispatches/i, { selector: "button" })).toBeInTheDocument();
   });
 
   it("renders an empty chronicle without fabricated entries", () => {
@@ -329,7 +365,10 @@ describe("StrategyRightDrawer", () => {
         rivals={rivals}
         activeTab="factions"
         isPinned={false}
-        world={mockWorld}
+        world={{
+          ...mockWorld,
+          wars: [{ id: "war-9", attacker_id: "f-war", defender_id: mockWorld.my_faction.id }],
+        }}
         diplomacy={{ pacts: [], isProposalAvailable: true, onProposeTerms }}
         onSubmitOrder={mockSubmitOrder}
         onSelectTab={vi.fn()}
@@ -347,7 +386,7 @@ describe("StrategyRightDrawer", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /Sue for Peace/i }));
     expect(mockSubmitOrder).toHaveBeenCalledWith(
-      expect.objectContaining({ kind: "sue_peace" }),
+      expect.objectContaining({ kind: "sue_peace", war_id: "war-9" }),
     );
 
     // At peace: "Propose terms", "Send Envoy", and "Declare War"

@@ -57,7 +57,7 @@ function PersonaActions({
           type="button"
           onClick={onBeginReign}
           disabled={isSubmitting}
-          className="order-1 sm:order-2 w-full sm:w-auto px-6 py-2.5 rounded-lg bg-[#785a00] hover:bg-[#967000] text-white transition-all shadow-md hover:shadow-lg active:translate-y-px flex items-center justify-center gap-2 group font-serif text-base font-semibold disabled:opacity-50"
+          className="order-1 sm:order-2 w-full sm:w-auto px-6 py-2.5 rounded-lg bg-[#785a00] hover:bg-[#967000] text-white transition shadow-md hover:shadow-lg active:translate-y-px flex items-center justify-center gap-2 group font-serif text-base font-semibold disabled:opacity-50"
         >
           <span>{isSubmitting ? "Inscribing Campaign..." : "Begin Reign Anno 1042"}</span>
           <IconArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />

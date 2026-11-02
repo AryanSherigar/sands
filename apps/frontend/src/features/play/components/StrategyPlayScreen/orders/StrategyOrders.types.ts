@@ -5,6 +5,7 @@ export interface StrategyOrdersTrayProps {
   ordersRemaining?: number;
   ordersTotal?: number;
   regionNames?: Record<string, string>;
+  factionNames?: Record<string, string>;
   onCancelOrder: (commandId: string) => void;
 }
 

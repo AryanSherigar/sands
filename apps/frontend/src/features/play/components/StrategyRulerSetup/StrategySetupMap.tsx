@@ -7,18 +7,9 @@ import {
   IconSailboat,
 } from "@tabler/icons-react";
 import type { StrategySetupMapProps, PlayableFactionInfo } from "./StrategyRulerSetup.types";
-import { FALLBACK_STRATEGY_MAP } from "../StrategyPlayScreen/fallbackStrategyMap";
 import type { MapRegion } from "@/shared/types/strategy-map.types";
 
-const DEFAULT_MAP_BG =
-  "https://lh3.googleusercontent.com/aida-public/AB6AXuA3wl03TneYGCeEOVoL1w2XjPBTYNi9wFIL3cxJHz0JmBNvErkl69agyHGmDgFw5F2p0L411xU9GrzGRrGyuyZl5t7Zl3ESKh3AzWKiu8u1vLHts6SZjD6Tip7fQ33ncjEgT1gkv-HQlbsX3X0Ae6KoI9RJ3xNMH3s-fdf0X4nFifwH420sLVjWcobKJg695N2B8HnljWOEUvb6o9yyNqG-szEkXUX8_r7buMlIf162ueVCm64Az86f2g";
-
-const FALLBACK_PIN_COORDS = [
-  { x: 780, y: 430 },
-  { x: 540, y: 490 },
-  { x: 1170, y: 250 },
-  { x: 370, y: 340 },
-];
+const NEUTRAL_REGION_COLOR = "#46606E";
 
 function getFactionIcon(factionId: string) {
   const id = factionId.toLowerCase();
@@ -38,60 +29,49 @@ function getShortName(fullName: string): string {
   return fullName.replace(/^(Crown of|Duchy of|March of|Freehold of)\s+/i, "");
 }
 
+function findPinRegion(
+  faction: PlayableFactionInfo,
+  regions: MapRegion[],
+  regionOwners: Record<string, string>,
+): MapRegion | undefined {
+  const capital = regions.find((region) => region.id === faction.capital_region_id);
+  return capital ?? regions.find((region) => regionOwners[region.id] === faction.id);
+}
+
+const EMPTY_OWNERS: Record<string, string> = {};
+
 export const StrategySetupMap: React.FC<StrategySetupMapProps> = ({
-  mapDoc = FALLBACK_STRATEGY_MAP,
+  mapDoc,
+  regionOwners = EMPTY_OWNERS,
   factions,
   activeFactionId,
   onSelectFaction,
 }) => {
-  const activeDoc = mapDoc ?? FALLBACK_STRATEGY_MAP;
+  if (!mapDoc) {
+    return (
+      <div
+        role="status"
+        className="flex w-full h-[340px] items-center justify-center rounded-xl border border-[#3A3128]/15 bg-[#f5e5d8]/60 text-sm italic text-[#42474b]"
+      >
+        This realm has no map to show yet.
+      </div>
+    );
+  }
+  const activeDoc = mapDoc;
   const width = activeDoc.width || 1600;
   const height = activeDoc.height || 900;
   const regions = activeDoc.regions || [];
+  const colorByFaction = new Map(factions.map((faction) => [faction.id, faction.color]));
 
-  // Map each region to a faction
-  const getRegionFaction = (region: MapRegion, index: number): PlayableFactionInfo | undefined => {
-    // 1. Direct capital match
-    const byCapital = factions.find((f) => f.capital_region_id === region.id);
-    if (byCapital) return byCapital;
-
-    // 2. Name / ID match
-    const regLower = (region.name + " " + region.id).toLowerCase();
-    const byName = factions.find((f) => {
-      const fId = f.id.toLowerCase();
-      if (fId.includes("valen") && regLower.includes("dunmere")) return true;
-      if (fId.includes("oak") && regLower.includes("greenford")) return true;
-      if (fId.includes("iron") && regLower.includes("highcrag")) return true;
-      if (fId.includes("river") && regLower.includes("silverwood")) return true;
-      return regLower.includes(fId);
-    });
-    if (byName) return byName;
-
-    // 3. Round-robin fallback
-    return factions[index % factions.length];
-  };
-
-  // Determine pin coordinate for each faction
-  const factionPins = factions.map((faction, idx) => {
-    let pinX = FALLBACK_PIN_COORDS[idx % FALLBACK_PIN_COORDS.length].x;
-    let pinY = FALLBACK_PIN_COORDS[idx % FALLBACK_PIN_COORDS.length].y;
-
-    const matchedRegion = regions.find((r, rIdx) => {
-      const rFaction = getRegionFaction(r, rIdx);
-      return rFaction?.id === faction.id;
-    });
-
-    if (matchedRegion?.label_point) {
-      pinX = matchedRegion.label_point.x;
-      pinY = matchedRegion.label_point.y;
-    }
-
-    return {
+  const factionPins = factions.flatMap((faction) => {
+    const region = findPinRegion(faction, regions, regionOwners);
+    if (!region?.label_point) return [];
+    return [{
       faction,
-      x: pinX,
-      y: pinY,
+      x: region.label_point.x,
+      y: region.label_point.y,
       isActive: faction.id === activeFactionId,
-    };
+    }];
   });
 
   return (
@@ -99,7 +79,7 @@ export const StrategySetupMap: React.FC<StrategySetupMapProps> = ({
       {/* Hand-painted Watercolor Map Texture Background */}
       <div
         className="absolute inset-0 bg-cover bg-center w-full h-full transform transition-transform duration-700 group-hover:scale-[1.02]"
-        style={{ backgroundImage: `url('${activeDoc.image_url || DEFAULT_MAP_BG}')` }}
+        style={activeDoc.image_url ? { backgroundImage: `url('${activeDoc.image_url}')` } : undefined}
       />
 
       {/* Atmospheric Cloud Vignette Overlay */}
@@ -112,19 +92,19 @@ export const StrategySetupMap: React.FC<StrategySetupMapProps> = ({
         preserveAspectRatio="none"
       >
         <g className="regions">
-          {regions.map((region, idx) => {
-            const ownerFaction = getRegionFaction(region, idx);
+          {regions.map((region) => {
+            const ownerFaction = factions.find((faction) => faction.id === regionOwners[region.id]);
             const isOwnerActive = ownerFaction?.id === activeFactionId;
             return (
               <path
                 key={region.id}
                 d={region.outline}
-                fill={ownerFaction ? ownerFaction.color : "#46606E"}
+                fill={colorByFaction.get(ownerFaction?.id ?? "") ?? NEUTRAL_REGION_COLOR}
                 fillOpacity={isOwnerActive ? 0.42 : 0.22}
                 stroke="#3A3128"
                 strokeWidth={isOwnerActive ? 2 : 1}
                 strokeOpacity={isOwnerActive ? 0.85 : 0.45}
-                className="transition-all duration-300 cursor-pointer hover:fill-opacity-50"
+                className="transition duration-300 cursor-pointer hover:fill-opacity-50"
                 onClick={() => ownerFaction && onSelectFaction(ownerFaction.id)}
               >
                 <title>{`${region.name} (${ownerFaction?.name ?? "Neutral Territory"})`}</title>
@@ -139,10 +119,10 @@ export const StrategySetupMap: React.FC<StrategySetupMapProps> = ({
         <IconCompass size={22} className="text-[#785a00] shrink-0" />
         <div className="flex flex-col">
           <span className="text-[10px] uppercase font-semibold text-[#72787c] tracking-wider font-['Manrope',sans-serif]">
-            The Frontier Wilds
+            The Realm
           </span>
           <span className="text-[11px] font-bold text-[#221a12] font-['Manrope',sans-serif] tabular-nums">
-            E. 42° 11′ · N. 18° 04′
+            {regions.length} {regions.length === 1 ? "region" : "regions"}
           </span>
         </div>
       </div>
@@ -152,7 +132,7 @@ export const StrategySetupMap: React.FC<StrategySetupMapProps> = ({
         const leftPercent = (x / width) * 100;
         const topPercent = (y / height) * 100;
         const shortName = getShortName(faction.name);
-        const provinceCount = faction.provinces_count ?? 1;
+        const provinceCount = Object.values(regionOwners).filter((ownerId) => ownerId === faction.id).length;
 
         return (
           <div
@@ -199,7 +179,7 @@ export const StrategySetupMap: React.FC<StrategySetupMapProps> = ({
                 {shortName}
               </span>
               <span className="text-[10px] text-[#42474b] font-['Manrope',sans-serif]">
-                {provinceCount} Fertile {provinceCount === 1 ? "Province" : "Provinces"}
+                {provinceCount} {provinceCount === 1 ? "Province" : "Provinces"}
               </span>
             </div>
           </div>

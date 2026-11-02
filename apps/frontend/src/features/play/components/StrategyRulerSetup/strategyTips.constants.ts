@@ -13,12 +13,6 @@ export const STRATEGY_LOADER_STAGES = [
 
 export const STRATEGY_TIPS: readonly StrategyTip[] = [
   {
-    id: "hover-formulas",
-    category: "Simulation Clarity",
-    text: "Every number can be hovered to reveal its underlying simulation formula.",
-    subtext: "Transparent mechanics govern all taxation, supply, and casualty tallies.",
-  },
-  {
     id: "treaty-covenants",
     category: "Diplomatic Honour",
     text: "Treaties are binding covenants — breaking an oath leaves a bitter memory across rival courts.",

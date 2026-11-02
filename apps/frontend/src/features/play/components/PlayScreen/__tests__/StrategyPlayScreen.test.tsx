@@ -42,6 +42,15 @@ vi.mock("../../../hooks/useSimulationWorld", () => ({
   }),
 }));
 
+vi.mock("../../../hooks/useRestoredTurnReport", () => ({
+  useRestoredTurnReport: () => undefined,
+}));
+vi.mock("../../../hooks/useHistoricalWorld", () => ({
+  useHistoricalWorld: () => ({ data: undefined, isFetching: false, isError: false }),
+}));
+vi.mock("../../../hooks/usePendingEventNarratives", () => ({
+  usePendingEventNarratives: vi.fn(),
+}));
 vi.mock("../../../hooks/useEndTurn", () => ({
   useEndTurn: () => ({
     endTurn: mockEndTurn,
@@ -67,6 +76,38 @@ vi.mock("../../../hooks/useStrategyEvent", () => ({
   }),
 }));
 
+vi.mock("../../../hooks/useLiveLetter", () => ({
+  useLiveLetter: () => ({
+    pkg: null,
+    isOpen: false,
+    isLetterScene: false,
+    isSceneTypeResolved: true,
+    dispatchNumber: undefined,
+    failureMessage: null,
+    handleOpen: vi.fn(),
+    handleClose: vi.fn(),
+    handleSeal: vi.fn(),
+    handleDecline: vi.fn(),
+    requestScribeDraft: vi.fn(),
+  }),
+}));
+
+vi.mock("../../../hooks/useLiveJudgment", () => ({
+  useLiveJudgment: () => ({
+    pkg: null,
+    isOpen: false,
+    isJudgmentScene: false,
+    isSceneTypeResolved: true,
+    isStreaming: false,
+    liveText: "",
+    failureMessage: null,
+    handleSpeak: vi.fn(),
+    handlePronounce: vi.fn(),
+    handleDismissReveal: vi.fn(),
+    handleClose: vi.fn(),
+  }),
+}));
+
 vi.mock("../../../hooks/useStrategyDiplomacy", () => ({
   useStrategyDiplomacy: () => ({
     diplomacy: { pacts: [], isProposalAvailable: false, onProposeTerms: vi.fn() },
@@ -75,25 +116,68 @@ vi.mock("../../../hooks/useStrategyDiplomacy", () => ({
   }),
 }));
 
+const mockUseStrategyMap = vi.fn(() => ({
+  data: null as null | {
+    schema_version: number;
+    source: "manual";
+    width: number;
+    height: number;
+    image_url: string | null;
+    regions: {
+      id: string;
+      name: string;
+      terrain: "plain" | "mountain";
+      outline: string;
+      label_point: { x: number; y: number };
+      neighbor_ids: string[];
+      source_color: string | null;
+      source_ref: string | null;
+    }[];
+    roads: never[];
+  },
+  isLoading: false,
+  isError: false,
+}));
+
 vi.mock("../../../hooks/useStrategyMap", () => ({
-  useStrategyMap: () => ({
-    data: null,
-    isLoading: false,
-    isError: false,
-  }),
+  useStrategyMap: () => mockUseStrategyMap(),
 }));
 
 describe("StrategyPlayScreen Integration", () => {
   beforeEach(() => {
     mockEndTurn.mockClear();
+    mockUseStrategyMap.mockReturnValue({
+      data: null,
+      isLoading: false,
+      isError: false,
+    });
     useStrategyPlayStore.getState().reset();
   });
 
-  it("renders full HUD and End Turn button", () => {
+  it("renders full HUD, End Turn button, and empty map state when scenario has no custom map", () => {
     render(<StrategyPlayScreen />);
     expect(screen.getByText("King Alden IV")).toBeInTheDocument();
     expect(screen.getByText("End Turn")).toBeInTheDocument();
-    expect(screen.getByText("Dunmere Vale")).toBeInTheDocument();
+    expect(screen.getByText("No realm cartography available")).toBeInTheDocument();
+    expect(screen.queryByText("Dunmere Vale")).not.toBeInTheDocument();
+  });
+
+  it("installs no window hook for triggering a letter", () => {
+    render(<StrategyPlayScreen />);
+    expect((window as unknown as Record<string, unknown>).__TRIGGER_LETTER__).toBeUndefined();
+  });
+
+  it("renders map skeleton while map data is loading", () => {
+    mockUseStrategyMap.mockReturnValue({
+      data: null,
+      isLoading: true,
+      isError: false,
+    });
+
+    render(<StrategyPlayScreen />);
+    expect(screen.getByRole("status", { name: /loading map/i })).toBeInTheDocument();
+    expect(screen.getByText("Unfurling realm cartography...")).toBeInTheDocument();
+    expect(screen.queryByText("Dunmere Vale")).not.toBeInTheDocument();
   });
 
   it("mounts turn report launcher button", () => {
@@ -140,7 +224,7 @@ describe("StrategyPlayScreen Integration", () => {
     expect(mockEndTurn).toHaveBeenCalled();
   });
 
-  it("calls endTurn when clicking Continue in StrategyTurnReportDrawer", () => {
+  it("closes the report drawer and does not end turn when clicking Continue", () => {
     useStrategyPlayStore.getState().setLatestReport({
       turn: 2,
       seasonTitle: "Summer, Year 3",
@@ -161,7 +245,8 @@ describe("StrategyPlayScreen Integration", () => {
     render(<StrategyPlayScreen />);
     const continueBtn = screen.getByRole("button", { name: /continue to next turn/i });
     fireEvent.click(continueBtn);
-    expect(mockEndTurn).toHaveBeenCalled();
+    expect(useStrategyPlayStore.getState().isTurnReportOpen).toBe(false);
+    expect(mockEndTurn).not.toHaveBeenCalled();
   });
 
   it("toggles the situations drawer when clicking active crises in top canopy", () => {

@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   createGetSSEConnection,
   createPostSSEConnection,
+  FantasyActionRefusedError,
   SSEHandlers,
 } from "./sse-client";
 import { refreshAuthToken } from "./api-client";
@@ -327,6 +328,18 @@ describe("sse-client", () => {
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(onError.mock.calls[0][0]).toBeInstanceOf(AlphaPausedError);
+  });
+
+  it("reports a fantasy exchange refusal with the server's reason", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+      ok: false, status: 409, body: null, headers: new Headers(),
+      json: () => Promise.resolve({ code: "fantasy_action_refused", detail: "You do not have enough coins." }),
+    }));
+    const onError = vi.fn();
+    createPostSSEConnection("http://localhost:8001/v1/turn", {}, null, { onEvent: vi.fn(), onError });
+    await vi.runAllTimersAsync();
+    expect(onError.mock.calls[0][0]).toBeInstanceOf(FantasyActionRefusedError);
+    expect(onError.mock.calls[0][0].message).toBe("You do not have enough coins.");
   });
 
   it("still reports a quota 503 as a RateLimitError", async () => {

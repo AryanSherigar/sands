@@ -1,5 +1,5 @@
 export interface StrategySceneDialogProps {
-  playthroughId: string;
+  playthroughId?: string;
   sceneId: string;
   onClose: () => void;
 }

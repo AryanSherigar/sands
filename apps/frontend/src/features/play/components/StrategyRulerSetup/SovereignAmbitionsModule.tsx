@@ -8,7 +8,7 @@ function AmbitionProgressBar({ progress = 0 }: { progress?: number }) {
   return (
     <div className="w-full bg-[#f0e0d2] rounded-full h-1.5 mt-2 overflow-hidden">
       <div
-        className="bg-[#785a00] h-full rounded-full transition-all duration-300"
+        className="bg-[#785a00] h-full rounded-full transition duration-300"
         style={{ width: `${clampedProgress}%` }}
       />
     </div>

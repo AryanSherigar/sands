@@ -9,7 +9,7 @@ import { ReportDrawerFooter } from "./ReportDrawerFooter";
 import { useTurnReportDrawer } from "./useTurnReportDrawer";
 
 const EmptyReportFallback: React.FC<{ onClose: () => void }> = ({ onClose }) => (
-  <aside className="w-[460px] absolute left-0 top-[49px] bottom-0 z-30 flex flex-col border-r border-[#3A3128]/20 bg-[#F7F0DC]/95 backdrop-blur-sm shadow-xl">
+  <aside className="w-[460px] absolute left-0 top-[49px] bottom-0 z-40 flex flex-col border-r border-[#3A3128]/20 bg-[#F7F0DC]/95 backdrop-blur-sm shadow-xl">
     <div className="flex justify-end p-3 border-b border-[#3A3128]/10">
       <button
         type="button"
@@ -47,7 +47,7 @@ export const StrategyTurnReportDrawer: React.FC<StrategyTurnReportDrawerProps> =
   if (!latestReport) return <EmptyReportFallback onClose={handleClose} />;
 
   return (
-    <aside className="w-[460px] absolute left-0 top-[49px] bottom-0 z-30 flex flex-col border-r border-[#3A3128]/20 bg-[#F7F0DC]/95 backdrop-blur-sm shadow-xl">
+    <aside className="w-[460px] absolute left-0 top-[49px] bottom-0 z-40 flex flex-col border-r border-[#3A3128]/20 bg-[#F7F0DC]/95 backdrop-blur-sm shadow-xl">
       <ReportDrawerHeader
         turn={latestReport.turn}
         seasonTitle={latestReport.seasonTitle}
@@ -55,7 +55,10 @@ export const StrategyTurnReportDrawer: React.FC<StrategyTurnReportDrawerProps> =
         onClose={handleClose}
       />
       <div className="p-3 border-b border-[#3A3128]/10 bg-[#F3EAD3]/30">
-        <QuickStatsTicker stats={latestReport.quickStats} />
+        <QuickStatsTicker
+          stats={latestReport.quickStats}
+          estimatedSections={latestReport.estimatedSections}
+        />
       </div>
       <ReportFilterPills
         activeFilter={activeReportFilter}

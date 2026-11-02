@@ -35,19 +35,22 @@ export const ArmyBannerPin: React.FC<ArmyBannerPinProps> = ({
   coords,
   isHostile = false,
   isSelected = false,
+  isGrouped = false,
   onClick,
 }) => {
   const handleClick = (event: React.MouseEvent) => {
     event.stopPropagation();
-    onClick(armyId);
+    onClick(armyId, event.shiftKey);
   };
 
-  const badgeClass = `${getHostileClass(isHostile)} ${isSelected ? "ring-2 ring-[#D2A94A]" : ""}`;
+  const badgeClass = `${getHostileClass(isHostile)} ${isSelected ? "ring-2 ring-[#D2A94A]" : ""} ${isGrouped ? "ring-2 ring-[#7A2E1D]" : ""}`;
   const displayName = commanderName ?? (isHostile ? "Hostile Host" : "Royal Host");
 
   return (
     <div
       style={{ left: `${coords.x}px`, top: `${coords.y}px` }}
+      aria-pressed={isGrouped}
+      title={isHostile ? undefined : "Shift-click to add to a group"}
       className="absolute -translate-x-1/2 -translate-y-1/2 -mt-12 cursor-pointer z-30 group"
       onClick={handleClick}
     >

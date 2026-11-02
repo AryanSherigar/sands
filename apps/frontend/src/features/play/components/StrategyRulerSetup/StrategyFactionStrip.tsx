@@ -30,7 +30,7 @@ export const StrategyFactionStrip: React.FC<StrategyFactionStripProps> = ({
             key={faction.id}
             type="button"
             onClick={() => onSelectFaction(faction.id)}
-            className={`flex flex-col text-left p-2.5 rounded-lg transition-all cursor-pointer ${
+            className={`flex flex-col text-left p-2.5 rounded-lg transition cursor-pointer ${
               isSelected
                 ? "bg-[#f5e5d8] shadow-md text-[#2e4856] ring-2 ring-[#2e4856]"
                 : "bg-[#F7F0DC]/75 hover:bg-[#F7F0DC] shadow-xs text-[#221a12] border border-[#3A3128]/10"

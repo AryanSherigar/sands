@@ -15,6 +15,8 @@ export const StrategyDrawerTabs: React.FC<StrategyDrawerTabsProps> = ({
 }) => {
   const handleFactionsClick = () => onSelectTab(activeTab === "factions" ? null : "factions");
   const handleChronicleClick = () => onSelectTab(activeTab === "chronicle" ? null : "chronicle");
+  const handleDispatchesClick = () =>
+    onSelectTab(activeTab === "dispatches" ? null : "dispatches");
   const handleTreasuryClick = () => onSelectTab(activeTab === "treasury" ? null : "treasury");
 
   return (
@@ -38,6 +40,14 @@ export const StrategyDrawerTabs: React.FC<StrategyDrawerTabsProps> = ({
         className={getTabClass(activeTab === "chronicle")}
       >
         Chronicle
+      </button>
+      <div className="h-px w-full bg-[#3A3128]/10" />
+      <button
+        type="button"
+        onClick={handleDispatchesClick}
+        className={getTabClass(activeTab === "dispatches")}
+      >
+        Dispatches
       </button>
       <div className="h-px w-full bg-[#3A3128]/10" />
       <button

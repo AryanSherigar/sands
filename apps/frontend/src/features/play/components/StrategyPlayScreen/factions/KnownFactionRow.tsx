@@ -8,6 +8,7 @@ import {
 
 export const KnownFactionRow: React.FC<KnownFactionRowProps> = ({
   rival,
+  warId,
   pactEndTurn = null,
   canProposeTerms = false,
   onProposeTerms,
@@ -16,6 +17,7 @@ export const KnownFactionRow: React.FC<KnownFactionRowProps> = ({
   onSuePeace,
   onSendEnvoy,
   onDeclareWar,
+  onMakeDemand,
 }) => {
   const isAtWar = rival.relation === "war" || rival.relation === "at_war";
   const relationText = rival.relation.replace(/_/g, " ");
@@ -39,18 +41,20 @@ export const KnownFactionRow: React.FC<KnownFactionRowProps> = ({
       ) : null}
       {isAtWar ? (
         <div className="flex items-center gap-1.5 flex-wrap">
-          <button
-            type="button"
-            onClick={() => {
-              onSuePeace?.(rival.faction_id);
-              if (onSubmitOrder) {
-                onSubmitOrder(buildSuePeaceOrder(myFactionId, rival.faction_id));
-              }
-            }}
-            className="self-start text-[11px] font-bold px-2 py-0.5 rounded bg-[#A8483E] text-white hover:bg-[#8F3B32] transition-colors"
-          >
-            Sue for Peace
-          </button>
+          {warId ? (
+            <button
+              type="button"
+              onClick={() => {
+                onSuePeace?.(rival.faction_id);
+                if (onSubmitOrder) {
+                  onSubmitOrder(buildSuePeaceOrder(myFactionId, warId));
+                }
+              }}
+              className="self-start text-[11px] font-bold px-2 py-0.5 rounded bg-[#A8483E] text-white hover:bg-[#8F3B32] transition-colors"
+            >
+              Sue for Peace
+            </button>
+          ) : null}
           {onProposeTerms ? (
             <button
               type="button"
@@ -84,11 +88,21 @@ export const KnownFactionRow: React.FC<KnownFactionRowProps> = ({
           >
             Send Envoy
           </button>
+          {onMakeDemand ? (
+            <button
+              type="button"
+              onClick={() => onMakeDemand(rival.faction_id)}
+              className="self-start text-[11px] font-bold px-2 py-0.5 rounded bg-[#46606E] text-white hover:bg-[#3A5260] transition-colors"
+            >
+              Make Demands
+            </button>
+          ) : null}
           <button
             type="button"
             onClick={() => {
-              onDeclareWar?.(rival.faction_id);
-              if (onSubmitOrder) {
+              if (onDeclareWar) {
+                onDeclareWar(rival.faction_id);
+              } else if (onSubmitOrder) {
                 onSubmitOrder(buildDeclareWarOrder(myFactionId, rival.faction_id));
               }
             }}

@@ -1,7 +1,7 @@
 import type { ReactZoomPanPinchRef } from "react-zoom-pan-pinch";
 import type { MapDocument } from "@/shared/types/strategy-map.types";
 import type { CampaignWorldView } from "../../../types/simulation.types";
-import type { SelectedEntity } from "../../../stores/strategyPlay.types";
+import type { SelectedEntity, StrategyMapMode } from "../../../stores/strategyPlay.types";
 import type { ActiveSituation } from "../../../types/situation.types";
 
 export interface StrategyMapCanvasProps {
@@ -11,6 +11,9 @@ export interface StrategyMapCanvasProps {
   onSelectEntity: (entity: SelectedEntity | null) => void;
   situations?: ActiveSituation[];
   onSelectSituation?: (situationId: string, regionId: string) => void;
+  activeMapMode?: StrategyMapMode;
+  groupArmyIds?: string[];
+  onToggleGroupArmy?: (armyId: string) => void;
 }
 
 export interface SettlementPinProps {
@@ -28,7 +31,8 @@ export interface ArmyBannerPinProps {
   coords: { x: number; y: number };
   isHostile?: boolean;
   isSelected?: boolean;
-  onClick: (armyId: string) => void;
+  isGrouped?: boolean;
+  onClick: (armyId: string, isAdditive: boolean) => void;
 }
 
 export interface CrisisAlertPinProps {

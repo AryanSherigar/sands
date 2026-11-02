@@ -88,4 +88,48 @@ describe("StrategyTopCanopy", () => {
     render(<StrategyTopCanopy world={mockWorld} activeCrisesCount={0} />);
     expect(screen.queryByRole("button", { name: /active cris/i })).toBeNull();
   });
+
+  it("renders letter shelf pill when letterDispatchNumber is provided and handles click", () => {
+    const onOpen = vi.fn();
+    render(
+      <StrategyTopCanopy
+        world={mockWorld}
+        letterDispatchNumber={42}
+        onOpenLetter={onOpen}
+      />,
+    );
+
+    const pill = screen.getByRole("button", { name: /dispatch #42/i });
+    expect(pill).toBeInTheDocument();
+    fireEvent.click(pill);
+    expect(onOpen).toHaveBeenCalledTimes(1);
+  });
+
+  it("renders clickable gold chip when onOpenTreasury is provided and handles click", () => {
+    const onOpenTreasury = vi.fn();
+    render(
+      <StrategyTopCanopy
+        world={mockWorld}
+        onOpenTreasury={onOpenTreasury}
+      />,
+    );
+
+    const treasuryButton = screen.getByRole("button", { name: /open treasury/i });
+    expect(treasuryButton).toBeInTheDocument();
+    fireEvent.click(treasuryButton);
+    expect(onOpenTreasury).toHaveBeenCalledTimes(1);
+  });
+
+  it("renders non-clickable gold chip when onOpenTreasury is omitted", () => {
+    render(<StrategyTopCanopy world={mockWorld} />);
+    expect(screen.queryByRole("button", { name: /open treasury/i })).toBeNull();
+    expect(screen.getByText("340")).toBeInTheDocument();
+  });
+
+  it("renders the replay audit pill with playthroughId", () => {
+    render(<StrategyTopCanopy world={mockWorld} playthroughId="pt-100" />);
+    const verifyButton = screen.getByRole("button", { name: /verify replay/i });
+    expect(verifyButton).toBeInTheDocument();
+    expect(verifyButton).not.toBeDisabled();
+  });
 });

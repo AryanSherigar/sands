@@ -132,6 +132,93 @@ describe("StrategyMapCanvas", () => {
     expect(screen.getByText("Unrest 75%")).toBeInTheDocument();
   });
 
+  it("conceals hostile armies located in fogged regions", () => {
+    const onSelect = vi.fn();
+    const fogWorld: CampaignWorldView = {
+      ...mockWorld,
+      regions: [
+        {
+          ...mockWorld.regions[0],
+          visibility: "fogged",
+        },
+      ],
+      armies: [
+        {
+          army_id: "enemy-hidden",
+          owner_id: "fac-enemy",
+          location_id: "reg-1",
+          commander_name: "Shadow Host",
+          troops: { infantry: 500 },
+        },
+      ],
+    };
+    render(
+      <StrategyMapCanvas
+        document={mockDocument}
+        world={fogWorld}
+        onSelectEntity={onSelect}
+      />,
+    );
+    expect(screen.queryByText("Shadow Host")).toBeNull();
+  });
+
+  it("renders friendly armies even if located in fogged regions", () => {
+    const onSelect = vi.fn();
+    const fogWorld: CampaignWorldView = {
+      ...mockWorld,
+      regions: [
+        {
+          ...mockWorld.regions[0],
+          visibility: "fogged",
+        },
+      ],
+      armies: [
+        {
+          army_id: "player-scout",
+          owner_id: "fac-player",
+          location_id: "reg-1",
+          commander_name: "Forward Scouts",
+          troops: { cavalry: 100 },
+        },
+      ],
+    };
+    render(
+      <StrategyMapCanvas
+        document={mockDocument}
+        world={fogWorld}
+        onSelectEntity={onSelect}
+      />,
+    );
+    expect(screen.getByText("Forward Scouts")).toBeInTheDocument();
+  });
+
+  it("suppresses crisis alerts on unowned fogged regions", () => {
+    const onSelect = vi.fn();
+    const fogWorld: CampaignWorldView = {
+      ...mockWorld,
+      regions: [
+        {
+          ...mockWorld.regions[0],
+          owner_id: "fac-enemy",
+          visibility: "fogged",
+          detail: {
+            ...mockWorld.regions[0].detail!,
+            owner_id: "fac-enemy",
+            unrest: 85,
+          },
+        },
+      ],
+    };
+    render(
+      <StrategyMapCanvas
+        document={mockDocument}
+        world={fogWorld}
+        onSelectEntity={onSelect}
+      />,
+    );
+    expect(screen.queryByText("Unrest 85%")).toBeNull();
+  });
+
   it("deselects entity when background map is clicked", () => {
     const onSelect = vi.fn();
     const { container } = render(
@@ -144,5 +231,28 @@ describe("StrategyMapCanvas", () => {
     const background = container.firstElementChild as HTMLElement;
     fireEvent.click(background);
     expect(onSelect).toHaveBeenCalledWith(null);
+  });
+
+  it("labels a besieged region with its progress", () => {
+    const world: CampaignWorldView = {
+      ...mockWorld,
+      regions: [{ ...mockWorld.regions[0], siege: { besieger_id: "fac-enemy", progress: 40 } }],
+    };
+    render(<StrategyMapCanvas document={mockDocument} world={world} onSelectEntity={vi.fn()} />);
+    expect(screen.getByText("Siege 40%")).toBeInTheDocument();
+  });
+
+  it("labels an occupied region", () => {
+    const world: CampaignWorldView = {
+      ...mockWorld,
+      regions: [
+        {
+          ...mockWorld.regions[0],
+          occupation: { occupier_id: "fac-enemy", siege_progress: 100, hold_turns: 1 },
+        },
+      ],
+    };
+    render(<StrategyMapCanvas document={mockDocument} world={world} onSelectEntity={vi.fn()} />);
+    expect(screen.getByText("Occupied")).toBeInTheDocument();
   });
 });

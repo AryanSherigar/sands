@@ -25,11 +25,36 @@ function collectLinks(regions: MapRegion[]): [MapRegion, MapRegion][] {
   );
 }
 
+function resolveStrokeClass(
+  regionId: string,
+  selectedIds: string[],
+  regionStrokeClasses?: Record<string, string>,
+): string {
+  if (selectedIds.includes(regionId)) {
+    return SELECTED_CLASSES;
+  }
+  return regionStrokeClasses?.[regionId] ?? IDLE_CLASSES;
+}
+
+function renderNeighborLinks(links: [MapRegion, MapRegion][]): React.ReactNode {
+  return links.map(([first, second]) => (
+    <line
+      key={`${first.id}-${second.id}`}
+      x1={first.label_point.x}
+      y1={first.label_point.y}
+      x2={second.label_point.x}
+      y2={second.label_point.y}
+      className={`pointer-events-none stroke-white/40 stroke-1 ${NON_SCALING}`}
+    />
+  ));
+}
+
 export const RegionOutlineLayer: React.FC<RegionOutlineLayerProps> = ({
   document,
   targetSize,
   selectedIds,
   regionFillClasses,
+  regionStrokeClasses,
   showNeighborLinks = false,
   onRegionClick,
 }) => {
@@ -39,28 +64,21 @@ export const RegionOutlineLayer: React.FC<RegionOutlineLayerProps> = ({
 
   return (
     <g transform={`scale(${scaleX} ${scaleY})`}>
-      {document.regions.map((region, index) => (
-        <path
-          key={region.id}
-          data-region-id={region.id}
-          d={region.outline}
-          fillRule="evenodd"
-          className={`cursor-pointer ${regionFillClasses?.[region.id] ?? TINT_CLASSES[index % TINT_CLASSES.length]} ${NON_SCALING} ${
-            selectedIds.includes(region.id) ? SELECTED_CLASSES : IDLE_CLASSES
-          }`}
-          onClick={(event) => onRegionClick?.(region.id, event)}
-        />
-      ))}
-      {links.map(([first, second]) => (
-        <line
-          key={`${first.id}-${second.id}`}
-          x1={first.label_point.x}
-          y1={first.label_point.y}
-          x2={second.label_point.x}
-          y2={second.label_point.y}
-          className={`pointer-events-none stroke-white/40 stroke-1 ${NON_SCALING}`}
-        />
-      ))}
+      {document.regions.map((region, index) => {
+        const fill = regionFillClasses?.[region.id] ?? TINT_CLASSES[index % TINT_CLASSES.length];
+        const stroke = resolveStrokeClass(region.id, selectedIds, regionStrokeClasses);
+        return (
+          <path
+            key={region.id}
+            data-region-id={region.id}
+            d={region.outline}
+            fillRule="evenodd"
+            className={`cursor-pointer ${fill} ${NON_SCALING} ${stroke}`}
+            onClick={(event) => onRegionClick?.(region.id, event)}
+          />
+        );
+      })}
+      {renderNeighborLinks(links)}
     </g>
   );
 };

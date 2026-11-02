@@ -10,7 +10,39 @@ import { useStrategySetupState } from "./useStrategySetupState";
 import { StrategyRealmExplorer } from "./StrategyRealmExplorer";
 import { StrategyRulerPersona } from "./StrategyRulerPersona";
 import { StrategyCampaignLoader } from "./StrategyCampaignLoader";
+import type { PlayableFactionInfo } from "./StrategyRulerSetup.types";
 import type { ScenarioDetailResponse } from "@/features/play/types/scenario";
+
+function readRegionOwners(document: Record<string, unknown> | undefined): Record<string, string> {
+  const starting = document?.starting as { regions?: unknown } | undefined;
+  const regions = starting?.regions ?? document?.regions;
+  if (!Array.isArray(regions)) return {};
+  const owners: Record<string, string> = {};
+  for (const item of regions) {
+    const entry = item as { region_id?: unknown; owner_id?: unknown };
+    if (typeof entry.region_id === "string" && typeof entry.owner_id === "string") {
+      owners[entry.region_id] = entry.owner_id;
+    }
+  }
+  return owners;
+}
+
+function countOwnedRegions(
+  factions: PlayableFactionInfo[],
+  regionOwners: Record<string, string>,
+): PlayableFactionInfo[] {
+  const owned = Object.values(regionOwners);
+  if (owned.length === 0) return factions;
+  return factions.map((faction) => ({
+    ...faction,
+    provinces_count: owned.filter((ownerId) => ownerId === faction.id).length,
+  }));
+}
+
+function readStartYear(document: Record<string, unknown> | undefined): number | undefined {
+  const tuning = document?.tuning as { start_year?: unknown } | undefined;
+  return typeof tuning?.start_year === "number" ? tuning.start_year : undefined;
+}
 
 export interface StrategyRulerSetupScreenProps {
   scenario: (ScenarioDetailResponse | Partial<ScenarioDetailResponse>) & { id?: string };
@@ -35,6 +67,8 @@ export const StrategyRulerSetupScreen: React.FC<StrategyRulerSetupScreenProps> =
       : "");
 
   const { data: mapDoc } = useStrategyMap(targetScenarioId);
+  const regionOwners = readRegionOwners(scenario?.strategy_document);
+  const startYear = readStartYear(scenario?.strategy_document);
 
   const {
     activeFactionId,
@@ -51,6 +85,7 @@ export const StrategyRulerSetupScreen: React.FC<StrategyRulerSetupScreenProps> =
     availableAmbitions,
   } = useStrategySetupState(scenario);
 
+  const factionsWithCounts = countOwnedRegions(factions, regionOwners);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -134,13 +169,15 @@ export const StrategyRulerSetupScreen: React.FC<StrategyRulerSetupScreenProps> =
         </header>
 
         {/* Workspace: 2-column layout */}
-        <main className="grid grid-cols-1 xl:grid-cols-12 gap-6 xl:gap-8">
+        <main className="strategy-surface grid grid-cols-1 xl:grid-cols-12 gap-6 xl:gap-8">
           <div className="xl:col-span-6">
             <StrategyRealmExplorer
-              factions={factions}
+              factions={factionsWithCounts}
               activeFactionId={activeFactionId}
               onSelectFaction={setActiveFactionId}
               mapDoc={mapDoc}
+              regionOwners={regionOwners}
+              startYear={startYear}
             />
           </div>
           <div className="xl:col-span-6">

@@ -1,12 +1,13 @@
 import React from "react";
 import { IconPin } from "@tabler/icons-react";
 import { KnownFactionsLedger } from "./KnownFactionsLedger";
+import { DispatchesPanel } from "./DispatchesPanel";
 import { LiveChronicleFeed } from "./LiveChronicleFeed";
 import { TreasuryDrawerPanel } from "./TreasuryDrawerPanel";
 import type { StrategyDrawerPanelProps } from "./StrategyDrawerPanel.types";
 
 function renderDrawerContent(props: StrategyDrawerPanelProps): React.ReactNode {
-  const { activeTab, world, onSubmitOrder, playthroughId, onJumpToRegion, rivals, diplomacy } =
+  const { activeTab, world, onSubmitOrder, playthroughId, onJumpToRegion, rivals, diplomacy, regionNames } =
     props;
   if (activeTab === "treasury" && world && onSubmitOrder) {
     return <TreasuryDrawerPanel world={world} onSubmitOrder={onSubmitOrder} />;
@@ -14,12 +15,16 @@ function renderDrawerContent(props: StrategyDrawerPanelProps): React.ReactNode {
   if (activeTab === "chronicle") {
     return <LiveChronicleFeed playthroughId={playthroughId} onJumpToRegion={onJumpToRegion} />;
   }
+  if (activeTab === "dispatches") {
+    return <DispatchesPanel playthroughId={playthroughId} />;
+  }
   return (
     <KnownFactionsLedger
       rivals={rivals}
       diplomacy={diplomacy}
       world={world}
       onSubmitOrder={onSubmitOrder}
+      regionNames={regionNames}
     />
   );
 }

@@ -1,12 +1,20 @@
 import { apiClient } from "@/shared/lib/api-client";
 import { SIMULATION_PLAYTHROUGHS_PATH } from "../constants/strategy.constants";
+import type {
+  BattleView,
+  ExchangeReport,
+} from "../components/StrategyWarCouncil/StrategyWarCouncil.types";
+import { parseCampaignWorld } from "../lib/campaignWorldParser";
+import { adaptHistoricalWorld } from "../lib/historicalWorld";
 import type { TurnReportResponse } from "../types/turnReportApi.types";
 import type {
+  BattleSpeechResponse,
   CampaignWorldView,
   EconomyChoice,
   MutationResponse,
   OperationGuard,
   OrderCheckResponse,
+  StrategyDispatchView,
   StrategySummaryPage,
   StrategySummaryView,
   StrategyOrder,
@@ -19,11 +27,11 @@ const playthroughPath = (playthroughId: string): string =>
   `${SIMULATION_PLAYTHROUGHS_PATH}/${playthroughId}`;
 
 export async function getCampaignWorld(playthroughId: string): Promise<CampaignWorldView> {
-  const { data } = await apiClient.get<CampaignWorldView>(
+  const { data } = await apiClient.get<unknown>(
     `${playthroughPath(playthroughId)}/world`,
     SIMULATION_REQUEST_CONFIG,
   );
-  return data;
+  return parseCampaignWorld(data);
 }
 
 export async function checkCommand(
@@ -138,3 +146,89 @@ export const getStrategySummaryStreamPath = (
   playthroughId: string,
   summaryId: string,
 ): string => `/trs/v1/strategy/playthroughs/${playthroughId}/summaries/${summaryId}/stream`;
+
+export async function getStrategyDispatches(
+  playthroughId: string,
+): Promise<StrategyDispatchView[]> {
+  const { data } = await apiClient.get<StrategyDispatchView[]>(
+    `${playthroughPath(playthroughId)}/dispatches`,
+    SIMULATION_REQUEST_CONFIG,
+  );
+  return data;
+}
+
+export const getStrategyDispatchStreamPath = (
+  playthroughId: string,
+  rumorId: string,
+): string => `/trs/v1/strategy/playthroughs/${playthroughId}/dispatches/${rumorId}/stream`;
+
+export async function getBattle(
+  playthroughId: string,
+  battleId: string,
+): Promise<BattleView> {
+  const { data } = await apiClient.get<BattleView>(
+    `${playthroughPath(playthroughId)}/battles/${battleId}`,
+    SIMULATION_REQUEST_CONFIG,
+  );
+  return data;
+}
+
+export async function listBattleReports(
+  playthroughId: string,
+  battleId: string,
+  afterExchange = 0,
+  limit = 50,
+): Promise<ExchangeReport[]> {
+  const { data } = await apiClient.get<{ items?: ExchangeReport[] } | ExchangeReport[]>(
+    `${playthroughPath(playthroughId)}/battles/${battleId}/reports?after_exchange=${afterExchange}&limit=${limit}`,
+    SIMULATION_REQUEST_CONFIG,
+  );
+  if (Array.isArray(data)) {
+    return data;
+  }
+  return data.items ?? [];
+}
+
+export interface ReplayVerificationResponse {
+  verified_turn: number;
+  world_hash: string;
+  step_count: number;
+}
+
+export async function postBattleSpeech(
+  playthroughId: string,
+  battleId: string,
+  speechText: string,
+  guard: OperationGuard,
+): Promise<BattleSpeechResponse> {
+  const { data } = await apiClient.post<BattleSpeechResponse>(
+    `${playthroughPath(playthroughId)}/battles/${battleId}/speech`,
+    { ...guard, speech_text: speechText },
+    SIMULATION_REQUEST_CONFIG,
+  );
+  return data;
+}
+
+export async function getHistoricalWorld(
+  playthroughId: string,
+  turn: number,
+): Promise<CampaignWorldView> {
+  const { data } = await apiClient.get<Parameters<typeof adaptHistoricalWorld>[0]>(
+    `${playthroughPath(playthroughId)}/history/${turn}`,
+    SIMULATION_REQUEST_CONFIG,
+  );
+  return adaptHistoricalWorld(data);
+}
+
+export async function verifyPlaythroughReplay(
+  playthroughId: string,
+  throughTurn?: number,
+): Promise<ReplayVerificationResponse> {
+  const query = throughTurn !== undefined ? `?through_turn=${throughTurn}` : "";
+  const { data } = await apiClient.post<ReplayVerificationResponse>(
+    `${playthroughPath(playthroughId)}/replay/verify${query}`,
+    undefined,
+    SIMULATION_REQUEST_CONFIG,
+  );
+  return data;
+}

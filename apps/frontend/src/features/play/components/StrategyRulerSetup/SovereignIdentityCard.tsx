@@ -1,21 +1,27 @@
 import React from "react";
-import { IconCrown, IconEdit, IconShieldCheck } from "@tabler/icons-react";
+import { IconCrown, IconEdit, IconShieldCheck, IconUser } from "@tabler/icons-react";
 import type { SovereignIdentityCardProps } from "./SovereignIdentityCard.types";
 
-const FALLBACK_PORTRAIT =
-  "https://lh3.googleusercontent.com/aida-public/AB6AXuBsacY1r5pJ5gGVLUhuFAS4mQ99oLQChktAGMvSurMx4VOYhLC8X03qb7vxRY2dO_2fkBtAoi9tpmFzz53n7iIvFsZQsl2iWYNnCVMdhY7KBnHfllM2bErsuc1RD7Regn4Ew1aWlFZqiiKt3ZmmkhPjWHDR7zLNMIcx6HESEoDDMY-z-IIAT0yvuDUsbzvh7jqWYjDgR1__74fe8wTjh9JBd8D2VkY-ucF7BH9Cx0WMGbP8FqhUM6Re-g";
-
 function SovereignPortrait({ portraitUrl }: { portraitUrl?: string }) {
-  const imageSource = portraitUrl || FALLBACK_PORTRAIT;
   return (
     <div className="relative shrink-0">
       <div className="w-28 h-36 rounded-t-full rounded-b-lg overflow-hidden shadow-md bg-[#f5e5d8] p-1">
         <div className="w-full h-full rounded-t-full rounded-b-md overflow-hidden relative">
-          <img
-            className="w-full h-full object-cover"
-            alt="Sovereign Coronation Portrait"
-            src={imageSource}
-          />
+          {portraitUrl ? (
+            <img
+              className="w-full h-full object-cover"
+              alt="Sovereign Coronation Portrait"
+              src={portraitUrl}
+            />
+          ) : (
+            <div
+              role="img"
+              aria-label="No portrait chosen yet"
+              className="flex h-full w-full items-center justify-center bg-[#ebdcb9] text-[#785a00]"
+            >
+              <IconUser size={40} stroke={1.25} />
+            </div>
+          )}
           <div className="absolute inset-0 bg-gradient-to-t from-[#2e4856]/30 to-transparent pointer-events-none" />
         </div>
       </div>

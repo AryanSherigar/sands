@@ -27,6 +27,7 @@ const renderLine = (line: EconomyLedgerLine, index: number): React.ReactNode => 
 export const EconomyLedgerCard: React.FC<EconomyLedgerCardProps> = ({
   lines,
   netGold,
+  isEstimated,
 }) => (
   <article className="p-3 bg-[#F3EAD3]/70 rounded-lg border border-[#3A3128]/20 space-y-2.5">
     <div className="flex items-center gap-1.5 text-xs text-[#7A6F62]">
@@ -34,6 +35,11 @@ export const EconomyLedgerCard: React.FC<EconomyLedgerCardProps> = ({
       <h4 className="font-serif font-semibold text-sm text-[#3A3128]">
         Seasonal Ledger
       </h4>
+      {isEstimated ? (
+        <span className="text-[10px] font-sans font-medium px-1.5 py-0.5 text-[#8B6B1B] bg-[#D2A94A]/20 border border-[#D2A94A]/40 rounded">
+          (Estimated)
+        </span>
+      ) : null}
     </div>
 
     <div className="space-y-0.5">{lines.map(renderLine)}</div>

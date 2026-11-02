@@ -1,5 +1,10 @@
-import React from "react";
+import React, { useState } from "react";
+import { DemandPlayForm } from "./DemandPlayForm";
+import { buildDeclareWarOrder } from "../../../lib/orderBuilders";
+import { useStrategyPlayStore } from "../../../stores/strategyPlay.store";
+import { findActiveWarId } from "../../../lib/warLookup";
 import { KnownFactionRow } from "./KnownFactionRow";
+import { RealmAffairsSection } from "./RealmAffairsSection";
 import type { KnownFactionsLedgerProps } from "./KnownFactionsLedger.types";
 import type { PactView } from "../../../types/scene.types";
 import type { CallView, PendingDemandView, RivalView, StrategyOrder } from "../../../types/simulation.types";
@@ -135,7 +140,16 @@ export const KnownFactionsLedger: React.FC<KnownFactionsLedgerProps> = ({
   diplomacy,
   world,
   onSubmitOrder,
+  regionNames,
 }) => {
+  const [demandTargetId, setDemandTargetId] = useState<string | null>(null);
+  const requestWarTarget = useStrategyPlayStore((state) => state.setPendingWarTarget);
+  const handleDeclareWar = (factionId: string): void => {
+    const hasGrounds = (world?.usable_grounds ?? []).some((ground) => ground.target_faction_id === factionId);
+    if (hasGrounds) requestWarTarget(factionId);
+    else onSubmitOrder?.(buildDeclareWarOrder(myFactionId, factionId));
+  };
+  const demandTarget = world?.rivals.find((rival) => rival.faction_id === demandTargetId);
   const effectiveRivals = rivals.length > 0 ? rivals : (world?.rivals ?? []);
   const myFactionId = world?.my_faction?.id ?? "";
 
@@ -158,6 +172,7 @@ export const KnownFactionsLedger: React.FC<KnownFactionsLedgerProps> = ({
           <KnownFactionRow
             key={rival.faction_id}
             rival={rival}
+            warId={isAtWar ? findActiveWarId(world, myFactionId, rival.faction_id) : undefined}
             pactEndTurn={pact?.end_turn ?? null}
             canProposeTerms={
               Boolean(diplomacy?.isProposalAvailable) &&
@@ -167,9 +182,27 @@ export const KnownFactionsLedger: React.FC<KnownFactionsLedgerProps> = ({
             onProposeTerms={diplomacy?.onProposeTerms}
             onSubmitOrder={onSubmitOrder}
             myFactionId={myFactionId}
+            onDeclareWar={onSubmitOrder ? handleDeclareWar : undefined}
+            onMakeDemand={onSubmitOrder && world ? setDemandTargetId : undefined}
           />
         );
       })}
+      {world ? <RealmAffairsSection world={world} onSubmitOrder={onSubmitOrder} regionNames={regionNames} /> : null}
+      {world && demandTarget && onSubmitOrder ? (
+        <DemandPlayForm
+          factionId={myFactionId}
+          targetFactionId={demandTarget.faction_id}
+          targetName={demandTarget.name}
+          targetRegions={world.regions
+            .filter((region) => region.owner_id === demandTarget.faction_id)
+            .map((region) => ({ id: region.region_id, label: regionNames?.[region.region_id] ?? region.region_id }))}
+          onSubmit={(order) => {
+            setDemandTargetId(null);
+            onSubmitOrder(order);
+          }}
+          onCancel={() => setDemandTargetId(null)}
+        />
+      ) : null}
     </div>
   );
 };

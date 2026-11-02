@@ -162,4 +162,17 @@ describe("StrategyPlayScreen negotiation flow", () => {
     const dialog = await screen.findByRole("dialog");
     expect(within(dialog).getByText("Incoming offer")).toBeInTheDocument();
   });
+
+  it("shows emergency fallback when awaiting_scene has unsupported scene type and escapes to planning", async () => {
+    const backend = installBackend();
+    backend.world = worldAt("awaiting_scene", 2, SCENE_ID);
+    backend.scene = offerScene({
+      scene_type: "unsupported_unknown_scene" as unknown as typeof backend.scene.scene_type,
+    });
+    renderScreen();
+    const alert = await screen.findByRole("alertdialog");
+    expect(within(alert).getByText("Conference Unavailable")).toBeInTheDocument();
+    fireEvent.click(within(alert).getByRole("button", { name: /break talks & resume campaign/i }));
+    await waitFor(() => expect(backend.decisionBody).toMatchObject({ is_confirmed: false }));
+  });
 });

@@ -22,6 +22,10 @@ let stream: {
   start: typeof start;
 } = { streaming: null, error: null, start };
 
+const useStrategyArt = vi.fn();
+vi.mock("../../../../hooks/useStrategyArt", () => ({
+  useStrategyArt: (...args: unknown[]) => useStrategyArt(...args),
+}));
 vi.mock("../../../../hooks/useStrategySummaries", () => ({
   useStrategySummaries: () => summaries,
   useStrategySummaryStream: () => stream,
@@ -41,6 +45,8 @@ const pendingSummary: StrategySummaryView = {
 describe("LiveChronicleFeed", () => {
   beforeEach(() => {
     start.mockReset();
+    useStrategyArt.mockReset();
+    useStrategyArt.mockReturnValue({ artUrl: null, isLoading: false });
     refetch.mockReset();
     summaries = { isLoading: false, isError: false, data: { items: [] }, refetch };
     stream = { streaming: null, error: null, start };
@@ -51,15 +57,23 @@ describe("LiveChronicleFeed", () => {
     expect(screen.getByText("No chronicle entries yet")).toBeInTheDocument();
   });
 
-  it("starts a pending entry and permits only its safe map region", () => {
+  it("starts a pending entry with the selected chronicler", () => {
     summaries = { ...summaries, data: { items: [pendingSummary] } };
     const onJumpToRegion = vi.fn();
     render(<LiveChronicleFeed playthroughId="playthrough-1" onJumpToRegion={onJumpToRegion} />);
 
+    // Default chronicler is lucan
     fireEvent.click(screen.getByRole("button", { name: "Write entry" }));
-    fireEvent.click(screen.getByRole("button", { name: "Map" }));
+    expect(start).toHaveBeenCalledWith(pendingSummary, "lucan");
 
-    expect(start).toHaveBeenCalledWith(pendingSummary);
+    // Change chronicler to morvath
+    const select = screen.getByLabelText("Select Chronicler");
+    fireEvent.change(select, { target: { value: "morvath" } });
+
+    fireEvent.click(screen.getByRole("button", { name: "Write entry" }));
+    expect(start).toHaveBeenCalledWith(pendingSummary, "morvath");
+
+    fireEvent.click(screen.getByRole("button", { name: "Map" }));
     expect(onJumpToRegion).toHaveBeenCalledWith("reg-dunmere");
   });
 
@@ -74,5 +88,22 @@ describe("LiveChronicleFeed", () => {
 
     expect(screen.getByText("A storm gathers.")).toBeInTheDocument();
     expect(screen.getByRole("alert")).toHaveTextContent("Chronicle could not be saved");
+  });
+
+  it("requests art only for the entry the player chooses to illustrate", () => {
+    const completed = (id: string): StrategySummaryView => ({
+      ...pendingSummary,
+      summary_id: id,
+      status: "completed",
+      narration: "The realm stirs.",
+    });
+    summaries = { ...summaries, data: { items: [completed("summary-1"), completed("summary-2")] } };
+    render(<LiveChronicleFeed playthroughId="playthrough-1" onJumpToRegion={vi.fn()} />);
+
+    expect(useStrategyArt).not.toHaveBeenCalled();
+    fireEvent.click(screen.getAllByRole("button", { name: "Illustrate" })[0]);
+
+    expect(useStrategyArt).toHaveBeenCalledWith("playthrough-1", "chronicle", "summary-1");
+    expect(useStrategyArt).not.toHaveBeenCalledWith("playthrough-1", "chronicle", "summary-2");
   });
 });

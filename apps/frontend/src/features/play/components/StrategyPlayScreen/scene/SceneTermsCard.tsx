@@ -19,12 +19,28 @@ export const SceneTermsCard: React.FC<SceneTermsCardProps> = ({
         Terms on the table
       </span>
       <ul className="flex flex-col gap-1 text-sm text-content">
-        {card.terms.map((term) => (
-          <li key={`${term.kind}-${term.faction_a}-${term.faction_b}`}>
-            A non-aggression pact with {counterpartName} for {term.duration_turns} turns,
-            ending on turn {currentTurn + term.duration_turns}.
-          </li>
-        ))}
+        {card.terms.map((term, idx) => {
+          if (term.kind === "non_aggression") {
+            return (
+              <li key={`non_aggression-${term.faction_a}-${term.faction_b}-${idx}`}>
+                A non-aggression pact with {counterpartName} for {term.duration_turns} turns,
+                ending on turn {currentTurn + term.duration_turns}.
+              </li>
+            );
+          }
+          if (term.kind === "peace") {
+            return (
+              <li key={`peace-${term.faction_a}-${term.faction_b}-${idx}`}>
+                Peace treaty ({term.tier}) with {counterpartName}.
+              </li>
+            );
+          }
+          return (
+            <li key={`${term.kind}-${idx}`}>
+              {term.kind.replace(/_/g, " ")} with {counterpartName}.
+            </li>
+          );
+        })}
       </ul>
       <p className="text-micro text-content-muted">
         Nothing is binding until you sign.

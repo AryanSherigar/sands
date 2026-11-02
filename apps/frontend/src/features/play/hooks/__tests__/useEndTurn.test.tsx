@@ -5,9 +5,11 @@ import type { ReactNode } from "react";
 import { useEndTurn } from "../useEndTurn";
 import * as simulationApi from "../../api/simulation.api";
 import { useStrategyPlayStore } from "../../stores/strategyPlay.store";
+import { DEFAULT_PREVIEW_WORLD } from "../../components/StrategyPlayScreen/defaultPreviewWorld";
 import type { CampaignWorldView, MutationResponse } from "../../types/simulation.types";
 
 vi.mock("../../api/simulation.api");
+vi.mock("../../api/strategyEvents.api");
 
 const PLAYTHROUGH_ID = "pt-1";
 
@@ -26,11 +28,12 @@ const mutation = (status: MutationResponse["status"], worldVersion: number): Mut
 function renderEndTurn(world: Partial<CampaignWorldView> = {}) {
   const queryClient = new QueryClient({ defaultOptions: { mutations: { retry: false } } });
   queryClient.setQueryData(["simulation-world", PLAYTHROUGH_ID], {
+    ...DEFAULT_PREVIEW_WORLD,
     world_version: 1,
     turn: 1,
     wave: 0,
     ...world,
-  } as CampaignWorldView);
+  });
   const wrapper = ({ children }: { children: ReactNode }) => (
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   );
@@ -62,7 +65,7 @@ describe("useEndTurn", () => {
   });
 
   it("resumes exactly one player-controlled wave after reload", async () => {
-    const battle = { id: "battle_1", region_id: "field", status: "awaiting_commands", exchanges_used: 0, total_exchanges: 0, control_mode: "player" as const };
+    const battle = { id: "battle_1", region_id: "field", status: "awaiting_commands" as const, exchanges_used: 0, total_exchanges: 0, control_mode: "player" as const };
     vi.mocked(simulationApi.advanceBattles).mockResolvedValue({ ...mutation("awaiting_commands", 3), battles: [battle], wave: 1 });
     const { result } = renderEndTurn({ status: "awaiting_commands", battles: [battle] });
     act(() => result.current.endTurn());

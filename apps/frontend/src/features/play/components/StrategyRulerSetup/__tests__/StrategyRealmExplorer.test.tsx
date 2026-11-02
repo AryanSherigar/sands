@@ -73,6 +73,7 @@ describe("StrategyRealmExplorer", () => {
         activeFactionId="valenreach"
         onSelectFaction={onSelectFaction}
         mapDoc={FALLBACK_STRATEGY_MAP}
+        regionOwners={{ "reg-dunmere": "valenreach", "reg-greenford": "oakhaven" }}
       />
     );
     const oakhavenPin = screen.getByTestId("map-pin-oakhaven");
@@ -96,16 +97,28 @@ describe("StrategyRealmExplorer", () => {
     expect(onSelectFaction).toHaveBeenCalledWith("oakhaven");
   });
 
-  it("renders fallback map gracefully when mapDoc is not provided", () => {
-    const onSelectFaction = vi.fn();
+  it("shows a notice instead of a made-up map when the scenario has none", () => {
     render(
       <StrategyRealmExplorer
         factions={mockFactions}
         activeFactionId="valenreach"
-        onSelectFaction={onSelectFaction}
+        onSelectFaction={vi.fn()}
       />
     );
-    expect(screen.getByText("The Frontier Wilds")).toBeDefined();
-    expect(screen.getByTestId("map-pin-valenreach")).toBeDefined();
+    expect(screen.getByText("This realm has no map to show yet.")).toBeDefined();
+    expect(screen.queryByTestId("map-pin-valenreach")).toBeNull();
+  });
+
+  it("names the scenario's start year instead of a fixed one", () => {
+    render(
+      <StrategyRealmExplorer
+        factions={mockFactions}
+        activeFactionId="valenreach"
+        onSelectFaction={vi.fn()}
+        startYear={1187}
+      />
+    );
+    expect(screen.getByText(/campaign of 1187/)).toBeDefined();
+    expect(screen.queryByText(/1042/)).toBeNull();
   });
 });

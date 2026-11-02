@@ -9,6 +9,8 @@ export const StrategyRealmExplorer: React.FC<StrategyRealmExplorerProps> = ({
   activeFactionId,
   onSelectFaction,
   mapDoc,
+  regionOwners,
+  startYear,
 }) => {
   const activeFaction =
     factions.find((f) => f.id === activeFactionId) ?? factions[0];
@@ -26,13 +28,14 @@ export const StrategyRealmExplorer: React.FC<StrategyRealmExplorerProps> = ({
           </span>
         </div>
         <p className="text-[14px] text-[#42474b] italic font-['Manrope',sans-serif]">
-          Select a realm to sovereign in the Anno 1042 campaign. The land bears memory of treaties long broken.
+          {startYear ? `Select a realm to rule in the campaign of ${startYear}.` : "Select a realm to rule in this campaign."}
         </p>
       </div>
 
       {/* Interactive Watercolor Map Preview Container */}
       <StrategySetupMap
         mapDoc={mapDoc}
+        regionOwners={regionOwners}
         factions={factions}
         activeFactionId={activeFactionId}
         onSelectFaction={onSelectFaction}

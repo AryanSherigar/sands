@@ -145,6 +145,15 @@ describe("StrategyTurnReportDrawer", () => {
     expect(useStrategyPlayStore.getState().isTurnReportOpen).toBe(false);
   });
 
+  it("closes the report drawer on Continue click even without onContinue prop", () => {
+    useStrategyPlayStore.getState().openTurnReport();
+    render(<StrategyTurnReportDrawer />);
+
+    const continueBtn = screen.getByRole("button", { name: /continue to next turn/i });
+    fireEvent.click(continueBtn);
+    expect(useStrategyPlayStore.getState().isTurnReportOpen).toBe(false);
+  });
+
   it("renders empty state when no report is available", () => {
     useStrategyPlayStore.getState().setLatestReport(null);
     useStrategyPlayStore.getState().openTurnReport();
@@ -175,5 +184,31 @@ describe("StrategyTurnReportDrawer", () => {
     fireEvent.click(mapButtons[0]);
     expect(handleFocusMap).toHaveBeenCalledWith("greywater_ford");
     expect(useStrategyPlayStore.getState().mapFocusTarget?.regionId).toBe("greywater_ford");
+  });
+
+  it("renders amber disclaimer banner when economy_lines is in estimatedSections", () => {
+    useStrategyPlayStore.getState().openTurnReport();
+    useStrategyPlayStore.getState().setLatestReport({
+      ...TEST_REPORT,
+      estimatedSections: ["economy_lines"],
+    });
+    render(<StrategyTurnReportDrawer onContinue={() => {}} />);
+
+    expect(
+      screen.getByText("Dispatches delayed — seasonal ledger estimated from realm records."),
+    ).toBeInTheDocument();
+  });
+
+  it("does not render amber disclaimer banner when economy_lines is not in estimatedSections", () => {
+    useStrategyPlayStore.getState().openTurnReport();
+    useStrategyPlayStore.getState().setLatestReport({
+      ...TEST_REPORT,
+      estimatedSections: [],
+    });
+    render(<StrategyTurnReportDrawer onContinue={() => {}} />);
+
+    expect(
+      screen.queryByText("Dispatches delayed — seasonal ledger estimated from realm records."),
+    ).not.toBeInTheDocument();
   });
 });

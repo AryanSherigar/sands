@@ -6,4 +6,5 @@ export interface KnownFactionsLedgerProps {
   diplomacy?: StrategyDiplomacyProps;
   world?: CampaignWorldView;
   onSubmitOrder?: (order: StrategyOrder) => void;
+  regionNames?: Record<string, string>;
 }

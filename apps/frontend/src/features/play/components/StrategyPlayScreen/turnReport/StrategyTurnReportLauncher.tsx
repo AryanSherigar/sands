@@ -54,12 +54,12 @@ export const StrategyTurnReportLauncher: React.FC<StrategyTurnReportLauncherProp
       type="button"
       title={title}
       onClick={toggleTurnReport}
-      className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 bg-[#F7F0DC]/95 border px-3.5 py-1.5 rounded-full backdrop-blur-sm text-sm font-medium text-[#3A3128] hover:bg-[#F3EAD3] transition-all cursor-pointer ${unreadClasses} ${className}`}
+      className={`fixed bottom-4 left-4 z-20 sm:bottom-6 sm:left-1/2 sm:-translate-x-1/2 flex items-center gap-2 bg-[#F7F0DC]/95 border px-3.5 py-1.5 rounded-full backdrop-blur-sm text-sm font-medium text-[#3A3128] hover:bg-[#F3EAD3] transition cursor-pointer ${unreadClasses} ${className}`}
     >
       <IconFileText size={16} className="text-[#3A3128]/70" aria-hidden="true" />
       <span>Turn report</span>
       {renderUnreadBadge(hasUnreadTurnReport, itemCount)}
-      <kbd className="text-[10px] text-[#7A6F62] font-mono">[R]</kbd>
+      <kbd className="hidden sm:inline text-[10px] text-[#7A6F62] font-mono">[R]</kbd>
     </button>
   );
 };

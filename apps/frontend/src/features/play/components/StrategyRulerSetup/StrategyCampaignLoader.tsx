@@ -135,7 +135,7 @@ export const StrategyCampaignLoader: React.FC<StrategyCampaignLoaderProps> = ({
       <footer className="relative z-10 w-full max-w-2xl pb-4">
         <div
           data-testid="strategy-tip-card"
-          className="bg-[#F7F0DC]/90 backdrop-blur-md border border-[#3A3128]/20 rounded-xl p-5 sm:p-6 shadow-xl transition-all duration-300"
+          className="bg-[#F7F0DC]/90 backdrop-blur-md border border-[#3A3128]/20 rounded-xl p-5 sm:p-6 shadow-xl transition duration-300"
         >
           {/* Header Row: Category Badge & Step Controls */}
           <div className="flex items-center justify-between pb-3 mb-2 border-b border-[#3A3128]/10 text-xs">
@@ -197,7 +197,7 @@ export const StrategyCampaignLoader: React.FC<StrategyCampaignLoaderProps> = ({
                 type="button"
                 aria-label={`Jump to tip ${idx + 1}`}
                 onClick={() => setCurrentTipIndex(idx)}
-                className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${
+                className={`h-1.5 rounded-full transition duration-300 cursor-pointer ${
                   idx === currentTipIndex % tips.length
                     ? "w-6 bg-[#D2A94A]"
                     : "w-2 bg-[#3A3128]/20 hover:bg-[#3A3128]/40"

@@ -39,6 +39,30 @@ describe("StrategyOrdersTray", () => {
     expect(screen.getByText("Levy troops in Dunmere Vale")).toBeInTheDocument();
   });
 
+  it("shows faction names for diplomatic orders when lookup is provided", () => {
+    const diplomaticOrders: QueuedOrderView[] = [
+      {
+        id: "cmd-dip-1",
+        order: {
+          kind: "declare_war",
+          faction_id: "player",
+          target_faction_id: "f-rival",
+        },
+        cost: 1,
+        queued_turn: 1,
+        is_cancellable: true,
+      },
+    ];
+    render(
+      <StrategyOrdersTray
+        orders={diplomaticOrders}
+        factionNames={{ "f-rival": "Dunmere" }}
+        onCancelOrder={vi.fn()}
+      />,
+    );
+    expect(screen.getByText("Declare war on Dunmere")).toBeInTheDocument();
+  });
+
   it("renders open mandates when remaining orders exist", () => {
     render(
       <StrategyOrdersTray

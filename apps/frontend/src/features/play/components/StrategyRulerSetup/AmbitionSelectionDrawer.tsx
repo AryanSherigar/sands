@@ -61,7 +61,7 @@ function AmbitionListItem({
   return (
     <div
       onClick={handleItemClick}
-      className={`p-3 rounded-lg border transition-all cursor-pointer flex flex-col gap-1.5 ${cardBorder}`}
+      className={`p-3 rounded-lg border transition cursor-pointer flex flex-col gap-1.5 ${cardBorder}`}
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
