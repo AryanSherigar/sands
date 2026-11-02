@@ -38,6 +38,13 @@ describe("MapViewer", () => {
     expect(screen.queryByText(/Nothing discovered/)).not.toBeInTheDocument();
   });
 
+  it("embeds the discovered-only map without a floating panel", () => {
+    const { container } = render(<MapViewer embedded scenarioSnapshot={buildSnapshot(null)} state={{ discovered_location_ids: [DESK_ID] }} />);
+    expect(screen.getByText("The night desk")).toBeInTheDocument();
+    expect(screen.queryByText("East corridor")).not.toBeInTheDocument();
+    expect(container.firstElementChild).not.toHaveClass("fixed");
+  });
+
   it("marks the current location in the text list", () => {
     render(
       <MapViewer

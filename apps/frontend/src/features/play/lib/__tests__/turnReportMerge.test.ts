@@ -107,3 +107,24 @@ describe("deriveTurnReport estimates", () => {
     expect(estimated.estimatedSections).toEqual(ALL_ESTIMATED_SECTIONS);
   });
 });
+
+describe("conquest report lines", () => {
+  const conquestKinds: Array<[string, string]> = [
+    ["siege_started", "Siege Begun"],
+    ["siege_progressed", "Siege Continues"],
+    ["region_occupied", "Region Occupied"],
+    ["region_conquered", "Region Conquered"],
+    ["occupation_lifted", "Occupation Lifted"],
+  ];
+
+  it.each(conquestKinds)("shows %s as a military item titled %s", (kind, title) => {
+    const report = mergeTurnReport(
+      estimated,
+      response({ lines: [{ text_key: kind, kind, subject_ids: [] }] }),
+      DEFAULT_PREVIEW_WORLD,
+      REGION_NAMES,
+    );
+    const item = report.items.find((candidate) => candidate.title === title);
+    expect(item?.category).toBe("military");
+  });
+});

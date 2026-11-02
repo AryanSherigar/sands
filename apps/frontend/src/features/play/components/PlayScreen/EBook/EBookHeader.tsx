@@ -9,11 +9,13 @@ import { StatusHudContainer } from "../../StatusHud/StatusHudContainer";
 import { StatusHudStripContainer } from "../../StatusHud/StatusHudStripContainer";
 
 export function EBookHeader({
+  isFantasy = false,
   onBack,
   onOpenCodex,
   onOpenChronicle,
 }: EBookHeaderProps) {
   const playthrough = usePlayStore((s) => s.playthrough);
+  const isNarrating = usePlayStore((s) => s.is_narrating);
   const theme = usePlayStore((s) => s.ebook_theme);
   const toggleEBookTheme = usePlayStore((s) => s.toggleEBookTheme);
 
@@ -29,7 +31,7 @@ export function EBookHeader({
       <header
         className={`relative z-10 w-full h-14 border-b backdrop-blur-md px-4 flex items-center justify-between transition-colors ${headerStyle}`}
       >
-        <div className="flex items-center gap-3">
+        <div className="flex min-w-0 shrink items-center gap-3">
           <button
             type="button"
             onClick={onBack}
@@ -43,7 +45,7 @@ export function EBookHeader({
 
           <div className="h-4 w-px bg-inherit/30 hidden sm:block" />
 
-          <div className="truncate max-w-[200px] sm:max-w-xs md:max-w-md">
+          <div className="truncate max-w-[88px] sm:max-w-xs md:max-w-md">
             <h1 className="font-serif text-sm sm:text-base font-bold truncate leading-tight">
               {playthrough?.scenario_title || "Chronicle"}
             </h1>
@@ -54,12 +56,12 @@ export function EBookHeader({
         </div>
 
         <div className="hidden md:flex items-center gap-2 font-mono text-xs opacity-75">
-          <span>Chapter {totalTurns + 1}</span>
+          <span>{isFantasy ? "Chronicle turn" : "Chapter"} {totalTurns + 1}</span>
           <span>•</span>
-          <span className="text-success text-[11px]">Auto-saved</span>
+          <span className="text-success text-[11px]">{isFantasy && isNarrating ? "Inscribing" : "Auto-saved"}</span>
         </div>
 
-        <div className="flex items-center gap-1.5 sm:gap-2">
+        <div className="flex min-w-0 items-center gap-1.5 overflow-x-auto sm:gap-2">
           <StatusHudContainer />
           <FeedbackButton />
           <EBookAudioControl />

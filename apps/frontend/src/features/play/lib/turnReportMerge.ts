@@ -78,6 +78,36 @@ const EVENT_PRESENTATION: Record<string, EventPresentation> = {
     description: "An army was stood down and its men sent home.",
     tone: "neutral",
   },
+  siege_started: {
+    category: "military",
+    title: "Siege Begun",
+    description: "An army has settled in to besiege a region.",
+    tone: "warning",
+  },
+  siege_progressed: {
+    category: "military",
+    title: "Siege Continues",
+    description: "The siege wears down the defenders.",
+    tone: "neutral",
+  },
+  region_occupied: {
+    category: "military",
+    title: "Region Occupied",
+    description: "A region fell to occupation and now pays no tax.",
+    tone: "danger",
+  },
+  region_conquered: {
+    category: "military",
+    title: "Region Conquered",
+    description: "A held occupation has changed the region's ruler.",
+    tone: "danger",
+  },
+  occupation_lifted: {
+    category: "military",
+    title: "Occupation Lifted",
+    description: "The occupying force withdrew or peace was made.",
+    tone: "positive",
+  },
   loan_overdue: {
     category: "economy",
     title: "Loan Overdue",

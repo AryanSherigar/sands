@@ -29,12 +29,13 @@ function renderStreamingAction(
   characterName: string,
   mode: string,
   action: string,
+  isFantasy: boolean,
 ): ReactElement | null {
   if (!action || action === "Continue the story.") return null;
   return (
-    <aside className="mb-5 pl-4 border-l-2 border-border-strong italic font-serif text-sm opacity-80">
+    <aside className={isFantasy ? "fantasy-turn-action" : "mb-5 pl-4 border-l-2 border-border-strong italic font-serif text-sm opacity-80"}>
       <span className="font-mono text-xs not-italic opacity-70 mr-1.5 uppercase font-medium">
-        {characterName} ({mode}):
+        {isFantasy ? "Your action" : `${characterName} (${mode})`}:
       </span>
       "{action}"
     </aside>
@@ -83,9 +84,9 @@ export function StreamingNarration(props: StreamingNarrationProps): ReactElement
   }, [streamingText, onScrollToBottom]);
 
   return (
-    <section className="my-8 pt-6 border-t border-inherit/20 animate-fade-in">
+    <section className={props.isFantasy ? "fantasy-turn fantasy-turn-active" : "my-8 pt-6 border-t border-inherit/20 animate-fade-in"}>
       {renderStreamingHeader(props.chapterNumber, stopGeneration)}
-      {renderStreamingAction(props.characterName, activeMode, lastAction)}
+      {renderStreamingAction(props.characterName, activeMode, lastAction, Boolean(props.isFantasy))}
       <div
         className={`${props.fontClass} ${READER_FONT_SIZE_CLASSES[readerFontSize]} leading-relaxed space-y-4`}
       >

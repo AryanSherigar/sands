@@ -19,6 +19,7 @@ import { ReaderTypographyMenuProps } from "./ReaderTypographyMenu.types";
 
 export const ReaderTypographyMenu: React.FC<ReaderTypographyMenuProps> = ({
   isSepia = false,
+  fallbackFont,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -47,9 +48,9 @@ export const ReaderTypographyMenu: React.FC<ReaderTypographyMenuProps> = ({
     setReduceSensoryEffects(e.target.checked);
   };
 
-  const defaultFontDef = resolveNarrationFont(scenarioFont);
+  const defaultFontDef = resolveNarrationFont(scenarioFont ?? fallbackFont);
   const effectiveFontDef = resolveNarrationFont(
-    readerFontOverride ?? scenarioFont,
+    readerFontOverride ?? scenarioFont ?? fallbackFont,
   );
 
   useEffect(() => {
@@ -74,7 +75,7 @@ export const ReaderTypographyMenu: React.FC<ReaderTypographyMenuProps> = ({
     const value = e.target.value;
     const nextOverride = value === "default" ? null : value;
     setReaderFontOverride(nextOverride);
-    loadNarrationFont(nextOverride ?? scenarioFont);
+    loadNarrationFont(nextOverride ?? scenarioFont ?? fallbackFont);
   };
 
   const popoverStyle = isSepia

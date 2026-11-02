@@ -1,3 +1,4 @@
+import type { StrategyDrawerTab } from "../types/strategyDrawer.types";
 import type {
   StrategyTurnReportData,
   TurnReportCategory,
@@ -10,6 +11,7 @@ export type StrategyTargetingAction = "move" | "attack";
 export interface StrategyTargetingState {
   action: StrategyTargetingAction;
   sourceArmyId: string;
+  groupArmyIds?: string[];
 }
 
 export interface StrategyOrderFeedback {
@@ -27,9 +29,12 @@ export interface MapFocusTarget {
 
 export interface StrategyPlayState {
   selectedEntity: SelectedEntity | null;
+  groupArmyIds: string[];
+  historyTurn: number | null;
+  pendingWarTargetId: string | null;
   activeMapMode: StrategyMapMode;
   targeting: StrategyTargetingState | null;
-  activeRightTab: "factions" | "chronicle" | null;
+  activeRightTab: StrategyDrawerTab | null;
   isRightDrawerPinned: boolean;
   orderFeedback: StrategyOrderFeedback | null;
   isTurnReportOpen: boolean;
@@ -42,10 +47,14 @@ export interface StrategyPlayState {
   isSituationsOpen: boolean;
   activeSituationId: string | null;
   selectEntity: (entity: SelectedEntity | null) => void;
+  toggleGroupArmy: (armyId: string) => void;
+  clearGroupArmies: () => void;
+  setHistoryTurn: (turn: number | null) => void;
+  setPendingWarTarget: (factionId: string | null) => void;
   setActiveMapMode: (mode: StrategyMapMode) => void;
   startTargeting: (targeting: StrategyTargetingState) => void;
   cancelTargeting: () => void;
-  setActiveRightTab: (tab: "factions" | "chronicle" | null) => void;
+  setActiveRightTab: (tab: StrategyDrawerTab | null) => void;
   togglePinRightDrawer: () => void;
   setOrderFeedback: (feedback: StrategyOrderFeedback | null) => void;
   openTurnReport: () => void;

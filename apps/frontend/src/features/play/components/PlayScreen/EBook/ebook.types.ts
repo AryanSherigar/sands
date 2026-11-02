@@ -7,6 +7,7 @@ import {
 } from "../../../types/play.types";
 
 export interface EBookHeaderProps {
+  isFantasy?: boolean;
   onBack: () => void;
   onOpenCodex: () => void;
   onOpenChronicle: () => void;
@@ -29,6 +30,7 @@ export interface CharacterDrawerProps {
 }
 
 export interface EBookPrologueCardProps {
+  isFantasy?: boolean;
   premise: string;
   onStartAction: () => void;
 }
@@ -38,6 +40,14 @@ export interface EBookTurnEntryProps {
   turnIndex: number;
   isLatest: boolean;
   shouldDistort?: boolean;
+  shouldHideImage?: boolean;
+  isFantasy?: boolean;
+}
+
+export interface EBookCanvasProps {
+  children?: React.ReactNode;
+  isFantasy?: boolean;
+  sceneImage?: { turnId: string; url: string } | null;
 }
 
 export interface EBookBottomBarProps {
@@ -53,6 +63,8 @@ export interface EBookBottomBarProps {
 }
 
 export interface EBookActionDrawerProps {
+  isFantasy?: boolean;
+  draftInsertion?: { text: string; mode: "do" | "say"; requestId: number };
   onSubmit: (actionText: string) => void;
   onContinue: () => void;
   onRetry: () => void;

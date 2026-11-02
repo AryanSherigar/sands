@@ -96,6 +96,24 @@ function buildServerPlaythrough(
 const emptyTurns: TurnLogListResponse = { items: [], total_count: 0 };
 
 describe("buildMasterPlaythroughData", () => {
+  it("uses narrative turns for multiplayer rotation after combat events", () => {
+    const server = buildServerPlaythrough({
+      turn_count: 3,
+      narrative_turn_count: 0,
+      participants: [
+        { participant_id: "participant-1", user_id: "u1", role: "owner", turn_order_position: 1 },
+        { participant_id: "participant-2", user_id: "u2", role: "joined", turn_order_position: 2 },
+      ],
+    });
+    expect(buildMasterPlaythroughData(server, emptyTurns, false).can_act).toBe(true);
+  });
+  it("preserves valid genre tags and rejects malformed snapshot metadata", () => {
+    const server = buildServerPlaythrough();
+    server.scenario_snapshot.genre_tags = ["High Fantasy", "Horror"];
+    expect(buildMasterPlaythroughData(server, emptyTurns, false).genre_tags).toEqual(["High Fantasy", "Horror"]);
+    server.scenario_snapshot.genre_tags = ["High Fantasy", 1];
+    expect(buildMasterPlaythroughData(server, emptyTurns, false).genre_tags).toEqual([]);
+  });
   it("merges live entity attributes onto the pinned snapshot entities", () => {
     const data = buildMasterPlaythroughData(
       buildServerPlaythrough(),

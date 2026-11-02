@@ -11,6 +11,7 @@ import { ChronicleRecapModal } from "./EBook/ChronicleRecapModal";
 import { MemoryDegradedBanner } from "./MemoryDegradedBanner";
 import { PlaythroughEndedBanner } from "./PlaythroughEndedBanner";
 import { Toast } from "@/shared/components/feedback/Toast";
+import { ScenePortraits } from "./SliceOfLife/ScenePortraits";
 
 export function NewbiePlayScreen() {
   const navigate = useNavigate();
@@ -73,6 +74,8 @@ export function NewbiePlayScreen() {
 
       {/* Minimal Reader Controls Bottom Dock */}
       <MemoryDegradedBanner />
+
+      {playthrough.genre_tags?.[0] === "Slice of Life" && <ScenePortraits portraits={playthrough.scene_portraits ?? []} presentIds={(playthrough.scene_portraits ?? []).map((portrait) => portrait.entity_id)} />}
 
       {isInputVisible ? (
         <EBookActionDrawer

@@ -15,6 +15,7 @@ import { MemoryDegradedBanner } from "./MemoryDegradedBanner";
 import { PlaythroughEndedBanner } from "./PlaythroughEndedBanner";
 import { PhoneEcho } from "../PhoneEcho/PhoneEcho";
 import { Toast } from "@/shared/components/feedback/Toast";
+import { ScenePortraits } from "./SliceOfLife/ScenePortraits";
 
 export function MasterPlayScreen() {
   const navigate = useNavigate();
@@ -85,6 +86,8 @@ export function MasterPlayScreen() {
       </div>
 
       <MemoryDegradedBanner />
+
+      {playthrough.genre_tags?.[0] === "Slice of Life" && <ScenePortraits portraits={playthrough.scene_portraits ?? []} presentIds={playthrough.state.scene_character_ids} />}
 
       {isInputVisible ? (
         <EBookActionDrawer

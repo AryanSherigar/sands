@@ -4,6 +4,7 @@ import { PostRunSurvey } from "@/shared/components/alpha-survey/PostRunSurvey/Po
 import { useIsAlphaMode } from "@/shared/hooks/useIsAlphaMode";
 import { usePlayStore } from "../../../stores/play.store";
 import { ChronicleRecapModalProps } from "./ebook.types";
+import { IconCheck, IconCopy, IconStarFilled } from "@tabler/icons-react";
 
 const getStarColorClass = (
   star: number,
@@ -106,7 +107,10 @@ export function ChronicleRecapModal({
                   onClick={handleCopyLink}
                   className="px-3 py-1.5 rounded-lg border border-inherit/30 hover:bg-zinc-800/50 transition-colors cursor-pointer"
                 >
-                  {copied ? "✓ Copied Link" : "📋 Copy Share Link"}
+                  <span className="inline-flex items-center gap-1.5">
+                    {copied ? <IconCheck size={14} aria-hidden="true" /> : <IconCopy size={14} aria-hidden="true" />}
+                    {copied ? "Copied Link" : "Copy Share Link"}
+                  </span>
                 </button>
               </div>
             )}
@@ -121,10 +125,11 @@ export function ChronicleRecapModal({
                     key={star}
                     type="button"
                     onClick={() => setRating(star)}
+                    aria-label={`Rate ${star} of 5`}
                     className="text-2xl hover:scale-125 transition-transform cursor-pointer"
                   >
                     <span className={getStarColorClass(star, rating, isSepia)}>
-                      ★
+                      <IconStarFilled size={24} aria-hidden="true" />
                     </span>
                   </button>
                 ))}

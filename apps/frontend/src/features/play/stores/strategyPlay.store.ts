@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import type { StrategyDrawerTab } from "../types/strategyDrawer.types";
 import type { StrategyPlayState } from "./strategyPlay.types";
 
 const AUTO_SHOW_STORAGE_KEY = "strategy_auto_show_turn_report";
@@ -28,9 +29,12 @@ function saveAutoShow(autoShow: boolean): void {
 
 const INITIAL_STATE = {
   selectedEntity: null,
+  groupArmyIds: [] as string[],
+  historyTurn: null as number | null,
+  pendingWarTargetId: null as string | null,
   activeMapMode: "political" as const,
   targeting: null,
-  activeRightTab: null,
+  activeRightTab: null as StrategyDrawerTab | null,
   isRightDrawerPinned: false,
   orderFeedback: null,
   isTurnReportOpen: false,
@@ -50,9 +54,21 @@ export const useStrategyPlayStore = create<StrategyPlayState>((set) => ({
   selectEntity: (selectedEntity) =>
     set((state) => ({
       selectedEntity,
+      groupArmyIds: [],
       targeting: null,
       isTurnReportOpen: selectedEntity !== null ? false : state.isTurnReportOpen,
     })),
+  toggleGroupArmy: (armyId) =>
+    set((state) => ({
+      groupArmyIds: state.groupArmyIds.includes(armyId)
+        ? state.groupArmyIds.filter((id) => id !== armyId)
+        : [...state.groupArmyIds, armyId],
+      targeting: null,
+    })),
+  clearGroupArmies: () => set({ groupArmyIds: [], targeting: null }),
+  setPendingWarTarget: (pendingWarTargetId) => set({ pendingWarTargetId }),
+  setHistoryTurn: (historyTurn) =>
+    set({ historyTurn, selectedEntity: null, groupArmyIds: [], targeting: null }),
   setActiveMapMode: (activeMapMode) => set({ activeMapMode }),
   startTargeting: (targeting) => set({ targeting }),
   cancelTargeting: () => set({ targeting: null }),

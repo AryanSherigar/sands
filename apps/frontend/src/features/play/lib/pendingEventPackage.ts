@@ -1,7 +1,7 @@
 import { describeEffects, describeNeglect, narrate } from "./eventText";
 import type { StrategyEventPackage } from "../types/eventScene.types";
 import { describeResponseEffects, describeUprisingCause, describeUprisingNeglect, responseLabel, uprisingStage, uprisingText } from "./uprisingText";
-import type { CampaignWorldView, UprisingView } from "../types/simulation.types";
+import type { CampaignWorldView, PendingEventView, UprisingView } from "../types/simulation.types";
 
 function buildUprisingPackage(
   world: CampaignWorldView,
@@ -39,40 +39,53 @@ function buildUprisingPackage(
   };
 }
 
-export function buildPendingEventPackage(
+function buildEventChoices(event: PendingEventView) {
+  return event.choices.map((choice) => ({
+    id: choice.id,
+    label: choice.label_hint,
+    effects: describeEffects(choice.effects),
+    orderCost: choice.order_cost,
+    isAffordable: choice.is_affordable,
+  }));
+}
+
+function buildEventPackage(
   world: CampaignWorldView,
-  eventId: string | null,
-  regionNames: Record<string, string> = {},
-): StrategyEventPackage | null {
-  const uprising = eventId ? world.uprisings?.find((item) => item.id === eventId) : undefined;
-  if (uprising) return buildUprisingPackage(world, uprising, regionNames);
-  const event = eventId ? world.pending_events?.find((item) => item.id === eventId) : undefined;
-  if (!event) return null;
-  const narrative = narrate(event);
+  event: PendingEventView,
+): StrategyEventPackage {
+  const fallback = narrate(event);
+  const narrative = event.narrative;
   const year = world.clock?.start_year;
   return {
     sceneId: event.id,
     eventId: event.id,
     category: "trouble",
-    title: narrative.title,
-    subheading: narrative.subheading,
+    title: fallback.title,
+    subheading: fallback.subheading,
     turnText: year === undefined ? `Turn ${world.turn}` : `Turn ${world.turn} • Year ${year}`,
-    bodyProse: narrative.bodyProse,
-    causeQuote: narrative.causeQuote,
+    bodyProse: narrative?.body_prose ?? fallback.bodyProse,
+    causeQuote: narrative?.cause_quote ?? fallback.causeQuote,
     character: {
-      name: narrative.characterName,
-      title: narrative.characterTitle,
-      disposition: narrative.disposition,
+      name: narrative?.character_name ?? fallback.characterName,
+      title: narrative?.character_title ?? fallback.characterTitle,
+      disposition: narrative?.disposition ?? fallback.disposition,
     },
-    choices: event.choices.map((choice) => ({
-      id: choice.id,
-      label: choice.label_hint,
-      effects: describeEffects(choice.effects),
-      orderCost: choice.order_cost,
-      isAffordable: choice.is_affordable,
-    })),
+    choices: buildEventChoices(event),
     neglectWarning: describeNeglect(event.neglect_effects),
     queuedChoiceId: event.queued_choice_id ?? null,
     queuedCommandId: event.queued_command_id ?? null,
   };
+}
+
+export function buildPendingEventPackage(
+  world: CampaignWorldView,
+  eventId: string | null | undefined,
+  regionNames: Record<string, string> = {},
+): StrategyEventPackage | null {
+  if (!eventId) return null;
+  const uprising = world.uprisings?.find((item) => item.id === eventId);
+  if (uprising) return buildUprisingPackage(world, uprising, regionNames);
+  const event = world.pending_events?.find((item) => item.id === eventId);
+  if (!event) return null;
+  return buildEventPackage(world, event);
 }

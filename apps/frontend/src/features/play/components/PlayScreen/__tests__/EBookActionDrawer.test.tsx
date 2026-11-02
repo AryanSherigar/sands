@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, act } from "@testing-library/react";
 import { EBookActionDrawer } from "../EBook/EBookActionDrawer";
 import { useVoiceInput } from "../../../hooks/useVoiceInput";
+import { usePlayStore } from "../../../stores/play.store";
 
 vi.mock("@/shared/hooks/useIsAlphaMode", () => ({
   useIsAlphaMode: () => false,
@@ -27,6 +28,39 @@ function mockVoiceInput(
 describe("EBookActionDrawer", () => {
   beforeEach(() => {
     mockVoiceInput();
+    usePlayStore.setState({ active_mode: "do" });
+  });
+
+  it("uses reference composer while retaining suggestions, submission, and continue", () => {
+    const submit = vi.fn();
+    const advance = vi.fn();
+    render(<EBookActionDrawer isFantasy onSubmit={submit} onContinue={advance} onRetry={vi.fn()} canRetry={false} isNarrating={false} actionChips={["Inspect the seal"]} />);
+    fireEvent.click(screen.getByRole("button", { name: "Show" }));
+    fireEvent.click(screen.getByRole("button", { name: "Inspect the seal" }));
+    expect(screen.getByRole("textbox")).toHaveValue("Inspect the seal");
+    fireEvent.click(screen.getByRole("button", { name: "Seal & Inscribe" }));
+    expect(submit).toHaveBeenCalledWith("Inspect the seal");
+    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+    fireEvent.click(screen.getAllByRole("button", { name: "Continue" })[1]);
+    expect(advance).toHaveBeenCalledOnce();
+  });
+
+  it("explains a failed turn next to Retry until the next turn starts", () => {
+    usePlayStore.setState({ failed_turn_message: "The narrator stopped responding unexpectedly." });
+    render(<EBookActionDrawer onSubmit={vi.fn()} onContinue={vi.fn()} onRetry={vi.fn()} canRetry isNarrating={false} />);
+    expect(screen.getByRole("status")).toHaveTextContent("The narrator stopped responding unexpectedly.");
+    usePlayStore.setState({ failed_turn_message: null });
+  });
+
+  it("inserts a requested Say draft without submitting, including repeated requests", () => {
+    const submit = vi.fn();
+    const props = { onContinue: vi.fn(), onRetry: vi.fn(), canRetry: false, onSubmit: submit, isNarrating: false };
+    const { rerender } = render(<EBookActionDrawer {...props} draftInsertion={{ text: "I talk to Veya.", mode: "say", requestId: 1 }} />);
+    expect(screen.getByRole("textbox")).toHaveValue("I talk to Veya.");
+    expect(submit).not.toHaveBeenCalled();
+    fireEvent.change(screen.getByRole("textbox"), { target: { value: "different" } });
+    rerender(<EBookActionDrawer {...props} draftInsertion={{ text: "I talk to Veya.", mode: "say", requestId: 2 }} />);
+    expect(screen.getByRole("textbox")).toHaveValue("I talk to Veya.");
   });
 
   it("renders when open and submits action text", () => {

@@ -1,10 +1,12 @@
 import { StatChange } from "../../../types/play.types";
 import { ChapterSummaryStripProps } from "./ebook.types";
 import { useEBookThemeTokens } from "./ebookTheme";
+import { IconBackpack, IconChartBar, IconDroplet, IconSparkles } from "@tabler/icons-react";
 
-function statChangeIcon(change: StatChange): string {
-  if (change.delta == null) return "📊";
-  return change.delta < 0 ? "🩸" : "✨";
+function StatChangeIcon({ change }: { change: StatChange }) {
+  if (change.delta == null) return <IconChartBar size={14} aria-hidden="true" />;
+  if (change.delta < 0) return <IconDroplet size={14} aria-hidden="true" />;
+  return <IconSparkles size={14} aria-hidden="true" />;
 }
 
 function statChangeValue(change: StatChange): string {
@@ -28,7 +30,7 @@ export function ChapterSummaryStrip({ delta }: ChapterSummaryStripProps) {
       {delta.stat_changes.map((change) => (
         <div key={change.path} className="flex items-center justify-between">
           <span>
-            {statChangeIcon(change)} {change.label}
+            <StatChangeIcon change={change} /> {change.label}
           </span>
           <span>{statChangeValue(change)}</span>
         </div>
@@ -38,7 +40,7 @@ export function ChapterSummaryStrip({ delta }: ChapterSummaryStripProps) {
           key={change.path + change.entity_id}
           className="flex items-center gap-2"
         >
-          <span>🎒</span>
+          <IconBackpack size={14} aria-hidden="true" />
           <span>+{change.entity_display_name}</span>
         </div>
       ))}

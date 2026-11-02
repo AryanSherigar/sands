@@ -79,6 +79,7 @@ interface TurnStreamBody {
   action_text: string;
   action_kind:
     | "narrative"
+    | "fantasy_action"
     | "minigame_result"
     | "check_resolution"
     | "check_report";
@@ -86,6 +87,7 @@ interface TurnStreamBody {
   minigame_result?: MinigameResultPayload;
   check_resolution?: CheckResolutionPayload;
   check_report?: CheckReportPayload;
+  fantasy_action?: { action_id: "rest" | "claim_retrieval_reward" };
   voice_output_requested: boolean;
 }
 
@@ -182,6 +184,7 @@ interface PlayStoreState {
   // The client_action_id of the last narrative submission, kept only until it
   // commits: retrying a turn that may have saved must reuse it.
   last_client_action_id: string | null;
+  last_fantasy_action: TurnStreamBody | null;
   // The action whose cues the player has already heard, and the stream attempt
   // that played them: a retry of that action must not replay them, but a second
   // cue within the same attempt still plays.
@@ -196,6 +199,7 @@ interface PlayStoreState {
   effects_action_id: string | null;
   effects_generation: number;
   degraded_message: string | null;
+  failed_turn_message: string | null;
   // Set when a `quota_notice` SSE event says this turn skipped its scene
   // image or voice narration because that daily quota is spent. The turn
   // itself still commits normally.
@@ -298,6 +302,7 @@ interface PlayStoreState {
   setRulesPanelHidden: (isHidden: boolean) => void;
   closeChronicleModal: () => void;
   submitTurn: (actionText: string, clientActionId?: string) => void;
+  submitFantasyAction: (actionId: "rest" | "claim_retrieval_reward") => void;
   submitMinigameResult: (result: MinigameResultPayload) => void;
   retryMinigameResult: () => void;
   submitMinigameTimeoutFallback: () => void;
@@ -319,8 +324,9 @@ interface PlayStoreState {
   is_audio_muted: boolean;
   setAudioVolume: (volume: number) => void;
   toggleAudioMute: () => void;
+  setIsAudioMuted: (isMuted: boolean) => void;
   setMood: (mood: ScenarioMood) => void;
-  playTurnAudio: (turnId: string, url: string) => void;
+  playTurnAudio: (turnId: string, url: string, loadSpeakers?: boolean) => void;
   stopTurnAudio: () => void;
 
   // Internal — not part of the public store surface; other files should not
@@ -346,6 +352,7 @@ export const usePlayStore = create<PlayStoreState>((set, get) => ({
   streaming_text: "",
   last_submitted_action: "",
   last_client_action_id: null,
+  last_fantasy_action: null,
   cue_played_action_id: null,
   cue_played_generation: 0,
   pending_client_effects: [],
@@ -354,6 +361,7 @@ export const usePlayStore = create<PlayStoreState>((set, get) => ({
   effects_action_id: null,
   effects_generation: 0,
   degraded_message: null,
+  failed_turn_message: null,
   quota_notice_message: null,
   input_truncated_message: null,
   memory_degraded_reasons: [],
@@ -451,12 +459,18 @@ export const usePlayStore = create<PlayStoreState>((set, get) => ({
     const isMuted = ambientSoundtrack.toggleMute();
     set({ is_audio_muted: isMuted });
   },
+  setIsAudioMuted: (isMuted: boolean) => {
+    if (ambientSoundtrack.getIsMuted() !== isMuted) {
+      ambientSoundtrack.toggleMute();
+    }
+    set({ is_audio_muted: isMuted });
+  },
   setMood: (mood: ScenarioMood) => {
     const trackUrl = getMoodTrackUrl(mood, get().playthrough?.music_tracks);
     ambientSoundtrack.transitionTo(mood, trackUrl, true);
   },
-  playTurnAudio: (turnId: string, url: string) =>
-    narrationPlayback.play(turnId, url),
+  playTurnAudio: (turnId: string, url: string, loadSpeakers = false) =>
+    narrationPlayback.play(turnId, url, loadSpeakers),
   stopTurnAudio: () => narrationPlayback.stop(),
   setActiveMode: (mode: ActionMode) => set({ active_mode: mode }),
   setEBookTheme: (theme: EBookTheme) => {
@@ -520,6 +534,22 @@ export const usePlayStore = create<PlayStoreState>((set, get) => ({
       },
       actionText,
     );
+  },
+
+  submitFantasyAction: (actionId) => {
+    const { playthrough, is_narrating, active_minigame, active_check, active_rule_check } = get();
+    if (!playthrough || is_narrating || playthrough.is_spectator || !playthrough.can_act || !playthrough.participant_id || playthrough.ended_outcome_tag || active_minigame || active_check || active_rule_check) return;
+    const actionText = actionId === "rest" ? "Rest at the inn." : "Claim the retrieval reward.";
+    get()._startTurnStream({
+      playthrough_id: playthrough.playthrough_id,
+      participant_id: playthrough.participant_id,
+      client_action_id: generateClientActionId(),
+      action_text: actionText,
+      action_kind: "fantasy_action",
+      action_mode: "do",
+      fantasy_action: { action_id: actionId },
+      voice_output_requested: isVoiceOutputRequested(),
+    }, actionText);
   },
 
   submitMinigameResult: (result: MinigameResultPayload) => {
@@ -837,7 +867,7 @@ export const usePlayStore = create<PlayStoreState>((set, get) => ({
   },
 
   stopGeneration: () => {
-    const { cancel_stream_fn } = get();
+    const { cancel_stream_fn, playthrough } = get();
     if (cancel_stream_fn) {
       cancel_stream_fn();
     }
@@ -859,6 +889,10 @@ export const usePlayStore = create<PlayStoreState>((set, get) => ({
       check_terminal_pending: null,
       resolved_check_outcome: null,
     });
+    if (playthrough) {
+      void queryClient.invalidateQueries({ queryKey: ["playthrough", playthrough.playthrough_id] });
+      void queryClient.invalidateQueries({ queryKey: ["playthrough-turns", playthrough.playthrough_id] });
+    }
   },
 
   retryLastTurn: () => {
@@ -875,10 +909,11 @@ export const usePlayStore = create<PlayStoreState>((set, get) => ({
       get()._resendCheckReport(last_check_report.report, last_check_report.label);
       return;
     }
-    const { last_submitted_action, submitTurn } = get();
+    const { last_submitted_action, submitTurn, last_fantasy_action } = get();
     if (last_submitted_action && last_client_action_id) {
       emitTurnRetry("after_error", turnNumber, last_client_action_id, playthroughId);
-      submitTurn(last_submitted_action, last_client_action_id);
+      if (last_fantasy_action) get()._startTurnStream(last_fantasy_action, last_submitted_action);
+      else submitTurn(last_submitted_action, last_client_action_id);
     }
   },
 
@@ -905,8 +940,10 @@ export const usePlayStore = create<PlayStoreState>((set, get) => ({
       streaming_text: "",
       last_submitted_action: actionTextForLog,
       last_client_action_id: body.client_action_id,
+      last_fantasy_action: body.action_kind === "fantasy_action" ? body : null,
       is_turn_paused: false,
       degraded_message: null,
+      failed_turn_message: null,
       quota_notice_message: null,
       input_truncated_message: null,
       is_action_drawer_open: false,
@@ -1102,7 +1139,7 @@ export const usePlayStore = create<PlayStoreState>((set, get) => ({
         telemetry.recordStall();
         if (isAlphaPausedError(error)) set({ is_turn_paused: true });
         failMinigameResult(
-          isRateLimitError(error) || isAlphaPausedError(error)
+          isRateLimitError(error) || isAlphaPausedError(error) || (body.action_kind === "fantasy_action" && error instanceof Error && error.name === "FantasyActionRefusedError")
             ? error.message
             : "Connection lost. Your turn may not have saved — you can try again.",
         );
@@ -1207,6 +1244,7 @@ export const usePlayStore = create<PlayStoreState>((set, get) => ({
       cancel_stream_fn: null,
       // The turn saved, so a later retry is a new action, not a replay.
       last_client_action_id: null,
+      last_fantasy_action: null,
       cue_played_action_id: null,
       ...queueCommittedEffects(get()),
       pending_chapter_delta: null,
@@ -1262,7 +1300,13 @@ export const usePlayStore = create<PlayStoreState>((set, get) => ({
       pending_rule_check_trigger: null,
       is_rule_check_submitting: false,
       degraded_message: message,
+      failed_turn_message: message,
     });
+    const playthroughId = get().playthrough?.playthrough_id;
+    if (playthroughId) {
+      void queryClient.invalidateQueries({ queryKey: ["playthrough", playthroughId] });
+      void queryClient.invalidateQueries({ queryKey: ["playthrough-turns", playthroughId] });
+    }
   },
 }));
 

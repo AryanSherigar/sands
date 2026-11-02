@@ -15,6 +15,8 @@ export default defineConfig({
     setupFiles: ["./src/test/setup.ts"],
     globals: true,
     env: {
+      VITE_CORE_API_URL: "http://localhost:8000",
+      VITE_TRS_URL: "http://localhost:8001",
       VITE_FIREBASE_API_KEY: "test-firebase-api-key",
       VITE_FIREBASE_AUTH_DOMAIN: "test.firebaseapp.com",
       VITE_FIREBASE_PROJECT_ID: "test-project",

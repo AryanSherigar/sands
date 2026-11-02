@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { usePlayStore } from "../../stores/play.store";
 import { useCheckResolution } from "../../hooks/useCheckResolution";
 import { CHECK_ROLL_ANIMATION_DURATION_MS } from "../../constants/check.constants";
+import { IconDice5 } from "@tabler/icons-react";
 
 /**
  * Full-screen takeover for a proposed check: the roll/decline prompt, the
@@ -76,7 +77,7 @@ export function CheckPromptOverlay() {
 
         {isNarrating && isAnimating && (
           <div className="space-y-3 py-4" role="status" aria-live="assertive">
-            <div className="mx-auto text-4xl motion-safe:animate-spin">🎲</div>
+            <IconDice5 size={40} aria-hidden="true" className="mx-auto motion-safe:animate-spin" />
             <p className="text-sm text-zinc-300">Rolling...</p>
           </div>
         )}

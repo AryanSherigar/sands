@@ -68,6 +68,7 @@ export type EstimatedSection =
   | "battle_results"
   | "event_dispatches"
   | "stability_delta"
+  | "manpower_delta"
   | "war_score"
   | "rival_casualties"
   | "tactical_round_text"

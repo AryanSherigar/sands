@@ -20,6 +20,7 @@ interface SnapshotEntity {
 export const MapViewer: React.FC<MapViewerProps> = ({
   scenarioSnapshot,
   state,
+  embedded = false,
 }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const maps = (scenarioSnapshot?.maps as ScenarioMap[] | undefined) ?? [];
@@ -127,7 +128,7 @@ export const MapViewer: React.FC<MapViewerProps> = ({
 
   return (
     <div
-      className={`fixed left-4 top-32 z-20 ${isCollapsed ? "w-auto" : "w-72"} border border-zinc-800 bg-zinc-950/95 font-sans text-zinc-300 shadow-xl`}
+      className={embedded ? "w-full border border-[#382E25] bg-[#14110E] text-[#EDE0CA]" : `fixed left-4 top-32 z-20 ${isCollapsed ? "w-auto" : "w-72"} border border-zinc-800 bg-zinc-950/95 font-sans text-zinc-300 shadow-xl`}
     >
       <button
         onClick={handleToggleCollapsed}

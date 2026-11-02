@@ -32,6 +32,10 @@ export const TURN_REPORT_GAPS: Record<EstimatedSection, TurnReportGap> = {
     needs:
       "The engine never changes faction stability and emits no stability event; add an internal-phase stability rule and event.",
   },
+  manpower_delta: {
+    label: "Manpower count",
+    needs: "Only estimated in preview or when the report fetch fails.",
+  },
   war_score: {
     label: "War score per battle",
     needs: "No war score exists in the simulation; add the field and its rules.",

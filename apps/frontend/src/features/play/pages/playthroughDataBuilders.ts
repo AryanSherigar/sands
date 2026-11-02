@@ -11,6 +11,7 @@ import {
   Objective,
   PlayerStat,
   PlaythroughData,
+  ScenePortrait,
   StoryCard,
   TurnLogItem,
 } from "../types/play.types";
@@ -25,6 +26,15 @@ import {
 } from "@/shared/types/check.types";
 
 const DEFAULT_OPENING_PREMISE = "Your chronicle begins...";
+
+function readScenePortraits(snapshot: Record<string, unknown> | undefined): ScenePortrait[] {
+  if (!Array.isArray(snapshot?.scene_portraits)) return [];
+  return snapshot.scene_portraits.filter((value): value is ScenePortrait => {
+    if (!value || typeof value !== "object") return false;
+    const item = value as Record<string, unknown>;
+    return typeof item.entity_id === "string" && typeof item.name === "string" && typeof item.avatar_url === "string";
+  }).slice(0, 2);
+}
 
 // NOTE: legacy newbie scenarios store these keys in Scenario.world_data; new
 // stories write documents that the backend renders into the same keys.
@@ -75,6 +85,10 @@ interface CommonPlaythroughFields {
   scenario_id: string;
   scenario_title: string;
   mode: "newbie" | "master" | "strategy";
+  genre_tags: string[];
+  scene_portraits: ScenePortrait[];
+  fantasy_mechanics?: Record<string, unknown>;
+  combat_enabled?: boolean;
   initial_mood?: ScenarioMood;
   music_tracks?: Partial<Record<ScenarioMood, string | null>>;
   tier_tracks?: Record<string, string>;
@@ -148,6 +162,20 @@ function readEnabledTools(snapshot: Record<string, unknown> | undefined): string
   return pinned.filter((tool): tool is string => typeof tool === "string");
 }
 
+function readGenreTags(snapshot: Record<string, unknown> | undefined): string[] {
+  const tags = snapshot?.genre_tags;
+  return Array.isArray(tags) && tags.every((tag) => typeof tag === "string")
+    ? tags
+    : [];
+}
+
+function readFantasyMechanics(snapshot: Record<string, unknown> | undefined): Record<string, unknown> | undefined {
+  const value = snapshot?.fantasy_mechanics;
+  if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;
+  const config = value as Record<string, unknown>;
+  return config.version === 1 && config.profile === "zegaris" ? config : undefined;
+}
+
 const MAX_DUTIES = 4;
 
 function readDuties(snapshot: Record<string, unknown> | undefined): string[] {
@@ -171,11 +199,11 @@ function buildCommonFields(
   const canAct = computeCanAct(
     serverPlaythrough.participants,
     serverPlaythrough.participant_id,
-    serverPlaythrough.turn_count,
+    serverPlaythrough.narrative_turn_count ?? serverPlaythrough.turn_count,
   );
   const nextActorLabel = computeNextActorLabel(
     serverPlaythrough.participants,
-    serverPlaythrough.turn_count,
+    serverPlaythrough.narrative_turn_count ?? serverPlaythrough.turn_count,
   );
   const narrationFont =
     (serverPlaythrough.scenario_snapshot?.narration_font as string | null) ??
@@ -192,6 +220,10 @@ function buildCommonFields(
     scenario_id: serverPlaythrough.scenario_id,
     scenario_title: serverPlaythrough.scenario_title,
     mode,
+    genre_tags: readGenreTags(serverPlaythrough.scenario_snapshot),
+    scene_portraits: readScenePortraits(serverPlaythrough.scenario_snapshot),
+    fantasy_mechanics: readFantasyMechanics(serverPlaythrough.scenario_snapshot),
+    combat_enabled: serverPlaythrough.scenario_snapshot?.combat_enabled === true,
     initial_mood: initialMood,
     music_tracks: musicTracks,
     tier_tracks: tierTracks,

@@ -45,6 +45,40 @@ describe("buildPendingEventPackage", () => {
     expect(pkg?.queuedChoiceId).toBe("ease_taxes");
     expect(pkg?.queuedCommandId).toBe("cmd-3");
   });
+
+  it("uses muse narrative when present", () => {
+    const event = makePendingEvent({
+      narrative: {
+        body_prose: "A sudden blight has struck the southern orchards.",
+        cause_quote: "The fruit rots upon the bough, your Grace.",
+        character_name: "Master Corvus",
+        character_title: "Chief Arborist",
+        disposition: "Despairing",
+      },
+    });
+    const pkg = buildPendingEventPackage(worldWith([event]), "event_1");
+    expect(pkg?.bodyProse).toBe("A sudden blight has struck the southern orchards.");
+    expect(pkg?.causeQuote).toBe("The fruit rots upon the bough, your Grace.");
+    expect(pkg?.character).toEqual({
+      name: "Master Corvus",
+      title: "Chief Arborist",
+      disposition: "Despairing",
+    });
+  });
+
+  it("falls back to deterministic template when narrative is absent", () => {
+    const eventWithNull = makePendingEvent({ narrative: null });
+    const pkgNull = buildPendingEventPackage(worldWith([eventWithNull]), "event_1");
+    expect(pkgNull?.bodyProse).toContain("Ashford Vale");
+    expect(pkgNull?.character.name).toBe("Ashford Vale");
+    expect(pkgNull?.character.title).toBe("Provincial petitioners");
+
+    const eventWithUndefined = makePendingEvent({ narrative: undefined });
+    const pkgUndefined = buildPendingEventPackage(worldWith([eventWithUndefined]), "event_1");
+    expect(pkgUndefined?.bodyProse).toContain("Ashford Vale");
+    expect(pkgUndefined?.character.name).toBe("Ashford Vale");
+    expect(pkgUndefined?.character.title).toBe("Provincial petitioners");
+  });
 });
 
 describe("buildPendingEventPackage for an uprising", () => {

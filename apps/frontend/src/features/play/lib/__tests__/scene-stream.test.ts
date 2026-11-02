@@ -39,6 +39,27 @@ describe("startSceneMessage", () => {
     expect(body).toEqual({ text: "Hello" });
   });
 
+  it("posts a letter action with its kind and the current draft", () => {
+    const callbacks = { onNarration: vi.fn(), onDone: vi.fn(), onFailure: vi.fn() };
+    startSceneMessage("scene-1", "Make it firmer", callbacks, {
+      kind: "scribe",
+      currentDraft: "Dear Mira",
+    });
+    const [, body] = sseMock.create.mock.calls[0];
+    expect(body).toEqual({
+      text: "Make it firmer",
+      kind: "scribe",
+      current_draft: "Dear Mira",
+    });
+  });
+
+  it("posts an open action with no text", () => {
+    const callbacks = { onNarration: vi.fn(), onDone: vi.fn(), onFailure: vi.fn() };
+    startSceneMessage("scene-1", "", callbacks, { kind: "open" });
+    const [, body] = sseMock.create.mock.calls[0];
+    expect(body).toEqual({ text: "", kind: "open" });
+  });
+
   it("forwards narration chunks and finishes once on done", () => {
     const callbacks = start();
     sseMock.handlers?.onEvent("narration", "Eight ");
@@ -70,5 +91,34 @@ describe("startSceneMessage", () => {
     const callbacks = start();
     sseMock.handlers?.onError?.(new Error("boom"));
     expect(callbacks.onFailure.mock.calls[0][0]).toMatch(/connection lost/i);
+  });
+});
+
+describe("startSceneMessage judgments", () => {
+  beforeEach(() => {
+    sseMock.create.mockClear();
+  });
+
+  it("posts a pronouncement with its verdict, nuance and decree text", () => {
+    const callbacks = { onNarration: vi.fn(), onDone: vi.fn(), onFailure: vi.fn() };
+    startSceneMessage("scene-1", "Begone.", callbacks, {
+      kind: "pronounce",
+      verdict: "exile",
+      nuance: "beyond_border",
+    });
+    const [, body] = sseMock.create.mock.calls[0];
+    expect(body).toEqual({
+      text: "Begone.",
+      kind: "pronounce",
+      verdict: "exile",
+      nuance: "beyond_border",
+    });
+  });
+
+  it("omits the nuance when none is chosen", () => {
+    const callbacks = { onNarration: vi.fn(), onDone: vi.fn(), onFailure: vi.fn() };
+    startSceneMessage("scene-1", "", callbacks, { kind: "pronounce", verdict: "imprison" });
+    const [, body] = sseMock.create.mock.calls[0];
+    expect(body).toEqual({ text: "", kind: "pronounce", verdict: "imprison" });
   });
 });

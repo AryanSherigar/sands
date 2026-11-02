@@ -1,0 +1,29 @@
+# Cloudflare Worker that fronts the Cloud Run backends for the closed alpha.
+# Deployed with `npx wrangler deploy`: see docs/arch/infra/alpha-deploy-runbook.md.
+name = "sands-edge-proxy"
+main = "src/index.ts"
+compatibility_date = "2026-10-27"
+
+# The Worker is only reachable through the alpha hostname, never through
+# workers.dev or a preview URL, so it stays the single entry to the backends.
+workers_dev = false
+preview_urls = false
+
+routes = [
+  { pattern = "alpha.sands.online/api/*", zone_name = "sands.online" },
+  { pattern = "alpha.sands.online/trs/*", zone_name = "sands.online" },
+]
+
+# Cron triggers run at most once a minute. The relay endpoint is idempotent.
+[triggers]
+crons = ["* * * * *"]
+
+[vars]
+CORE_API_ORIGIN = "https://core-api-754238404077.us-central1.run.app"
+TRS_ORIGIN = "https://turn-resolution-service-754238404077.us-central1.run.app"
+
+# NOTE: set SIMULATION_ORIGIN to the simulation Cloud Run URL before deploying.
+# SIMULATION_ORIGIN = "https://simulation-<project-number>.us-central1.run.app"
+
+# Secrets, set with `wrangler secret put`, never in this file:
+#   INTERNAL_PROXY_TOKEN, INTERNAL_SERVICE_TOKEN

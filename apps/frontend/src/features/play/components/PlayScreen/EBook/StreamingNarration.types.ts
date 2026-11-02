@@ -1,4 +1,5 @@
 export interface StreamingNarrationProps {
+  isFantasy?: boolean;
   chapterNumber: number;
   characterName: string;
   fontClass: string;

@@ -824,6 +824,23 @@ describe("play.store — client_action_id", () => {
     expect(sentActionId()).toBe(first);
   });
 
+  it("retries a fantasy exchange with the same structured payload and id", () => {
+    usePlayStore.getState().submitFantasyAction("rest");
+    const first = capturedBody;
+    expect(first).toMatchObject({ action_kind: "fantasy_action", fantasy_action: { action_id: "rest" } });
+    capturedHandlers!.onError?.(new Error("connection lost"));
+    usePlayStore.getState().retryLastTurn();
+    expect(capturedBody).toEqual(first);
+  });
+
+  it("shows a fantasy exchange refusal without changing the balance", () => {
+    usePlayStore.getState().submitFantasyAction("rest");
+    const error = new Error("You do not have enough coins.");
+    error.name = "FantasyActionRefusedError";
+    capturedHandlers!.onError?.(error);
+    expect(usePlayStore.getState().degraded_message).toBe(error.message);
+  });
+
   it("does not resubmit once the last turn already saved", () => {
     usePlayStore.getState().submitTurn("I open the door.");
     capturedHandlers!.onEvent("done", "");

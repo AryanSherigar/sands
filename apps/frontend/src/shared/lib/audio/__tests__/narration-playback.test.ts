@@ -25,6 +25,21 @@ describe("NarrationPlaybackController", () => {
     expect(controller.getPlayingTurnId()).toBeNull();
   });
 
+  it("uses actual timed speaker segments and clears them on stop", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(JSON.stringify({ segments: [{ speaker: "Asha", start: 1, end: 2 }] }), { status: 200, headers: { "content-type": "application/json" } }));
+    const listener = vi.fn();
+    controller.onSpeakerChange(listener);
+    controller.play("turn-1", "https://example.com/turn.wav", true);
+    await vi.waitFor(() => expect(fetchSpy).toHaveBeenCalledWith("https://example.com/turn.wav.speakers.json", expect.anything()));
+    const audio = (controller as unknown as { audio: HTMLAudioElement }).audio;
+    await vi.waitFor(() => { audio.currentTime = 1.5; audio.ontimeupdate?.(new Event("timeupdate")); expect(listener).toHaveBeenCalledWith("Asha"); });
+    audio.currentTime = 2;
+    audio.ontimeupdate?.(new Event("timeupdate"));
+    expect(listener).toHaveBeenLastCalledWith(null);
+    controller.stop();
+    fetchSpy.mockRestore();
+  });
+
   it("plays a turn's audio and tracks it as the playing turn", () => {
     controller.play("turn-1", "https://example.com/turn-1.wav");
 

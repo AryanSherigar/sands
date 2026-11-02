@@ -24,6 +24,7 @@ import { shouldApplyServerPlaythrough } from "./shouldApplyServerPlaythrough";
 export function PlayPage() {
   const { id } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
+  const isFantasy = usePlayStore((s) => s.playthrough?.mode !== "strategy" && s.playthrough?.genre_tags?.[0] === "High Fantasy");
   const setPlaythrough = usePlayStore((s) => s.setPlaythrough);
   const queryClient = useQueryClient();
 
@@ -117,11 +118,11 @@ export function PlayPage() {
 
   return (
     <>
-      <PlayScreen />
-      <MapViewer
+      <PlayScreen scenarioSnapshot={serverPlaythrough?.scenario_snapshot} state={serverPlaythrough?.state} />
+      {!isFantasy && <MapViewer
         scenarioSnapshot={serverPlaythrough?.scenario_snapshot}
         state={serverPlaythrough?.state}
-      />
+      />}
       <MinigameOverlay />
       <CheckPromptOverlay />
       <RuleCheckOverlay />

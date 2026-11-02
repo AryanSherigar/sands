@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { deriveTurnReport } from "../turnReportAdapter";
 import { DEFAULT_PREVIEW_WORLD } from "../../components/StrategyPlayScreen/defaultPreviewWorld";
-import type { BattleView, CampaignWorldView } from "../../types/simulation.types";
+import type { BattleSummary, CampaignWorldView } from "../../types/simulation.types";
 
 describe("deriveTurnReport", () => {
   const regionNames: Record<string, string> = {
@@ -54,7 +54,7 @@ describe("deriveTurnReport", () => {
   });
 
   it("maps battles into structured BattleReportItem entries with tactical skirmish rounds", () => {
-    const battle: BattleView = {
+    const battle: BattleSummary = {
       id: "b-greywater",
       region_id: "greywater_ford",
       status: "resolved",
@@ -102,5 +102,51 @@ describe("deriveTurnReport", () => {
 
     const warItem = diplomacyItems.find((i) => i.badge?.tone === "danger");
     expect(warItem).toBeDefined();
+  });
+
+  it("does not inject arbitrary minimum values when data is zeroed or empty", () => {
+    const zeroedWorld: CampaignWorldView = {
+      ...DEFAULT_PREVIEW_WORLD,
+      regions: [],
+      armies: [],
+    };
+
+    const report = deriveTurnReport(null, zeroedWorld, regionNames);
+    const taxLine = report.economyLines.find((l) => l.category === "tax");
+    const upkeepLine = report.economyLines.find((l) => l.category === "upkeep");
+
+    expect(taxLine?.amount).toBe(0);
+    expect(upkeepLine?.amount).toBe(0);
+  });
+
+  it("surfaces court rage rumors and war mobilization dispatches", () => {
+    const world: CampaignWorldView = {
+      ...DEFAULT_PREVIEW_WORLD,
+      mobilization: { turns_left: 3 },
+      rumors: [
+        {
+          about_faction_id: "fac_iron_covenant",
+          topic: "rage",
+          band: "high",
+          line_key: "rumor_rage_high",
+          turn: 2,
+        },
+      ],
+    };
+
+    const report = deriveTurnReport(null, world, regionNames);
+    const mobilizationItem = report.items.find(
+      (i) => i.id === "dispatch-mobilization",
+    );
+    expect(mobilizationItem).toBeDefined();
+    expect(mobilizationItem?.badge?.label).toBe("Mobilized");
+    expect(mobilizationItem?.description).toContain("3 seasons remaining");
+
+    const rageItem = report.items.find(
+      (i) => i.id === "dispatch-rumor-rage-fac_iron_covenant-2",
+    );
+    expect(rageItem).toBeDefined();
+    expect(rageItem?.badge?.label).toBe("Outraged");
+    expect(rageItem?.title).toContain("Court Outrage");
   });
 });

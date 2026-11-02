@@ -103,11 +103,21 @@ export interface StoryCard {
   content: string;
 }
 
+export interface ScenePortrait {
+  entity_id: string;
+  name: string;
+  avatar_url: string;
+}
+
 export interface PlaythroughData {
   playthrough_id: string;
   scenario_id: string;
   scenario_title: string;
   mode: "newbie" | "master" | "strategy";
+  genre_tags?: string[];
+  scene_portraits?: ScenePortrait[];
+  fantasy_mechanics?: Record<string, unknown>;
+  combat_enabled?: boolean;
   initial_mood?: ScenarioMood;
   // Per-scenario mood → track URL, pinned into scenario_snapshot at
   // playthrough creation (ADR-8). Always a real, playable URL for every

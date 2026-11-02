@@ -39,16 +39,37 @@ const createHandlers = (callbacks: SceneMessageCallbacks): SSEHandlers => {
   };
 };
 
+export type SceneMessageKind = "message" | "open" | "scribe" | "seal" | "pronounce";
+
+export interface SceneMessageOptions {
+  kind?: SceneMessageKind;
+  currentDraft?: string;
+  verdict?: string;
+  nuance?: string;
+}
+
+const buildMessageBody = (
+  text: string,
+  options: SceneMessageOptions,
+): Record<string, string> => ({
+  text,
+  ...(options.kind ? { kind: options.kind } : {}),
+  ...(options.currentDraft !== undefined ? { current_draft: options.currentDraft } : {}),
+  ...(options.verdict ? { verdict: options.verdict } : {}),
+  ...(options.nuance ? { nuance: options.nuance } : {}),
+});
+
 export const startSceneMessage = (
   sceneId: string,
   text: string,
   callbacks: SceneMessageCallbacks,
+  options: SceneMessageOptions = {},
 ): (() => void) => {
   const requestId = generateRequestId();
   setCurrentRequestId(requestId);
   return createPostSSEConnection(
     `${TRS_BASE_URL}/v1/scenes/${sceneId}/messages`,
-    { text },
+    buildMessageBody(text, options),
     useAuthStore.getState().accessToken,
     createHandlers(callbacks),
     requestId,

@@ -34,12 +34,13 @@ function PrologueFooter({ onStartAction }: { onStartAction: () => void }) {
 export function EBookPrologueCard({
   premise,
   onStartAction,
+  isFantasy = false,
 }: EBookPrologueCardProps) {
   const theme = usePlayStore((s) => s.ebook_theme);
   const scenarioFont = usePlayStore((s) => s.playthrough?.narration_font);
   const readerFontOverride = usePlayStore((s) => s.reader_font_override);
   const readerFontSize = usePlayStore((s) => s.reader_font_size);
-  const activeFont = resolveNarrationFont(readerFontOverride ?? scenarioFont);
+  const activeFont = resolveNarrationFont(readerFontOverride ?? scenarioFont ?? (isFantasy ? "eb-garamond" : undefined));
   const isSepia = theme === "antique-sepia";
 
   const cardStyle = isSepia
@@ -52,7 +53,7 @@ export function EBookPrologueCard({
 
   return (
     <article
-      className={`p-6 md:p-8 rounded-2xl border shadow-xs my-6 transition-colors ${cardStyle}`}
+      className={isFantasy ? "fantasy-prologue" : `p-6 md:p-8 rounded-2xl border shadow-xs my-6 transition-colors ${cardStyle}`}
     >
       <PrologueHeader bannerStyle={bannerStyle} />
       <p

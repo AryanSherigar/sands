@@ -10,7 +10,7 @@ import type {
   TurnReportQuickStats,
 } from "../types/turnReport.types";
 import type {
-  BattleView,
+  BattleSummary,
   CampaignWorldView,
   LoanState,
   RegionView,
@@ -23,10 +23,7 @@ const TAX_RATE_MULTIPLIERS: Record<string, number> = {
   high: 1.25,
 };
 
-const DEFAULT_REGION_WEALTH = 30;
-const MIN_TAX_INCOME = 10;
 const ARMY_BASE_UPKEEP = 40;
-const MIN_ARMY_UPKEEP = 20;
 const HIGH_UNREST_THRESHOLD = 30;
 const VICTORY_WAR_SCORE = 15;
 const MARGINAL_WAR_SCORE = 8;
@@ -132,17 +129,17 @@ function calculateTaxIncome(world: CampaignWorldView): number {
       region.detail?.owner_id === world.my_faction.id,
   );
   const totalWealth = owned.reduce(
-    (sum, region) => sum + (region.detail?.wealth ?? DEFAULT_REGION_WEALTH),
+    (sum, region) => sum + (region.detail?.wealth ?? 0),
     0,
   );
-  return Math.max(MIN_TAX_INCOME, Math.round(totalWealth * rateMultiplier));
+  return Math.round(totalWealth * rateMultiplier);
 }
 
 function calculateArmyUpkeep(world: CampaignWorldView): number {
   const ownArmies = world.armies.filter(
     (army) => army.owner_id === world.my_faction.id,
   );
-  return Math.max(MIN_ARMY_UPKEEP, ownArmies.length * ARMY_BASE_UPKEEP);
+  return ownArmies.length * ARMY_BASE_UPKEEP;
 }
 
 function buildLoanLines(loans: LoanState[]): EconomyLedgerLine[] {
@@ -159,7 +156,7 @@ export function buildEconomyLines(
 ): EconomyLedgerLine[] {
   const taxIncome = calculateTaxIncome(next);
   const armyUpkeep = calculateArmyUpkeep(next);
-  const taxRate = next.my_faction.tax_rate;
+  const taxRate = next.my_faction.tax_rate ?? "normal";
 
   return [
     {
@@ -170,7 +167,7 @@ export function buildEconomyLines(
     },
     {
       label: "Military Upkeep",
-      amount: -armyUpkeep,
+      amount: -armyUpkeep || 0,
       category: "upkeep",
       details: "Standing army provisions and pay",
     },
@@ -179,7 +176,7 @@ export function buildEconomyLines(
 }
 
 function buildSingleBattleReport(
-  battle: BattleView,
+  battle: BattleSummary,
   regionNames: Record<string, string>,
 ): BattleReportItem {
   const regionName = regionNames[battle.region_id] ?? battle.region_id;
@@ -207,7 +204,7 @@ function buildSingleBattleReport(
 }
 
 export function buildBattleReports(
-  battles: BattleView[],
+  battles: BattleSummary[],
   regionNames: Record<string, string>,
 ): BattleReportItem[] {
   return battles.map((battle) =>
@@ -318,6 +315,46 @@ function buildMilitaryDispatches(
   });
 }
 
+function buildMobilizationDispatches(next: CampaignWorldView): ReportItem[] {
+  if (!next.mobilization || next.mobilization.turns_left <= 0) {
+    return [];
+  }
+  const count = next.mobilization.turns_left;
+  const suffix = count > 1 ? "s" : "";
+  return [
+    {
+      id: "dispatch-mobilization",
+      category: "military",
+      title: "Total War Mobilization",
+      description: `The realm remains fully mobilized for war (${count} season${suffix} remaining).`,
+      badge: { label: "Mobilized", tone: "warning" },
+    },
+  ];
+}
+
+function buildRageRumorDispatches(next: CampaignWorldView): ReportItem[] {
+  if (!next.rumors || next.rumors.length === 0) {
+    return [];
+  }
+  return next.rumors
+    .filter((rumor) => rumor.topic === "rage")
+    .map((rumor) => {
+      const rival = next.rivals?.find(
+        (r) => r.faction_id === rumor.about_faction_id,
+      );
+      const name = rival?.name ?? rumor.about_faction_id;
+      const leader = rival?.leader_name ?? name;
+      const intensity = rumor.band.replace(/_/g, " ");
+      return {
+        id: `dispatch-rumor-rage-${rumor.about_faction_id}-${rumor.turn}`,
+        category: "diplomacy",
+        title: `${name} Court Outrage`,
+        description: `Whispers from ${leader}'s court report ${intensity} outrage over diplomatic grievances.`,
+        badge: { label: "Outraged", tone: "danger" },
+      };
+    });
+}
+
 export function buildDispatches(
   prev: CampaignWorldView | null,
   next: CampaignWorldView,
@@ -325,8 +362,14 @@ export function buildDispatches(
   battles: BattleReportItem[] = [],
 ): ReportItem[] {
   const internal = buildInternalDispatches(prev, next, regionNames);
-  const diplomacy = buildDiplomacyDispatches(next);
-  const military = buildMilitaryDispatches(battles);
+  const diplomacy = [
+    ...buildDiplomacyDispatches(next),
+    ...buildRageRumorDispatches(next),
+  ];
+  const military = [
+    ...buildMilitaryDispatches(battles),
+    ...buildMobilizationDispatches(next),
+  ];
   return [...internal, ...diplomacy, ...military];
 }
 

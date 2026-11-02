@@ -1,9 +1,200 @@
 import type { ActiveSituation } from "../types/situation.types";
 import type {
+  AllianceView,
+  CallView,
+  CampaignWorldView,
+  CoalitionView,
+  EndingState,
   EventMemoryView,
+  HostageView,
+  MediationOfferView,
+  MobilizationView,
+  OwnThreatView,
+  PendingBattle,
+  PendingDemandView,
   PendingEventView,
+  SubsidyView,
+  TruceView,
   UprisingView,
+  VassalageView,
 } from "../types/simulation.types";
+import { DEFAULT_PREVIEW_WORLD } from "../components/StrategyPlayScreen/defaultPreviewWorld";
+
+export function makeCampaignWorld(
+  overrides: Partial<CampaignWorldView> = {},
+): CampaignWorldView {
+  return {
+    ...DEFAULT_PREVIEW_WORLD,
+    ...overrides,
+  };
+}
+
+export function makeAlliance(
+  overrides: Partial<AllianceView> = {},
+): AllianceView {
+  return {
+    id: "alliance_1",
+    partner_id: "f-oakhaven",
+    alliance_type: "defensive",
+    ends_turn: 10,
+    is_separate_peace_banned: true,
+    ...overrides,
+  };
+}
+
+export function makeVassalage(
+  overrides: Partial<VassalageView> = {},
+): VassalageView {
+  return {
+    id: "vassalage_1",
+    overlord_id: "f-valenreach",
+    vassal_id: "f-oakhaven",
+    tribute_share_percent: 20,
+    levy_share_percent: 15,
+    is_foreign_policy_controlled: true,
+    has_garrison_rights: true,
+    ends_turn: 20,
+    ...overrides,
+  };
+}
+
+export function makeCoalition(
+  overrides: Partial<CoalitionView> = {},
+): CoalitionView {
+  return {
+    id: "coalition-1",
+    target_id: "f-ironmark",
+    member_ids: ["f-valenreach", "f-oakhaven"],
+    expires_turn: 10,
+    ...overrides,
+  };
+}
+
+export function makeTruce(
+  overrides: Partial<TruceView> = {},
+): TruceView {
+  return {
+    faction_a: "f-valenreach",
+    faction_b: "f-ironmark",
+    tier: "short",
+    expires_turn: 5,
+    is_fragile: false,
+    guarantor_ids: [],
+    ...overrides,
+  };
+}
+
+export function makeHostage(
+  overrides: Partial<HostageView> = {},
+): HostageView {
+  return {
+    id: "hostage_1",
+    giver_id: "f-ironmark",
+    holder_id: "f-valenreach",
+    leader_id: "ldr-brandon",
+    release_turn: 8,
+    is_at_mercy: false,
+    ...overrides,
+  };
+}
+
+export function makeCall(
+  overrides: Partial<CallView> = {},
+): CallView {
+  return {
+    id: "call_1",
+    caller_id: "f-oakhaven",
+    war_id: "war_1",
+    side: "defender",
+    is_defensive: true,
+    deadline_turn: 3,
+    ...overrides,
+  };
+}
+
+export function makePendingDemand(
+  overrides: Partial<PendingDemandView> = {},
+): PendingDemandView {
+  return {
+    id: "demand_1",
+    overlord_id: "f-ironmark",
+    kind: "gold",
+    amount: 50,
+    granted: 0,
+    deadline_turn: 4,
+    ...overrides,
+  };
+}
+
+export function makeOwnThreat(
+  overrides: Partial<OwnThreatView> = {},
+): OwnThreatView {
+  return {
+    band: "elevated",
+    factors: { aggression: 30, border_friction: 15 },
+    ...overrides,
+  };
+}
+
+export function makeMediationOffer(
+  overrides: Partial<MediationOfferView> = {},
+): MediationOfferView {
+  return {
+    id: "med_1",
+    mediator_id: "f-highcrag",
+    war_id: "war_1",
+    expires_turn: 5,
+    ...overrides,
+  };
+}
+
+export function makeSubsidy(
+  overrides: Partial<SubsidyView> = {},
+): SubsidyView {
+  return {
+    id: "sub_1",
+    payer_id: "f-valenreach",
+    receiver_id: "f-oakhaven",
+    war_id: "war_1",
+    amount_per_turn: 25,
+    turns_left: 4,
+    ...overrides,
+  };
+}
+
+export function makeMobilization(
+  overrides: Partial<MobilizationView> = {},
+): MobilizationView {
+  return {
+    turns_left: 3,
+    ...overrides,
+  };
+}
+
+export function makePendingBattle(
+  overrides: Partial<PendingBattle> = {},
+): PendingBattle {
+  return {
+    battle_id: "battle_1",
+    region_id: "reg-dunmere",
+    attacker_faction_id: "f-ironmark",
+    defender_faction_id: "f-valenreach",
+    ...overrides,
+  };
+}
+
+export function makeEndingState(
+  overrides: Partial<EndingState> = {},
+): EndingState {
+  return {
+    ending_id: "ending_1",
+    kind: "victory",
+    turn: 10,
+    grade: "triumph",
+    inputs: { score: 100 },
+    ...overrides,
+  };
+}
 
 export function makePendingEvent(overrides: Partial<PendingEventView> = {}): PendingEventView {
   return {

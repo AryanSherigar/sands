@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
+import type { ReactNode } from "react";
 import { MasterEntity } from "../../../types/play.types";
 import { CharacterDrawerProps, CharacterDrawerTab } from "./ebook.types";
 import { useEBookThemeTokens } from "./ebookTheme";
+import { IconAlertTriangle, IconCompass, IconTrophy } from "@tabler/icons-react";
 
 const FACTION_ENTITY_TYPES = new Set(["faction", "organization"]);
 
@@ -44,7 +46,7 @@ export function CharacterDrawer({
       >
         <div className="flex items-center justify-between p-4 border-b border-inherit/20">
           <div className="flex items-center gap-2">
-            <span className="text-base">🧭</span>
+            <IconCompass size={16} aria-hidden="true" />
             <h2 className="font-mono text-xs tracking-wider uppercase font-semibold">
               Character
             </h2>
@@ -221,14 +223,14 @@ function ObjectivesTab({
   return (
     <>
       {wins.length > 0 && (
-        <ObjectiveGroup label="Goals" items={wins} tokens={tokens} icon="🏆" />
+        <ObjectiveGroup label="Goals" items={wins} tokens={tokens} icon={<IconTrophy size={14} aria-hidden="true" />} />
       )}
       {losses.length > 0 && (
         <ObjectiveGroup
           label="Avoid"
           items={losses}
           tokens={tokens}
-          icon="⚠️"
+          icon={<IconAlertTriangle size={14} aria-hidden="true" />}
         />
       )}
     </>
@@ -244,7 +246,7 @@ function ObjectiveGroup({
   label: string;
   items: CharacterDrawerProps["objectives"];
   tokens: ReturnType<typeof useEBookThemeTokens>;
-  icon: string;
+  icon: ReactNode;
 }) {
   return (
     <div className="space-y-2">
@@ -256,7 +258,7 @@ function ObjectiveGroup({
           key={item.outcome_title}
           className={`rounded-lg border px-3 py-2 ${tokens.cardBg}`}
         >
-          <p className="font-bold">
+          <p className="flex items-center gap-1.5 font-bold">
             {icon} {item.outcome_title}
           </p>
           <p className="text-xs opacity-75 mt-1">{item.outcome_text}</p>

@@ -1,18 +1,37 @@
 import { LEVY_INFANTRY_PRESET } from "../constants/strategy.constants";
 import type {
+  AnnexVassalOrder,
+  AppeaseCoalitionOrder,
+  AppeaseOffer,
+  DemandFromVassalOrder,
+  DemandTerm,
+  DiplomaticPlayOrder,
+  MobilizeOrder,
+  SubsidizeOrder,
+  VassalDemandKind,
   AnswerCallOrder,
   AnswerDemandOrder,
   AnswerEventOrder,
   AttackOrder,
+  BesiegeOrder,
   CallNegotiationOrder,
+  CutSubsidyOrder,
   DeclareDefaultOrder,
   DeclareWarOrder,
   DemandReply,
+  DenounceAllianceOrder,
+  DisbandArmyOrder,
+  FabricateClaimOrder,
   HaltArmyOrder,
+  HandlePrisonerOrder,
+  MapScoutOrder,
+  MediateOrder,
   MoveArmyOrder,
   PayLevel,
+  PrisonerAction,
   RaiseArmyOrder,
   RegionView,
+  ReleaseVassalOrder,
   ResolveUprisingOrder,
   SendEnvoyOrder,
   SetPayOrder,
@@ -39,6 +58,19 @@ export function buildAttackOrder(
 ): AttackOrder {
   return {
     kind: "attack",
+    faction_id: factionId,
+    army_id: armyId,
+    target_region_id: targetRegionId,
+  };
+}
+
+export function buildBesiegeOrder(
+  factionId: string,
+  armyId: string,
+  targetRegionId: string,
+): BesiegeOrder {
+  return {
+    kind: "besiege",
     faction_id: factionId,
     army_id: armyId,
     target_region_id: targetRegionId,
@@ -178,4 +210,111 @@ export function buildAnswerDemandOrder(
     demand_id: demandId,
     reply,
   };
+}
+
+export function buildDisbandOrder(factionId: string, armyId: string): DisbandArmyOrder {
+  return { kind: "disband_army", faction_id: factionId, army_id: armyId };
+}
+
+export function buildMapScoutOrder(factionId: string, regionId: string): MapScoutOrder {
+  return { kind: "map_scout", faction_id: factionId, target_region_id: regionId };
+}
+
+export function buildFabricateClaimOrder(
+  factionId: string,
+  targetFactionId: string,
+  regionId: string,
+): FabricateClaimOrder {
+  return {
+    kind: "fabricate_claim",
+    faction_id: factionId,
+    target_faction_id: targetFactionId,
+    region_id: regionId,
+  };
+}
+
+export function buildHandlePrisonerOrder(
+  factionId: string,
+  prisonerId: string,
+  action: PrisonerAction,
+): HandlePrisonerOrder {
+  return { kind: "handle_prisoner", faction_id: factionId, prisoner_id: prisonerId, action };
+}
+
+export function buildMediateOrder(factionId: string, warId: string): MediateOrder {
+  return { kind: "mediate", faction_id: factionId, war_id: warId };
+}
+
+export function buildCutSubsidyOrder(factionId: string, subsidyId: string): CutSubsidyOrder {
+  return { kind: "cut_subsidy", faction_id: factionId, subsidy_id: subsidyId };
+}
+
+export function buildDenounceAllianceOrder(
+  factionId: string,
+  allianceId: string,
+): DenounceAllianceOrder {
+  return { kind: "denounce_alliance", faction_id: factionId, alliance_id: allianceId };
+}
+
+export function buildReleaseVassalOrder(
+  factionId: string,
+  vassalageId: string,
+): ReleaseVassalOrder {
+  return { kind: "release_vassal", faction_id: factionId, vassalage_id: vassalageId };
+}
+
+export function buildAnnexVassalOrder(factionId: string, vassalageId: string): AnnexVassalOrder {
+  return { kind: "annex_vassal", faction_id: factionId, vassalage_id: vassalageId };
+}
+
+export function buildMobilizeOrder(factionId: string): MobilizeOrder {
+  return { kind: "mobilize", faction_id: factionId };
+}
+
+export function buildSubsidizeOrder(
+  factionId: string,
+  targetFactionId: string,
+  warId: string,
+  amountPerTurn: number,
+  turns: number,
+): SubsidizeOrder {
+  return {
+    kind: "subsidize",
+    faction_id: factionId,
+    target_faction_id: targetFactionId,
+    war_id: warId,
+    amount_per_turn: amountPerTurn,
+    turns,
+  };
+}
+
+export function buildAppeaseOrder(
+  factionId: string,
+  memberId: string,
+  offer: AppeaseOffer,
+): AppeaseCoalitionOrder {
+  return { kind: "appease_coalition", faction_id: factionId, member_id: memberId, offer };
+}
+
+export function buildVassalDemandOrder(
+  factionId: string,
+  vassalageId: string,
+  demandKind: VassalDemandKind,
+  amount: number,
+): DemandFromVassalOrder {
+  return {
+    kind: "demand_from_vassal",
+    faction_id: factionId,
+    vassalage_id: vassalageId,
+    demand_kind: demandKind,
+    amount,
+  };
+}
+
+export function buildDemandPlayOrder(
+  factionId: string,
+  targetFactionId: string,
+  demands: DemandTerm[],
+): DiplomaticPlayOrder {
+  return { kind: "diplomatic_play", faction_id: factionId, target_faction_id: targetFactionId, demands };
 }
