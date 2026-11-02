@@ -1,10 +1,12 @@
 from dataclasses import dataclass
 
+from app.engine.diplomacy.prisoner_curve import prisoner_curve
+from app.engine.diplomacy.ransom_verdict import ransom_willingness
 from app.engine.pressure.shocks import shock_total
 from app.engine.pressure.wars import side_score
 from app.engine.pressure.will import compute_will
-from app.models.world_diplomacy import WarState
-from app.models.world_state import WorldState
+from app.models.world_diplomacy import PrisonerKind, PrisonerState, WarState
+from app.models.world_state import CAPTIVITY_RULESET, WorldState
 from strategy_contracts.ids import FactionId
 from strategy_contracts.peace import PeaceTuning
 from strategy_contracts.scenario import StrategyScenario
@@ -18,6 +20,8 @@ from strategy_contracts.terms import (
     TermsCard,
     TributeTerm,
 )
+
+PERCENT_BASE = 100
 
 
 @dataclass(frozen=True)
@@ -72,11 +76,83 @@ def price_term(term: Term, signer_id: FactionId, tuning: PeaceTuning) -> CardPri
     return CardPrice(demand=0, concession=0)
 
 
+def _term_prisoners(
+    world: WorldState, term: ReleasePrisonersTerm
+) -> list[PrisonerState]:
+    wanted = set(term.prisoner_ids)
+    return [item for item in world.prisoners if item.id in wanted]
+
+
+def _release_worth(
+    world: WorldState, scenario: StrategyScenario, held: list[PrisonerState]
+) -> int:
+    tuning = scenario.tuning.peace
+    troops = sum(item.troop_count for item in held)
+    worth = prisoner_curve(
+        troops,
+        tuning.release_troop_ceiling,
+        scenario.tuning.diplomacy.prisoner_score_half_troops,
+    )
+    for item in held:
+        if item.kind is not PrisonerKind.CHARACTER:
+            continue
+        is_ruler = item.character_id == world.factions[item.origin_faction_id].leader_id
+        worth += tuning.release_ruler_value if is_ruler else tuning.release_noble_value
+    return worth
+
+
+def _release_want_percent(
+    world: WorldState, scenario: StrategyScenario, held: list[PrisonerState]
+) -> int:
+    tuning = scenario.tuning.peace
+    wants = [ransom_willingness(world, scenario, item) for item in held]
+    mean = sum(wants) // len(wants)
+    return min(
+        tuning.release_want_max_percent, max(tuning.release_want_min_percent, mean)
+    )
+
+
+def price_release(
+    world: WorldState,
+    scenario: StrategyScenario,
+    term: ReleasePrisonersTerm,
+    signer_id: FactionId,
+) -> CardPrice:
+    """Freed captives are worth what the receiving side wants them back, on a curve that flattens for large numbers."""
+    held = _term_prisoners(world, term)
+    if not held:
+        return CardPrice(demand=0, concession=0)
+    worth = _release_worth(world, scenario, held)
+    value = worth * _release_want_percent(world, scenario, held) // PERCENT_BASE
+    gift = _price_flat(term.holder_id, value, signer_id)
+    tuning = scenario.tuning.peace
+    paid = _price_payment(term.recipient_id, term.ransom_gold, signer_id, tuning)
+    return CardPrice(
+        demand=gift.demand + paid.demand, concession=gift.concession + paid.concession
+    )
+
+
+def is_curved_release(world: WorldState | None, term: Term) -> bool:
+    return (
+        world is not None
+        and world.peace_ruleset >= CAPTIVITY_RULESET
+        and isinstance(term, ReleasePrisonersTerm)
+    )
+
+
 def price_card(
-    scenario: StrategyScenario, card: TermsCard, signer_id: FactionId
+    scenario: StrategyScenario,
+    card: TermsCard,
+    signer_id: FactionId,
+    world: WorldState | None = None,
 ) -> CardPrice:
     tuning = scenario.tuning.peace
-    prices = [price_term(term, signer_id, tuning) for term in card.terms]
+    prices = [
+        price_release(world, scenario, term, signer_id)
+        if world is not None and is_curved_release(world, term)
+        else price_term(term, signer_id, tuning)
+        for term in card.terms
+    ]
     return CardPrice(
         demand=sum(price.demand for price in prices),
         concession=sum(price.concession for price in prices),
@@ -103,7 +179,7 @@ def can_afford(
     signer_id: FactionId,
     war: WarState,
 ) -> bool:
-    demand = price_card(scenario, card, signer_id).demand
+    demand = price_card(scenario, card, signer_id, world).demand
     if demand <= side_score(war, signer_id):
         return True
     return is_will_broken(world, scenario, _other_side(war, signer_id))

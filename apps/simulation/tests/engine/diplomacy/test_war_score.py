@@ -123,21 +123,73 @@ def test_destroyed_army_adds_ten() -> None:
     assert world.wars[0].war_score_attacker == 25
 
 
-def test_prisoners_score_by_fifty_and_fall_when_released() -> None:
-    world = _world_at_war()
+def _hold(world, troops: int, prisoner_id: str = "prisoners_1") -> None:
     world.prisoners.append(
         PrisonerState(
-            id="prisoners_1",
+            id=prisoner_id,
             held_by_id=ATTACKER,
             origin_faction_id=DEFENDER,
             kind=PrisonerKind.TROOPS,
-            troop_count=100,
+            troop_count=troops,
             origin_battle_id="battle_x",
-            troops_by_type={TroopType.INFANTRY: 100},
+            troops_by_type={TroopType.INFANTRY: troops},
         )
     )
+
+
+def _prisoner_score(troops: int) -> int:
+    world = _world_at_war()
+    _hold(world, troops)
+    tally_war_scores(world, SCENARIO)
+    return world.wars[0].war_score_attacker
+
+
+def test_legacy_ruleset_scores_prisoners_by_fifty_and_they_fall_when_released() -> None:
+    world = _world_at_war()
+    world.peace_ruleset = 1
+    _hold(world, 100)
     tally_war_scores(world, SCENARIO)
     assert world.wars[0].war_score_attacker == 2
+
+    world.prisoners = []
+    tally_war_scores(world, SCENARIO)
+
+    assert world.wars[0].war_score_attacker == 0
+
+
+def test_a_handful_of_captives_score_nothing() -> None:
+    assert _prisoner_score(1) == 0
+    assert _prisoner_score(2) == 0
+    assert _prisoner_score(50) == 0
+
+
+def test_a_thousand_captives_matter_and_ten_thousand_matter_more() -> None:
+    thousand = _prisoner_score(1000)
+    ten_thousand = _prisoner_score(10000)
+
+    assert thousand > 0
+    assert ten_thousand > thousand
+
+
+def test_ten_times_the_captives_is_far_less_than_ten_times_the_score() -> None:
+    assert _prisoner_score(10000) < 3 * _prisoner_score(1000)
+
+
+def test_captive_score_never_passes_its_ceiling() -> None:
+    assert _prisoner_score(10_000_000) <= TUNING.prisoner_score_ceiling
+
+
+def test_captive_score_never_falls_as_captives_grow() -> None:
+    scores = [_prisoner_score(count) for count in (0, 10, 100, 500, 1000, 5000, 50000)]
+
+    assert scores == sorted(scores)
+
+
+def test_released_captives_stop_scoring_under_the_curve() -> None:
+    world = _world_at_war()
+    _hold(world, 2000)
+    tally_war_scores(world, SCENARIO)
+    assert world.wars[0].war_score_attacker > 0
 
     world.prisoners = []
     tally_war_scores(world, SCENARIO)

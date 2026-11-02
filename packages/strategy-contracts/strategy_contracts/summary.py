@@ -4,6 +4,7 @@ from uuid import UUID
 from pydantic import Field
 
 from strategy_contracts.base import StrictModel
+from strategy_contracts.chronicler import DEFAULT_CHRONICLER_ID, ChroniclerId
 from strategy_contracts.ids import WholeNumber
 
 MAX_SUMMARY_EVENTS = 100
@@ -27,6 +28,7 @@ class SummaryBriefing(StrictModel):
     summary_id: UUID
     playthrough_id: UUID
     observer_faction_id: str
+    chronicler_id: ChroniclerId = DEFAULT_CHRONICLER_ID
     requested_turn: WholeNumber
     trigger: SummaryTrigger
     facts: list[SummaryFact] = Field(min_length=1, max_length=MAX_SUMMARY_EVENTS)

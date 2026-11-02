@@ -8,6 +8,7 @@ from strategy_contracts.ai import AiTuning
 from strategy_contracts.alliance import AllianceTuning
 from strategy_contracts.base import StrictModel
 from strategy_contracts.battle import BattleTuning
+from strategy_contracts.chronicler import DEFAULT_CHRONICLER_ID, ChroniclerId
 from strategy_contracts.coalition import CoalitionTuning
 from strategy_contracts.conditions import Condition
 from strategy_contracts.diplomacy import DiplomacyTuning
@@ -40,6 +41,7 @@ from strategy_contracts.ids import (
     TraitId,
     WholeNumber,
 )
+from strategy_contracts.judgment import JudgmentTuning
 from strategy_contracts.letters import LetterTuning
 from strategy_contracts.limits import (
     MAX_DISABLED_BUILTIN_EVENTS,
@@ -55,6 +57,7 @@ from strategy_contracts.outrage import OutrageTuning
 from strategy_contracts.overtures import OvertureTuning
 from strategy_contracts.peace import PeaceTuning
 from strategy_contracts.pressure import PressureTuning
+from strategy_contracts.revolt import RevoltTalkTuning
 from strategy_contracts.siege import SiegeTuning
 from strategy_contracts.stances import MAX_CUSTOM_STANCES, StanceDefinition
 from strategy_contracts.succession import (
@@ -94,6 +97,7 @@ HEAVY_ORDER_KINDS = frozenset(
 FREE_ORDER_KINDS = frozenset(
     {
         OrderKind.HALT_ARMY,
+        OrderKind.SET_ARMY_POLICY,
         OrderKind.SUE_PEACE,
         OrderKind.ANSWER_CALL,
         OrderKind.ANSWER_DEMAND,
@@ -348,6 +352,7 @@ class PlayerRulerCustomization(StrictModel):
     trait_ids: list[TraitId] = Field(min_length=2, max_length=3)
     ambition_ids: list[AmbitionId] = Field(min_length=1, max_length=2)
     backstory: str = Field(default="", max_length=MAX_TEXT_CHARS)
+    chronicler_id: ChroniclerId = DEFAULT_CHRONICLER_ID
 
 
 class GovernorSetup(StrictModel):
@@ -702,6 +707,8 @@ class Tuning(StrictModel):
     outrage: OutrageTuning = Field(default_factory=OutrageTuning)
     overtures: OvertureTuning = Field(default_factory=OvertureTuning)
     letters: LetterTuning = Field(default_factory=LetterTuning)
+    judgments: JudgmentTuning = Field(default_factory=JudgmentTuning)
+    revolt_talk: RevoltTalkTuning = Field(default_factory=RevoltTalkTuning)
     agents: AgentTuning = Field(default_factory=AgentTuning)
     ai: AiTuning = Field(default_factory=AiTuning)
     endings: EndingsTuning = Field(default_factory=EndingsTuning)

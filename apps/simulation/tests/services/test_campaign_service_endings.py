@@ -64,7 +64,7 @@ async def test_a_playthrough_without_a_lost_capital_has_no_ending(
     assert view.ending is None
 
 
-async def test_reaching_the_end_date_surfaces_a_graded_ending_with_own_components(
+async def test_reaching_the_end_date_surfaces_a_graded_ending_without_its_scores(
     db_connection: AsyncConnection,
 ) -> None:
     request = initialization()
@@ -80,11 +80,4 @@ async def test_reaching_the_end_date_surfaces_a_graded_ending_with_own_component
     assert view.ending is not None
     assert view.ending.kind is EndingKind.GRADED
     assert view.ending.grade is not None
-    assert set(view.ending.inputs) == {
-        "position",
-        "stability",
-        "treasury",
-        "will",
-        "strain",
-        "score",
-    }
+    assert "inputs" not in view.ending.model_dump(mode="json")

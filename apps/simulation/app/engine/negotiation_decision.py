@@ -14,8 +14,8 @@ from strategy_contracts.scene import (
 from strategy_contracts.scene_exchange import SceneAction, SceneDecision
 from strategy_contracts.scene_validation import validate_outcome_against_package
 from strategy_contracts.terms import (
+    SUBJECT_PROMISE_KINDS,
     NonAggressionTerm,
-    PromiseKind,
     SwornPromiseTerm,
     TermKind,
     TermsCard,
@@ -97,7 +97,7 @@ def _interpret_promise(
     if decision.duration_turns is None:
         return Interpretation(reason=REASON_MISSING_DURATION)
     is_subject_missing = decision.promise_subject_id is None
-    if decision.promise_kind is PromiseKind.NEVER_ALLY_WITH and is_subject_missing:
+    if decision.promise_kind in SUBJECT_PROMISE_KINDS and is_subject_missing:
         return Interpretation(reason=REASON_MISSING_SUBJECT)
     duration = min(decision.duration_turns, _terms_spec(package).max_duration_turns)
     try:

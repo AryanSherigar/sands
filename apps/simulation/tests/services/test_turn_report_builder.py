@@ -207,3 +207,48 @@ def test_an_unrelated_faction_does_not_see_a_siege() -> None:
     events = [siege_started(BESIEGER, TARGET_REGION, [BESIEGER_ARMY])]
 
     assert build_event_lines(events, world, "house_dunwick") == []
+
+
+def test_the_ending_appears_in_the_report_without_its_scores() -> None:
+    world = make_world()
+    ending_event = EventLogEntry(
+        seq=9,
+        turn=29,
+        phase=PhaseName.STORY_CHECK,
+        kind="ending_reached",
+        is_major=True,
+        cause=EventCause(
+            summary_key="endings.default_graded_end_date",
+            subject_ids=["default_graded_end_date"],
+            inputs={"score": 91, "strain": 12},
+        ),
+    )
+    report = build_turn_report(29, [ending_event], [], world, "house_carrow")
+    [line] = report.lines
+    assert line.kind == "ending_reached"
+    assert line.text_key == "endings.default_graded_end_date"
+    assert line.cause.inputs == {}
+    assert "ending_reached" in report.major_event_kinds
+
+
+def test_a_sworn_promise_reaches_both_parties_reports_but_not_a_third_partys() -> None:
+    world = make_world()
+    events = [
+        _event(1, "sworn_promise_made", ["house_carrow", "house_ashford", "c1"]),
+        _event(
+            2,
+            "sworn_promise_broken",
+            ["house_carrow", "house_ashford", "c1"],
+            is_major=True,
+        ),
+    ]
+
+    promisor = build_turn_report(3, events, [], world, "house_carrow")
+    beneficiary = build_turn_report(3, events, [], world, "house_ashford")
+    outsider = build_turn_report(3, events, [], world, "house_dunwick")
+
+    kinds = ["sworn_promise_made", "sworn_promise_broken"]
+    assert [line.kind for line in promisor.lines] == kinds
+    assert [line.kind for line in beneficiary.lines] == kinds
+    assert outsider.lines == []
+    assert promisor.major_event_kinds == ["sworn_promise_broken"]

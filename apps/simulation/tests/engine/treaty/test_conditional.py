@@ -203,3 +203,56 @@ def test_destroyed_party_lapses_a_trigger_quietly() -> None:
 
     assert _scan(world) == []
     assert _of(world, ConditionalTerm)[0].status is CommitmentStatus.EXPIRED
+
+
+def _region_condition(template: ConditionTemplate, faction_id: str, region_id: str):
+    return ConditionalTerm(
+        mode=ConditionalMode.TRIGGER,
+        when=ConditionClause(
+            template=template, faction_id=faction_id, region_id=region_id
+        ),
+        expires_in_turns=EXPIRY,
+        inner=_tribute(),
+    )
+
+
+def test_a_loses_region_trigger_fires_once_the_region_changes_hands() -> None:
+    world = _world()
+    term = _region_condition(ConditionTemplate.LOSES_REGION, PLAYER, "aldgate")
+    _sign(world, term)
+    assert _scan(world) == []
+
+    world.regions["aldgate"].owner_id = WRATHFUL_RIVAL
+    world.factions[PLAYER].treasury = THRESHOLD
+
+    assert "conditional_clause_triggered" in [event.kind for event in _scan(world)]
+    assert _of(world, TributeTerm)[0].status is CommitmentStatus.ACTIVE
+
+
+def test_an_owns_region_trigger_waits_until_the_faction_holds_it() -> None:
+    world = _world()
+    term = _region_condition(ConditionTemplate.OWNS_REGION, WRATHFUL_RIVAL, "aldgate")
+    _sign(world, term)
+    assert _scan(world) == []
+
+    world.regions["aldgate"].owner_id = WRATHFUL_RIVAL
+    world.factions[PLAYER].treasury = THRESHOLD
+
+    assert "conditional_clause_triggered" in [event.kind for event in _scan(world)]
+
+
+def test_a_region_condition_naming_an_unknown_region_is_refused() -> None:
+    world = _world()
+    term = _region_condition(ConditionTemplate.OWNS_REGION, WRATHFUL_RIVAL, "nowhere")
+
+    with pytest.raises(CampaignProgressError) as error:
+        _sign(world, term)
+
+    assert error.value.status_code == 422
+
+
+def test_numeric_conditions_keep_their_hash_shape() -> None:
+    world = _world()
+    _sign(world, _conditional(ConditionalMode.TRIGGER, _tribute()))
+    dumped = _of(world, ConditionalTerm)[0].term.model_dump(mode="json")
+    assert "region_id" not in dumped["when"]

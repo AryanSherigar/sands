@@ -1,10 +1,9 @@
 """Maps domain exceptions to HTTP responses. The only file that does this translation."""
 
 import structlog
+from app.exceptions.base import SimulationServiceError
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
-
-from app.exceptions.base import SimulationServiceError
 
 logger = structlog.get_logger()
 

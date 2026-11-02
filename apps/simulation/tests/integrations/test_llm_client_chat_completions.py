@@ -13,8 +13,15 @@ from app.integrations.llm_client import (
     StanceProviderClient,
 )
 from app.models.battle_intelligence import IntentKind
-from app.models.speech_grading import SpeechBriefing
+from app.models.speech_grading import MoodBriefing, SpeechBriefing
 from app.models.stance import StanceBriefing, StanceMenuItem
+from strategy_contracts.battle_speech import (
+    ArmyMood,
+    CrowdMood,
+    ExhaustionBucket,
+    MoraleBucket,
+    PayBucket,
+)
 from tests.integrations.test_llm_client import sample_briefing
 
 PROVIDER_URL = "https://api.meta.ai/v1/chat/completions"
@@ -82,7 +89,7 @@ def stance_briefing() -> StanceBriefing:
 
 def speech_briefing() -> SpeechBriefing:
     return SpeechBriefing(
-        speech_text="We hold the line.",
+        talks=["We hold the line."],
         ruler_name="Valdren",
         ruler_trait_notes=["Honorable: keeps their word"],
         ruler_ambitions=["Peace"],
@@ -130,6 +137,31 @@ async def test_speech_returns_rubric_scores() -> None:
         "fits_ruler_character",
         "promises_made",
     ]
+
+
+async def test_speech_mood_uses_chat_envelope_and_returns_a_menu_reaction() -> None:
+    seen: list[httpx.Request] = []
+    answer = {"mood": "protest", "intensity": 3}
+    client = SpeechProviderClient(recording_transport(completion(answer), seen))
+    briefing = MoodBriefing(
+        talks=["Pay is coming."],
+        ruler_name="Valdren",
+        ruler_trait_notes=[],
+        army_mood=ArmyMood(
+            morale=MoraleBucket.BROKEN,
+            exhaustion=ExhaustionBucket.SPENT,
+            pay=PayBucket.UNPAID,
+        ),
+    )
+
+    result = await client.react_to_talk(chat_settings(), briefing)
+
+    body = json.loads(seen[0].content)
+    assert (result.mood, result.intensity) == (CrowdMood.PROTEST, 3)
+    assert [message["role"] for message in body["messages"]] == ["system", "user"]
+    schema = body["response_format"]["json_schema"]["schema"]
+    assert schema["properties"]["mood"]["enum"] == [item.value for item in CrowdMood]
+    assert json.loads(body["messages"][1]["content"])["talks"] == ["Pay is coming."]
 
 
 async def test_stance_returns_a_menu_option() -> None:

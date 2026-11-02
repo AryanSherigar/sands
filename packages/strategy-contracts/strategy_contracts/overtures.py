@@ -13,6 +13,8 @@ DEFAULT_IGNORE_OPINION_PENALTY = 5
 DEFAULT_IGNORE_OUTRAGE_LEVELS = 1
 DEFAULT_TALKS_MIN_WAR_TURNS = 3
 DEFAULT_INTENSIFY_GROUND_STRENGTH = 10
+DEFAULT_OATH_OFFER_MIN_OPINION = 20
+DEFAULT_OATH_OFFER_DURATION_TURNS = 12
 
 
 class OvertureKind(StrEnum):
@@ -20,6 +22,9 @@ class OvertureKind(StrEnum):
     DEMAND = "demand"
     CALL_FOR_TALKS = "call_for_talks"
     HEIR_RENEWAL = "heir_renewal"
+    RANSOM_DEMAND = "ransom_demand"
+    RANSOM_COUNTER = "ransom_counter"
+    OATH_OFFER = "oath_offer"
 
 
 class OvertureTuning(StrictModel):
@@ -31,3 +36,7 @@ class OvertureTuning(StrictModel):
     ignore_outrage_levels: WholeNumber = DEFAULT_IGNORE_OUTRAGE_LEVELS
     talks_min_war_turns: WholeNumber = DEFAULT_TALKS_MIN_WAR_TURNS
     intensify_ground_strength: WholeNumber = DEFAULT_INTENSIFY_GROUND_STRENGTH
+    oath_offer_min_opinion: WholeNumber = DEFAULT_OATH_OFFER_MIN_OPINION
+    oath_offer_duration_turns: int = Field(
+        default=DEFAULT_OATH_OFFER_DURATION_TURNS, ge=1
+    )

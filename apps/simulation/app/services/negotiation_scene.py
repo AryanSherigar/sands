@@ -143,7 +143,19 @@ def _realm_id_facts(
     return [
         SituationFact(label="Your realm id", value=counterpart_id),
         SituationFact(label="The player's realm id", value=player_id),
+        _table_regions_fact(world, player_id, counterpart_id),
     ]
+
+
+def _table_regions_fact(
+    world: WorldState, player_id: str, counterpart_id: str
+) -> SituationFact:
+    region_ids = sorted(
+        region_id
+        for region_id, region in world.regions.items()
+        if region.owner_id in (player_id, counterpart_id)
+    )
+    return SituationFact(label="Regions at the table", value=", ".join(region_ids))
 
 
 def _other_realms_fact(
@@ -227,6 +239,13 @@ def _negotiation_term_kinds(configured: list[TermKind]) -> list[TermKind]:
     return [*configured, TermKind.SWORN_PROMISE]
 
 
+def _peace_term_kinds(world: WorldState) -> list[TermKind]:
+    kinds = list(PEACE_TERM_KINDS)
+    if world.treaty_ruleset >= 1:
+        kinds.append(TermKind.CONDITIONAL)
+    return kinds
+
+
 def build_peace_package(
     world: WorldState,
     scenario: StrategyScenario,
@@ -267,7 +286,7 @@ def build_peace_package(
         ),
         allowed_outcomes=[
             TermsCardSpec(
-                allowed_term_kinds=list(PEACE_TERM_KINDS),
+                allowed_term_kinds=_peace_term_kinds(world),
                 price_by_term_kind={},
                 war_score_available=side_score(war, player) if war else 0,
             )

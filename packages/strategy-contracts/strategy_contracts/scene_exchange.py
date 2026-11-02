@@ -32,6 +32,7 @@ class SceneDecision(StrictModel):
     action: SceneAction
     duration_turns: int | None = Field(default=None, ge=1)
     option_id: EntityId | None = None
+    nuance_id: EntityId | None = None
     peace_tier: PeaceTier | None = None
     is_white_peace: bool = False
     guarantor_ids: list[FactionId] = Field(default_factory=list)
@@ -73,6 +74,7 @@ class SceneExchangeView(StrictModel):
     leader_text: str
     proposal: TermsCard | None = None
     verdict: Verdict | None = None
+    clause_bands: list[WeightBand] = Field(default_factory=list)
 
 
 class InternalScenePackage(StrictModel):

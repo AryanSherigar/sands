@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from uuid import NAMESPACE_URL, uuid5
 
+from app.engine.battles.speech import apply_speech_step
 from app.engine.campaign import advance_campaign, begin_campaign, resume_campaign
 from app.engine.commands.application import accept_command
 from app.engine.commands.cancellation import cancel_command
@@ -18,6 +19,8 @@ from app.models.replay import (
     ResolveNegotiationReplayInput,
     ResolveSceneReplayInput,
     ResumeEconomyReplayInput,
+    SkipBattleSpeechReplayInput,
+    SubmitSpeechTalkReplayInput,
     ordered_replay_steps,
 )
 from app.models.stance import StanceChoice
@@ -92,6 +95,10 @@ def _apply_step(
             replay_input.scene_id,
             replay_input.outcome,
         )[0]
+    if isinstance(
+        replay_input, SubmitSpeechTalkReplayInput | SkipBattleSpeechReplayInput
+    ):
+        return apply_speech_step(world, replay_input)
     raise ReplayMismatchError(
         step.sequence, "known replay input", "unknown replay input"
     )

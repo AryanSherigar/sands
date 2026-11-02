@@ -17,12 +17,19 @@ def _require_live_faction(world: WorldState, faction_id: str) -> None:
         raise CampaignProgressError("invalid term", "invalid_term", 422)
 
 
+def _require_known_region(world: WorldState, region_id: str | None) -> None:
+    if region_id not in world.regions:
+        raise CampaignProgressError("invalid term", "invalid_term", 422)
+
+
 def _require_valid_parties(world: WorldState, term: SwornPromiseTerm) -> None:
     _require_live_faction(world, term.promisor_id)
     _require_live_faction(world, term.beneficiary_id)
     if term.promise is PromiseKind.NEVER_ALLY_WITH:
         assert term.subject_id is not None
         _require_live_faction(world, term.subject_id)
+    if term.promise is PromiseKind.NEVER_OCCUPY_REGION:
+        _require_known_region(world, term.subject_id)
 
 
 def _is_same_promise(first: SwornPromiseTerm, second: SwornPromiseTerm) -> bool:
@@ -41,6 +48,10 @@ def _has_active_equal(world: WorldState, term: SwornPromiseTerm) -> bool:
         and _is_same_promise(commitment.term, term)
         for commitment in world.commitments
     )
+
+
+def is_promise_in_force(world: WorldState, term: SwornPromiseTerm) -> bool:
+    return _has_active_equal(world, term)
 
 
 def sign_sworn_promise(

@@ -31,7 +31,9 @@ class InternalPhase:
         events: list[EventLogEntry] = []
         tuning = context.scenario.tuning.internal
         is_lifecycle = world.internal_ruleset >= UPRISING_LIFECYCLE_RULESET
-        events.extend(apply_queued_responses(world, tuning))
+        events.extend(
+            apply_queued_responses(world, tuning, context.scenario.tuning.revolt_talk)
+        )
         if is_lifecycle:
             events.extend(end_crushed_uprisings(world, tuning))
         for faction_id in sorted(world.factions):

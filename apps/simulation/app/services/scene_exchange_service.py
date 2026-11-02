@@ -45,7 +45,8 @@ REASON_SCENE_ENDED = "scene_ended"
 REASON_OUT_OF_ORDER = "out_of_order"
 REASON_EXCHANGE_CAP = "exchange_cap"
 MAX_SCENE_FAILURES = 3
-LETTER_BODY_SEQUENCE = 1
+OPENING_SEQUENCE = 1
+OPENING_SCENE_TYPES = (SceneType.LETTER, SceneType.JUDGMENT)
 
 
 def _result(
@@ -158,24 +159,26 @@ class SceneExchangeService:
                 return early
             return await self._record(scene, exchanges, submission, acting_user_id)
 
-    async def store_letter_body(
+    async def store_opening_text(
         self, scene_id: UUID, acting_user_id: UUID, text: str
     ) -> SceneExchangeResult:
-        """Record the incoming letter as exchange 1 if none exists; a repeat is ignored."""
+        """Record the scene's opening text as exchange 1 if none exists; a repeat is ignored."""
         async with self._connection.transaction():
             scene = await self._owned_scene(scene_id, acting_user_id)
             if (
-                scene.scene_type is not SceneType.LETTER
+                scene.scene_type not in OPENING_SCENE_TYPES
                 or scene.status in FINAL_STATUSES
             ):
-                raise CampaignProgressError("not an open letter", "invalid_lifecycle")
+                raise CampaignProgressError(
+                    "not an open scene with an opening", "invalid_lifecycle"
+                )
             exchanges = await scene_exchange_repo.list_exchanges(
                 self._connection, scene_id
             )
             if exchanges:
                 return _result(scene, exchanges, SubmissionStatus.DUPLICATE_IGNORED)
             await scene_exchange_repo.insert_exchange(
-                self._connection, scene_id, LETTER_BODY_SEQUENCE, "", text, None
+                self._connection, scene_id, OPENING_SEQUENCE, "", text, None
             )
             exchanges = await scene_exchange_repo.list_exchanges(
                 self._connection, scene_id
@@ -237,6 +240,7 @@ class SceneExchangeService:
             interpretation.proposal,
             validated_citations(scene.package, submission.decision.cited_grudge_ids),
             interpretation.verdict,
+            list(interpretation.bands),
         )
         await scene_repo.reset_failed_attempts(self._connection, scene.scene_id)
         remaining = exchanges_remaining(scene, exchanges) - 1

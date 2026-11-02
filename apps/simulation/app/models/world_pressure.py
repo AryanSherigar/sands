@@ -1,5 +1,5 @@
 from app.models.base import WorldModel
-from pydantic import Field
+from pydantic import Field, SerializerFunctionWrapHandler, model_serializer
 from strategy_contracts.ids import EntityId, FactionId, RegionId, WholeNumber
 from strategy_contracts.pressure import HopeSource, PressureBand, RumorTopic, ShockKind
 
@@ -8,6 +8,13 @@ class ShockRecord(WorldModel):
     war_id: str
     faction_id: FactionId
     kind: ShockKind
+    turn: WholeNumber
+
+
+class MercyRecord(WorldModel):
+    war_id: str
+    faction_id: FactionId
+    amount: int
     turn: WholeNumber
 
 
@@ -44,10 +51,20 @@ class PressureState(WorldModel):
     humiliation: dict[FactionId, WholeNumber] = Field(default_factory=dict)
     devastation: dict[RegionId, WholeNumber] = Field(default_factory=dict)
     shocks: list[ShockRecord] = Field(default_factory=list)
+    mercies: list[MercyRecord] = Field(default_factory=list)
     mediation_offers: list[MediationOffer] = Field(default_factory=list)
     subsidies: list[SubsidyState] = Field(default_factory=list)
     rumors: list[RumorState] = Field(default_factory=list)
     last_bands: dict[FactionId, str] = Field(default_factory=dict)
+
+    @model_serializer(mode="wrap")
+    def omit_empty_mercies(
+        self, handler: SerializerFunctionWrapHandler
+    ) -> dict[str, object]:
+        document = handler(self)
+        if not document.get("mercies"):
+            document.pop("mercies", None)
+        return document
 
 
 class StrainReading(WorldModel):

@@ -24,6 +24,8 @@ def command_cost(
 ) -> int:
     if command.kind in FREE_BATTLE_COMMANDS:
         return 0
+    if command.kind == "convene_proclamation":
+        return 2
     if command.kind == "resolve_uprising":
         return _uprising_cost(world, scenario)
     if isinstance(command, AnswerEventOrder):

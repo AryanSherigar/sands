@@ -76,7 +76,7 @@ def evaluate_card(
     """Net value the counterpart weighs for the whole card against its hidden acceptance line."""
     proposer_id, counterpart_id = card.proposer_id, card.counterpart_id
     limits = acceptance_range(world, scenario, proposer_id, counterpart_id)
-    prices = [price_clause(term, proposer_id, scenario) for term in card.terms]
+    prices = [price_clause(term, proposer_id, scenario, world) for term in card.terms]
     bands = tuple(
         _band_of(price.concession - price.demand, limits.accept_at) for price in prices
     )

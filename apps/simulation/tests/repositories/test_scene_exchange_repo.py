@@ -2,6 +2,7 @@ from uuid import uuid4
 
 from app.repositories import scene_exchange_repo, scene_repo
 from strategy_contracts.terms import NonAggressionTerm, TermsCard
+from strategy_contracts.treaty import Verdict, WeightBand
 
 from tests.repositories.helpers import make_package, seed_playthrough
 
@@ -74,3 +75,34 @@ async def test_cited_grudge_ids_round_trip_and_default_to_empty(db_connection) -
     )
     rows = await scene_exchange_repo.list_exchanges(db_connection, scene_id)
     assert [row.cited_grudge_ids for row in rows] == [[], ["g1", "g3"]]
+
+
+async def test_verdict_round_trips_and_defaults_to_none(db_connection) -> None:
+    scene_id = await _seed_scene(db_connection)
+    await scene_exchange_repo.insert_exchange(
+        db_connection, scene_id, 1, "a", "b", None, verdict=Verdict.HAGGLE
+    )
+    await scene_exchange_repo.insert_exchange(
+        db_connection, scene_id, 2, "c", "d", None
+    )
+
+    rows = await scene_exchange_repo.list_exchanges(db_connection, scene_id)
+
+    assert [row.verdict for row in rows] == [Verdict.HAGGLE, None]
+
+
+async def test_clause_bands_round_trip_in_order_and_default_to_empty(
+    db_connection,
+) -> None:
+    scene_id = await _seed_scene(db_connection)
+    bands = [WeightBand.HEAVY, WeightBand.LIGHT]
+    await scene_exchange_repo.insert_exchange(
+        db_connection, scene_id, 1, "a", "b", PROPOSAL, clause_bands=bands
+    )
+    await scene_exchange_repo.insert_exchange(
+        db_connection, scene_id, 2, "c", "d", None
+    )
+
+    rows = await scene_exchange_repo.list_exchanges(db_connection, scene_id)
+
+    assert [row.clause_bands for row in rows] == [bands, []]

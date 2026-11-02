@@ -2,6 +2,7 @@ from typing import Annotated, Literal
 
 from app.models.base import WorldModel
 from pydantic import Field, model_validator
+from strategy_contracts.battle import ReservePolicy, WithdrawalPolicy
 from strategy_contracts.coalition import AppeaseOffer
 from strategy_contracts.enums import (
     ImprovementKind,
@@ -99,6 +100,16 @@ class SplitArmyOrder(WorldModel):
     faction_id: FactionId
     army_id: ArmyId
     troops: dict[TroopType, WholeNumber]
+
+
+class SetArmyPolicyOrder(WorldModel):
+    """A standing preset applied when this army's next battle begins."""
+
+    kind: Literal["set_army_policy"] = "set_army_policy"
+    faction_id: FactionId
+    army_id: ArmyId
+    withdrawal_policy: WithdrawalPolicy | None = None
+    reserve_policy: ReservePolicy | None = None
 
 
 class SetPayOrder(WorldModel):
@@ -289,6 +300,7 @@ Order = Annotated[
     | DisbandArmyOrder
     | MergeArmiesOrder
     | SplitArmyOrder
+    | SetArmyPolicyOrder
     | SetPayOrder
     | SetTaxRateOrder
     | TakeLoanOrder

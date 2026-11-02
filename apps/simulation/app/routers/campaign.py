@@ -1,8 +1,6 @@
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends
-
 from app.middleware.auth import get_current_user
 from app.models.api_battle import CampaignWorldView
 from app.models.api_commands import EconomyChoiceRequest
@@ -11,6 +9,7 @@ from app.models.battle_progress import MutationResponse, OperationGuard
 from app.services.api_dependencies import get_campaign_service, get_world_view_service
 from app.services.campaign_service import CampaignService
 from app.services.world_view_service import WorldViewService
+from fastapi import APIRouter, Depends
 
 router = APIRouter(prefix="/v1/playthroughs/{playthrough_id}", tags=["campaign"])
 User = Annotated[CurrentUser, Depends(get_current_user)]

@@ -1,5 +1,11 @@
 from app.models.battle_command import AcceptedCommand, CommandStatus, TakeCommandCommand
-from app.models.world_battle import BattleControlMode, BattleState, BattleStatus
+from app.models.world_battle import (
+    BattleControlMode,
+    BattleSpeechState,
+    BattleSpeechStatus,
+    BattleState,
+    BattleStatus,
+)
 from app.models.world_state import WorldState
 
 
@@ -17,6 +23,18 @@ def pending_decisions(world: WorldState) -> list[BattleState]:
     ]
 
 
+def pending_speeches(world: WorldState) -> list[BattleState]:
+    return [
+        battle
+        for battle in world.battles
+        if battle.status != BattleStatus.RESOLVED
+        and not battle.total_exchanges
+        and battle.control_mode == BattleControlMode.PLAYER
+        and battle.speech is not None
+        and battle.speech.status == BattleSpeechStatus.PENDING
+    ]
+
+
 def has_player_control(world: WorldState) -> bool:
     return any(
         battle.status != BattleStatus.RESOLVED
@@ -30,6 +48,8 @@ def apply_control_choice(world: WorldState, accepted: AcceptedCommand) -> None:
     battle.control_mode = BattleControlMode.DELEGATED
     if isinstance(accepted.command, TakeCommandCommand):
         battle.control_mode = BattleControlMode.PLAYER
+        if world.battle_speech_ruleset and battle.speech is None:
+            battle.speech = BattleSpeechState()
     accepted.status = CommandStatus.APPLIED
     accepted.applied_turn = world.clock.turn
     accepted.applied_wave = world.progress.completed_waves

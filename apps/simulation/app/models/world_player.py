@@ -1,5 +1,6 @@
 from app.models.base import WorldModel
-from pydantic import Field
+from pydantic import Field, SerializerFunctionWrapHandler, model_serializer
+from strategy_contracts.chronicler import DEFAULT_CHRONICLER_ID, ChroniclerId
 from strategy_contracts.ids import AmbitionId, Percent, RegionId, TraitId, WholeNumber
 from strategy_contracts.limits import MAX_NAME_CHARS, MAX_TEXT_CHARS
 
@@ -37,3 +38,13 @@ class PlayerRuler(WorldModel):
     )
     backstory: str = Field(default="", max_length=MAX_TEXT_CHARS)
     stress: Percent = 0
+    chronicler_id: ChroniclerId = DEFAULT_CHRONICLER_ID
+
+    @model_serializer(mode="wrap")
+    def omit_default_chronicler(
+        self, handler: SerializerFunctionWrapHandler
+    ) -> dict[str, object]:
+        document = handler(self)
+        if self.chronicler_id == DEFAULT_CHRONICLER_ID:
+            document.pop("chronicler_id", None)
+        return document

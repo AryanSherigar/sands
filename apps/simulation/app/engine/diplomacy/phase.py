@@ -9,6 +9,7 @@ from app.engine.diplomacy.events import diplomacy_event
 from app.engine.diplomacy.fabrication import start_forgery, tick_forgeries
 from app.engine.diplomacy.grounds import expire_grounds
 from app.engine.diplomacy.mediation import apply_mediation
+from app.engine.diplomacy.npc_captives import act_on_player_captives
 from app.engine.diplomacy.npc_peace import apply_sue_peace
 from app.engine.diplomacy.plays import open_play, resolve_due_plays
 from app.engine.diplomacy.prisoners import execute_held_prisoners, handle_prisoner
@@ -21,6 +22,7 @@ from app.engine.peace.breach import tick_breach
 from app.engine.peace.hostages import release_due_hostages
 from app.engine.peace.truces import expire_truces
 from app.engine.phases import PhaseContext, PhaseResult
+from app.engine.pressure.captivity import is_captivity_active, tick_captivity
 from app.engine.pressure.counters import update_stalemate
 from app.engine.pressure.phase import tick_pressure
 from app.engine.pressure.subsidies import (
@@ -250,6 +252,7 @@ class TimePhase:
             events += tick_pressure(world, context.scenario, context.rng)
         if world.peace_ruleset:
             events += tick_breach(world, context.scenario, context.rng)
+            tick_captivity(world, context.scenario)
         events += tick_coalitions(world, context.scenario)
         events += [
             event.model_copy(update={"phase": PhaseName.TIME})
@@ -259,5 +262,10 @@ class TimePhase:
             event.model_copy(update={"phase": PhaseName.TIME})
             for event in execute_held_prisoners(world, context.scenario)
         ]
+        if is_captivity_active(world):
+            events += [
+                event.model_copy(update={"phase": PhaseName.TIME})
+                for event in act_on_player_captives(world, context.scenario)
+            ]
         events += tick_succession(world, context.scenario, context.rng)
         return PhaseResult(world, events)

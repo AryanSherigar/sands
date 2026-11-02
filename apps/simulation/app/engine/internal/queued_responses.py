@@ -4,13 +4,14 @@ from app.exceptions.base import SimulationServiceError
 from app.models.battle_command import CommandStatus, ResolveUprisingCommand
 from app.models.world_events import EventLogEntry, PhaseName
 from app.models.world_state import WorldState
+from strategy_contracts.revolt import RevoltTalkTuning
 from strategy_contracts.scenario import InternalTuning
 
 FAILURE_REASON_UNAVAILABLE = "command_unavailable"
 
 
 def apply_queued_responses(
-    world: WorldState, tuning: InternalTuning
+    world: WorldState, tuning: InternalTuning, revolt: RevoltTalkTuning
 ) -> list[EventLogEntry]:
     """Answers queued during planning land before this turn's escalation."""
     logged: list[EventLogEntry] = []
@@ -19,7 +20,7 @@ def apply_queued_responses(
         if not isinstance(order, ResolveUprisingCommand):
             continue
         try:
-            logged.append(apply_resolution(world, order, tuning))
+            logged.append(apply_resolution(world, order, tuning, revolt))
         except SimulationServiceError:
             accepted.status = CommandStatus.FAILED
             accepted.failure_reason = FAILURE_REASON_UNAVAILABLE

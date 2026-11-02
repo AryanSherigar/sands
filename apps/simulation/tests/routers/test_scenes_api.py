@@ -303,3 +303,64 @@ async def test_confirming_without_naming_the_card_is_rejected(
     }
     result = await api.post(f"{base}/scenes/{scene_id}/decision", json=body)
     assert result.status_code == 422
+
+
+async def test_a_multi_clause_card_is_priced_proposed_and_signed(
+    api: AsyncClient,
+) -> None:
+    base, opened, scene_id, path, headers = await _scene(api)
+    terms = [
+        {
+            "kind": "non_aggression",
+            "faction_a": "house_carrow",
+            "faction_b": RIVAL,
+            "duration_turns": LONG_PACT_TURNS,
+        },
+        {
+            "kind": "trade_deal",
+            "faction_a": "house_carrow",
+            "faction_b": RIVAL,
+            "duration_turns": LONG_PACT_TURNS,
+        },
+    ]
+    exchange = _exchange(1, "propose_terms") | {
+        "decision": {"action": "propose_terms", "terms": terms}
+    }
+
+    proposed = await api.post(f"{path}/exchanges", json=exchange, headers=headers)
+
+    body = proposed.json()
+    assert [term["kind"] for term in body["pending_proposal"]["terms"]] == [
+        "non_aggression",
+        "trade_deal",
+    ]
+    assert body["verdict"] == "accept"
+    assert body["clause_bands"] and "accept_at" not in str(body)
+    decision = mutation("confirm", opened["world_version"]).model_dump() | {
+        "is_confirmed": True,
+        "proposal_sequence": 1,
+    }
+    done = await api.post(f"{base}/scenes/{scene_id}/decision", json=decision)
+    assert done.status_code == 200
+
+
+async def test_a_card_that_only_bargains_reports_the_haggle_verdict(
+    api: AsyncClient,
+) -> None:
+    base, _, scene_id, path, headers = await _scene(api)
+    terms = [
+        {
+            "kind": "non_aggression",
+            "faction_a": "house_carrow",
+            "faction_b": RIVAL,
+            "duration_turns": 4,
+        }
+    ]
+    exchange = _exchange(1) | {"decision": {"action": "propose_terms", "terms": terms}}
+
+    result = await api.post(f"{path}/exchanges", json=exchange, headers=headers)
+
+    assert result.json()["pending_proposal"] is None
+    assert result.json()["verdict"] in {"haggle", "refuse"}
+    view = await api.get(f"{base}/scenes/{scene_id}")
+    assert view.json()["transcript"][0]["verdict"] == result.json()["verdict"]

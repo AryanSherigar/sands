@@ -21,7 +21,7 @@ def test_ruleset_one_world_carries_peace_fields() -> None:
 
     text = canonical_world_json(world)
 
-    assert '"peace_ruleset":1' in text
+    assert f'"peace_ruleset":{CURRENT_PEACE_RULESET}' in text
     assert '"peace":{' in text
 
 

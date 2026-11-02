@@ -42,9 +42,10 @@ asyncio_default_fixture_loop_scope = "session"
 asyncio_default_test_loop_scope = "session"
 testpaths = ["tests"]
 pythonpath = ["."]
-addopts = "-m \"not headless_long\""
+addopts = "-m \"not headless_long and not live_provider\""
 markers = [
     "headless_long: long multi-seed AI-vs-AI balance runs; opt in with -m headless_long",
+    "live_provider: opt-in provider tests against live Muse; need MUSE_API_KEY and spend tokens from the live budget, run with -m live_provider",
 ]
 
 [tool.importlinter]

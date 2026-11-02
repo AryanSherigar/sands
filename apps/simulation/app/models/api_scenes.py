@@ -4,6 +4,7 @@ from app.models.base import WorldModel
 from app.models.battle_progress import OperationGuard
 from pydantic import Field, model_validator
 from strategy_contracts.ids import EntityId, TraitId, WholeNumber
+from strategy_contracts.judgment import AdvisorStance
 from strategy_contracts.limits import MAX_NAME_CHARS
 from strategy_contracts.scene import (
     GrudgeBand,
@@ -45,6 +46,7 @@ class SceneParticipantView(WorldModel):
     kind: ParticipantKind
     name: str = Field(max_length=MAX_NAME_CHARS)
     trait_ids: list[TraitId] = Field(default_factory=list)
+    stance: AdvisorStance | None = None
 
 
 class VoicedGrudgeView(WorldModel):
@@ -69,3 +71,4 @@ class SceneView(WorldModel):
     pending_proposal_sequence: int | None = None
     outcome: SceneOutcome | None = None
     voiced_grudges: list[VoicedGrudgeView] = Field(default_factory=list)
+    outcome_summary: list[str] = Field(default_factory=list)

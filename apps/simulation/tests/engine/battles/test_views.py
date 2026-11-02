@@ -120,3 +120,29 @@ def test_departed_contingent_has_no_legal_commands() -> None:
     world.battles[0].contingents[ATTACKER].status = ContingentStatus.WITHDRAWN
 
     assert project_battle(world, BATTLE_ID, ATTACKER, scenario).legal_commands == []
+
+
+def test_projection_reports_the_terrain_frontage_limit() -> None:
+    from app.engine.battles.views import project_battle
+
+    world, scenario = private_fixture()
+    view = project_battle(world, BATTLE_ID, ATTACKER, scenario)
+
+    assert view.frontage == scenario.tuning.battle.frontage[view.terrain]
+    assert view.frontage > 0
+
+
+def test_own_contingent_shows_active_and_reserve_but_not_the_opponent_split() -> None:
+    from app.engine.battles.views import project_battle
+
+    world, scenario = private_fixture()
+    own = project_battle(world, BATTLE_ID, ATTACKER, scenario).own_contingent
+    deployment = next(iter(world.battles[0].contingents[ATTACKER].deployments.values()))
+
+    assert own.active == {k: v for k, v in deployment.active.items() if v}
+    assert own.reserve == {k: v for k, v in deployment.reserve.items() if v}
+    assert sum(own.active.values()) + sum(own.reserve.values()) == sum(
+        own.troops.values()
+    )
+    dumped = project_battle(world, BATTLE_ID, ATTACKER, scenario).model_dump_json()
+    assert dumped.count('"active"') == 1

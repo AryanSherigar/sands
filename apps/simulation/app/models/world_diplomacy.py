@@ -202,6 +202,19 @@ class PrisonerState(WorldModel):
     is_legacy_aggregate: bool = False
     origin_battle_id: str | None = None
     troops_by_type: dict[TroopType, WholeNumber] = Field(default_factory=dict)
+    sentence_ends_turn: WholeNumber | None = None
+    held_since_turn: WholeNumber | None = None
+
+    @model_serializer(mode="wrap")
+    def omit_unset_sentence(
+        self, handler: SerializerFunctionWrapHandler
+    ) -> dict[str, object]:
+        document = handler(self)
+        if document.get("sentence_ends_turn") is None:
+            document.pop("sentence_ends_turn", None)
+        if document.get("held_since_turn") is None:
+            document.pop("held_since_turn", None)
+        return document
 
     @model_validator(mode="after")
     def validate_prisoner_kind(self) -> "PrisonerState":

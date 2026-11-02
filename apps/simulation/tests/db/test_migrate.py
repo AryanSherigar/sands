@@ -35,6 +35,8 @@ EXPECTED_TABLES = {
     "stance_requests",
     "art_deliveries",
     "dispatch_deliveries",
+    "event_deliveries",
+    "epilogue_deliveries",
 }
 SELECT_PUBLIC_TABLES = "SELECT tablename FROM pg_tables WHERE schemaname = 'public'"
 SELECT_MIGRATION_ROWS = (
@@ -160,6 +162,11 @@ async def test_real_migrations_create_exactly_the_expected_tables(
         "0010_resolve_scene_replay_kind",
         "0011_dispatch_deliveries",
         "0012_scene_exchange_cited_grudges",
+        "0013_event_deliveries",
+        "0013_scene_exchange_verdict",
+        "0014_epilogue_deliveries",
+        "0015_battle_speech_replay_kinds",
+        "0016_scene_exchange_clause_bands",
     ]
     tables = await _fetch_column(scratch_database_url, SELECT_PUBLIC_TABLES)
     assert set(tables) == EXPECTED_TABLES
@@ -230,6 +237,11 @@ async def test_migration_preserves_existing_playthrough(
         "0010_resolve_scene_replay_kind",
         "0011_dispatch_deliveries",
         "0012_scene_exchange_cited_grudges",
+        "0013_event_deliveries",
+        "0013_scene_exchange_verdict",
+        "0014_epilogue_deliveries",
+        "0015_battle_speech_replay_kinds",
+        "0016_scene_exchange_clause_bands",
     ]
     assert await _fetch_column(
         scratch_database_url, "SELECT scenario_schema_version FROM sim_playthrough"
@@ -258,6 +270,11 @@ async def test_acceptance_migration_backfills_and_advances_sequence(
             "0010_resolve_scene_replay_kind",
             "0011_dispatch_deliveries",
             "0012_scene_exchange_cited_grudges",
+            "0013_event_deliveries",
+            "0013_scene_exchange_verdict",
+            "0014_epilogue_deliveries",
+            "0015_battle_speech_replay_kinds",
+            "0016_scene_exchange_clause_bands",
         ]
         assert await apply_migrations(scratch_database_url) == []
         cursor = await connection.execute(

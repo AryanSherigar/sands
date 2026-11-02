@@ -1,11 +1,12 @@
 from app.engine.battles.state import troop_count
 from app.engine.diplomacy.events import diplomacy_event
+from app.engine.diplomacy.prisoner_curve import prisoner_curve
 from app.engine.pressure.wars import side_of
 from app.models.world_battle import BattleOutcome, BattleState, BattleStatus
 from app.models.world_diplomacy import WarSide, WarState
 from app.models.world_events import EventLogEntry, PhaseName
 from app.models.world_region import RegionState
-from app.models.world_state import WorldState
+from app.models.world_state import CAPTIVITY_RULESET, WorldState
 from strategy_contracts.diplomacy import DiplomacyTuning, ScoreSource
 from strategy_contracts.ids import FactionId
 from strategy_contracts.scenario import StrategyScenario
@@ -105,14 +106,22 @@ def _score_occupations(
         war.scored_region_ids.append(region_id)
 
 
-def _prisoner_points(
-    world: WorldState, holder: FactionId, origin: FactionId, tuning: DiplomacyTuning
-) -> int:
-    held = sum(
+def _held_troops(world: WorldState, holder: FactionId, origin: FactionId) -> int:
+    return sum(
         prisoner.troop_count
         for prisoner in world.prisoners
         if prisoner.held_by_id == holder and prisoner.origin_faction_id == origin
     )
+
+
+def _prisoner_points(
+    world: WorldState, holder: FactionId, origin: FactionId, tuning: DiplomacyTuning
+) -> int:
+    held = _held_troops(world, holder, origin)
+    if world.peace_ruleset >= CAPTIVITY_RULESET:
+        return prisoner_curve(
+            held, tuning.prisoner_score_ceiling, tuning.prisoner_score_half_troops
+        )
     return (
         held
         // tuning.prisoners_per_score_point

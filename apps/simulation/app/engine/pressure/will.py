@@ -1,5 +1,6 @@
 from app.engine.outrage.effects import mobilization_will
 from app.engine.pressure.hope import derive_hope
+from app.engine.pressure.mercy import mercy_total
 from app.engine.pressure.shocks import shock_total
 from app.engine.pressure.wars import side_score, wars_of
 from app.engine.trait_axes import axis_totals
@@ -154,6 +155,9 @@ def compute_will(
     mobilization = mobilization_will(world, scenario, faction_id)
     if mobilization:
         factors["mobilization"] = mobilization
+    mercy = mercy_total(world, scenario, faction_id)
+    if mercy:
+        factors["mercy"] = -mercy
     floor = _trait_floor(world, scenario, faction_id)
     floor += _extinction_floor(world, scenario, faction_id) + factors["hope"]
     floor = min(FULL_PERCENT, max(0, floor - shocks))

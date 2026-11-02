@@ -1,18 +1,23 @@
 from enum import Enum
+from typing import Literal
 from uuid import UUID
 
 from app.models.base import WorldModel
 from app.models.orders import QueuedOrder
 from app.models.world_clock import TurnClock
 from app.models.world_diplomacy import WarSide
-from app.models.world_events import EndingState, PendingBattle
+from app.models.world_events import PendingBattle
 from app.models.world_faction import LoanState
 from app.models.world_internal import UprisingResponse, UprisingState
 from app.models.world_player import PlayerRuler
 from app.models.world_region import OccupationState, RegionState
-from pydantic import Field
+from pydantic import Field, SerializerFunctionWrapHandler, model_serializer
 from strategy_contracts.alliance import AllianceType
+from strategy_contracts.battle import ReservePolicy, WithdrawalPolicy
+from strategy_contracts.condition_templates import ConditionTemplate
 from strategy_contracts.conditions import ConditionScope
+from strategy_contracts.diplomacy import GroundKind
+from strategy_contracts.endings import EndingGrade
 from strategy_contracts.enums import (
     PayLevel,
     RelationStatus,
@@ -23,6 +28,7 @@ from strategy_contracts.enums import (
 from strategy_contracts.events import EffectKind, EventNarrativePayload
 from strategy_contracts.ids import (
     ArmyId,
+    EndingId,
     EntityId,
     EventId,
     FactionId,
@@ -30,11 +36,15 @@ from strategy_contracts.ids import (
     Percent,
     RegionId,
     SignedPercent,
+    TraitId,
     WholeNumber,
 )
 from strategy_contracts.peace import PeaceTier
 from strategy_contracts.pressure import PressureBand, RumorTopic
+from strategy_contracts.revolt import CovenantKind
+from strategy_contracts.scenario import EndingKind
 from strategy_contracts.scene import SceneType
+from strategy_contracts.succession import HealthBand
 from strategy_contracts.summary import SummaryAvailability
 from strategy_contracts.terms import PromiseKind
 from strategy_contracts.vassal import DemandKind
@@ -75,6 +85,9 @@ class ArmyView(WorldModel):
     size_estimate: IntRange | None = None
     troops: dict[TroopType, WholeNumber] | None = None
     commander_name: str | None = None
+    march_route: list[RegionId] | None = None
+    withdrawal_policy: WithdrawalPolicy | None = None
+    reserve_policy: ReservePolicy | None = None
 
 
 class RivalView(WorldModel):
@@ -115,6 +128,36 @@ class SwornPromiseView(WorldModel):
     end_turn: WholeNumber | None = None
 
 
+class CovenantView(WorldModel):
+    covenant_id: str
+    region_id: RegionId
+    covenant: CovenantKind
+    end_turn: WholeNumber
+
+
+class SwornPromiseHistoryView(WorldModel):
+    commitment_id: str
+    promisor_id: FactionId
+    beneficiary_id: FactionId
+    promise: PromiseKind
+    subject_id: EntityId | None = None
+    outcome: Literal["breached", "fulfilled", "expired"]
+    end_turn: WholeNumber | None = None
+
+
+class ConditionalClauseView(WorldModel):
+    commitment_id: str
+    mode: Literal["trigger", "gate"]
+    template: ConditionTemplate
+    condition_faction_id: FactionId
+    condition_value: WholeNumber
+    condition_region_id: RegionId | None = None
+    inner_kind: str
+    party_ids: list[FactionId]
+    state: Literal["pending", "gate_open", "gate_closed"]
+    end_turn: WholeNumber | None = None
+
+
 class SceneRef(WorldModel):
     scene_id: UUID
     scene_type: SceneType
@@ -149,6 +192,25 @@ class EventChoiceView(WorldModel):
     order_cost: int
     effects: list[EffectPreview] = Field(default_factory=list)
     is_affordable: bool
+
+
+class EndingView(WorldModel):
+    ending_id: EndingId
+    kind: EndingKind
+    turn: WholeNumber
+    grade: EndingGrade | None = None
+    name: str | None = None
+
+    @model_serializer(mode="wrap")
+    def omit_ungraded_grade(
+        self, handler: SerializerFunctionWrapHandler
+    ) -> dict[str, object]:
+        document = handler(self)
+        if self.grade is None:
+            document.pop("grade", None)
+        if self.name is None:
+            document.pop("name", None)
+        return document
 
 
 class PendingEventView(WorldModel):
@@ -269,11 +331,29 @@ class HostageView(WorldModel):
     is_at_mercy: bool = False
 
 
+class PrisonerView(WorldModel):
+    id: str
+    name: str
+    title: str
+    origin_faction_id: FactionId
+    ransom_value_gold: WholeNumber
+    sentence_ends_turn: WholeNumber | None = None
+
+
 class WarView(WorldModel):
     id: str
     attacker_id: FactionId
     defender_id: FactionId
     participant_ids: list[FactionId] = Field(default_factory=list)
+    outlook: Literal["leading", "even", "trailing"] = "even"
+    goal_slots: int = 1
+
+
+class GroundView(WorldModel):
+    id: str
+    kind: GroundKind
+    target_faction_id: FactionId
+    region_id: RegionId | None = None
 
 
 class MediationOfferView(WorldModel):
@@ -296,6 +376,32 @@ class MobilizationView(WorldModel):
     turns_left: WholeNumber
 
 
+class HeirView(WorldModel):
+    id: LeaderId
+    name: str
+    age: WholeNumber
+    trait_ids: list[TraitId] = Field(default_factory=list)
+    is_minor: bool = False
+
+
+class SuccessionCrisisView(WorldModel):
+    is_active: bool = False
+    regent_name: str | None = None
+    ends_turn: WholeNumber | None = None
+
+
+class RulerHealthView(WorldModel):
+    age: WholeNumber
+    health_band: HealthBand
+    death_chance_per_mille: WholeNumber
+
+
+class SuccessionView(WorldModel):
+    ruler_health: RulerHealthView | None = None
+    heir: HeirView | None = None
+    crisis: SuccessionCrisisView | None = None
+
+
 class WorldView(WorldModel):
     summary_availability: SummaryAvailability = Field(
         default_factory=SummaryAvailability
@@ -308,6 +414,9 @@ class WorldView(WorldModel):
     rivals: list[RivalView] = Field(default_factory=list)
     pacts: list[PactView] = Field(default_factory=list)
     sworn_promises: list[SwornPromiseView] = Field(default_factory=list)
+    covenants: list[CovenantView] = Field(default_factory=list)
+    sworn_promise_history: list[SwornPromiseHistoryView] = Field(default_factory=list)
+    conditional_clauses: list[ConditionalClauseView] = Field(default_factory=list)
     queued_orders: list[QueuedOrderView] = Field(default_factory=list)
     orders_remaining: int
     pending_events: list[PendingEventView] = Field(default_factory=list)
@@ -318,8 +427,10 @@ class WorldView(WorldModel):
     rumors: list[RumorView] = Field(default_factory=list)
     truces: list[TruceView] = Field(default_factory=list)
     own_hostages: list[HostageView] = Field(default_factory=list)
+    own_prisoners: list[PrisonerView] = Field(default_factory=list)
     open_mediations: list[MediationOfferView] = Field(default_factory=list)
     wars: list[WarView] = Field(default_factory=list)
+    usable_grounds: list[GroundView] = Field(default_factory=list)
     subsidies: list[SubsidyView] = Field(default_factory=list)
     mobilization: MobilizationView | None = None
     alliances: list[AllianceView] = Field(default_factory=list)
@@ -329,4 +440,5 @@ class WorldView(WorldModel):
     own_threat: OwnThreatView | None = None
     pending_demands: list[PendingDemandView] = Field(default_factory=list)
     pending_scene: SceneRef | None = None
-    ending: EndingState | None = None
+    ending: EndingView | None = None
+    succession: SuccessionView | None = None

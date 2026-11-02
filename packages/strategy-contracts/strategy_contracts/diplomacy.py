@@ -69,6 +69,8 @@ class DiplomacyTuning(StrictModel):
         default_factory=_default_score_weights
     )
     prisoners_per_score_point: int = Field(default=50, ge=1)
+    prisoner_score_ceiling: int = Field(default=20, ge=0)
+    prisoner_score_half_troops: int = Field(default=1000, ge=1)
     ground_base_strength: dict[GroundKind, int] = Field(
         default_factory=_default_ground_base_strength
     )

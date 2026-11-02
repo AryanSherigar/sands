@@ -60,7 +60,7 @@ async def _intent_or_none(settings: Settings) -> BattleIntent | None:
 
 
 def _briefing_with_text(text: str) -> SpeechBriefing:
-    return speech_briefing().model_copy(update={"speech_text": text})
+    return speech_briefing().model_copy(update={"talks": [text]})
 
 
 @pytest_asyncio.fixture(scope="module")

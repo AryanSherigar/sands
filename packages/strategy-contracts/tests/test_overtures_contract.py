@@ -7,12 +7,15 @@ def test_defaults_validate() -> None:
     assert OvertureTuning().cooldown_turns == 4
 
 
-def test_overture_kinds_are_the_four_named() -> None:
+def test_overture_kinds_are_the_seven_named() -> None:
     assert {kind.value for kind in OvertureKind} == {
         "peace_offer",
         "demand",
         "call_for_talks",
         "heir_renewal",
+        "ransom_demand",
+        "ransom_counter",
+        "oath_offer",
     }
 
 

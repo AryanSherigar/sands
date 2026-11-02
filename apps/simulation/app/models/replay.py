@@ -8,7 +8,10 @@ from app.models.battle_intelligence import BattleIntent
 from app.models.battle_progress import OperationGuard
 from app.models.stance import StanceChoice
 from pydantic import Field, model_validator
+from strategy_contracts.battle_speech import CrowdReaction
+from strategy_contracts.limits import MAX_TEXT_CHARS
 from strategy_contracts.scene import (
+    BattleSpeechOutcome,
     RefusedDemand,
     SceneOutcome,
     SceneType,
@@ -26,6 +29,8 @@ class ReplayStepKind(str, Enum):
     BEGIN_NEGOTIATION = "begin_negotiation"
     RESOLVE_NEGOTIATION = "resolve_negotiation"
     RESOLVE_SCENE = "resolve_scene"
+    SUBMIT_SPEECH_TALK = "submit_speech_talk"
+    SKIP_BATTLE_SPEECH = "skip_battle_speech"
 
 
 class AcceptCommandReplayInput(WorldModel):
@@ -87,6 +92,27 @@ class ResolveSceneReplayInput(WorldModel):
     outcome: SceneOutcome
 
 
+class SubmitSpeechTalkReplayInput(WorldModel):
+    kind: Literal[ReplayStepKind.SUBMIT_SPEECH_TALK] = ReplayStepKind.SUBMIT_SPEECH_TALK
+    guard: OperationGuard
+    battle_id: str = Field(min_length=1, max_length=128)
+    text: str = Field(min_length=1, max_length=MAX_TEXT_CHARS)
+    reaction: CrowdReaction | None = None
+    outcome: BattleSpeechOutcome | None = None
+
+    @model_validator(mode="after")
+    def validate_exactly_one_answer(self) -> "SubmitSpeechTalkReplayInput":
+        if (self.reaction is None) == (self.outcome is None):
+            raise ValueError("a talk records either a reaction or a final outcome")
+        return self
+
+
+class SkipBattleSpeechReplayInput(WorldModel):
+    kind: Literal[ReplayStepKind.SKIP_BATTLE_SPEECH] = ReplayStepKind.SKIP_BATTLE_SPEECH
+    guard: OperationGuard
+    battle_id: str = Field(min_length=1, max_length=128)
+
+
 ReplayInput = Annotated[
     AcceptCommandReplayInput
     | CancelCommandReplayInput
@@ -95,7 +121,9 @@ ReplayInput = Annotated[
     | ResumeEconomyReplayInput
     | BeginNegotiationReplayInput
     | ResolveNegotiationReplayInput
-    | ResolveSceneReplayInput,
+    | ResolveSceneReplayInput
+    | SubmitSpeechTalkReplayInput
+    | SkipBattleSpeechReplayInput,
     Field(discriminator="kind"),
 ]
 

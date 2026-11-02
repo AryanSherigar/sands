@@ -1,12 +1,17 @@
+from app.engine.diplomacy.war_score import goal_slots
+from app.engine.pressure.wars import side_score
 from app.models.api_world_view import (
     HostageView,
     MediationOfferView,
     TruceView,
     WarView,
 )
+from app.models.world_diplomacy import WarState
 from app.models.world_state import WorldState
+from app.services.peace_brief import STANDING_MARGIN
 from strategy_contracts.ids import FactionId
 from strategy_contracts.peace import PeaceTier
+from strategy_contracts.scenario import StrategyScenario
 
 
 def project_truces(world: WorldState, faction_id: FactionId) -> list[TruceView]:
@@ -26,13 +31,39 @@ def project_truces(world: WorldState, faction_id: FactionId) -> list[TruceView]:
     ]
 
 
-def project_wars(world: WorldState, faction_id: FactionId) -> list[WarView]:
+def _player_edge(war: WarState, faction_id: FactionId) -> int | None:
+    if faction_id not in (war.attacker_id, war.defender_id):
+        return None
+    own = side_score(war, faction_id)
+    total = war.war_score_attacker + war.war_score_defender
+    return own - (total - own)
+
+
+def _outlook(edge: int | None) -> str:
+    if edge is None or abs(edge) < STANDING_MARGIN:
+        return "even"
+    return "leading" if edge > 0 else "trailing"
+
+
+def _own_goal_slots(
+    war: WarState, faction_id: FactionId, scenario: StrategyScenario
+) -> int:
+    if _player_edge(war, faction_id) is None:
+        return 1
+    return goal_slots(side_score(war, faction_id), scenario.tuning.diplomacy)
+
+
+def project_wars(
+    world: WorldState, faction_id: FactionId, scenario: StrategyScenario
+) -> list[WarView]:
     return [
         WarView(
             id=war.id,
             attacker_id=war.attacker_id,
             defender_id=war.defender_id,
             participant_ids=list(war.participant_ids),
+            outlook=_outlook(_player_edge(war, faction_id)),
+            goal_slots=_own_goal_slots(war, faction_id, scenario),
         )
         for war in sorted(world.wars, key=lambda item: item.id)
         if faction_id in (war.attacker_id, war.defender_id, *war.participant_ids)

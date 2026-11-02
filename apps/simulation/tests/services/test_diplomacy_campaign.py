@@ -54,7 +54,7 @@ async def test_declared_war_replays_to_the_same_hashes(
     assert relation.status == RelationStatus.WAR
 
 
-async def test_player_view_never_contains_grounds_or_forgery_state(
+async def test_player_view_never_contains_forgery_state_or_ground_strength(
     db_connection: AsyncConnection,
 ) -> None:
     request = await _declare_and_begin(db_connection)
@@ -64,5 +64,14 @@ async def test_player_view_never_contains_grounds_or_forgery_state(
     )
 
     dumped = view.model_dump_json().lower()
-    assert "grounds" not in dumped
     assert "suspect_level" not in dumped
+    assert "is_forged" not in dumped
+    assert "strength" not in dumped
+    assert "matures_turn" not in dumped
+    for ground in view.usable_grounds:
+        assert set(ground.model_dump()) == {
+            "id",
+            "kind",
+            "target_faction_id",
+            "region_id",
+        }

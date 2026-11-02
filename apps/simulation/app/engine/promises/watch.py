@@ -3,7 +3,7 @@ from app.engine.peace.truces import (
     apply_breach_consequences,
     grant_broken_promise_ground,
 )
-from app.engine.promises.matchers import is_breach
+from app.engine.promises.matchers import is_breach, is_proxy_breach
 from app.models.world_diplomacy import CommitmentState, CommitmentStatus
 from app.models.world_events import EventLogEntry, PhaseName
 from app.models.world_state import WorldState
@@ -53,6 +53,15 @@ def _settle_without_breach(world: WorldState, commitment: CommitmentState) -> No
         commitment.status = CommitmentStatus.FULFILLED
 
 
+def _is_breached_by_any(
+    world: WorldState, term: SwornPromiseTerm, events: list[EventLogEntry]
+) -> bool:
+    return any(
+        is_breach(term, event) or is_proxy_breach(world, term, event)
+        for event in events
+    )
+
+
 def scan_sworn_promises(
     world: WorldState,
     scenario: StrategyScenario,
@@ -64,7 +73,7 @@ def scan_sworn_promises(
     for commitment, term in _open_promises(world):
         if _is_party_gone(world, term):
             commitment.status = CommitmentStatus.EXPIRED
-        elif any(is_breach(term, event) for event in phase_events):
+        elif _is_breached_by_any(world, term, phase_events):
             broken.append(_break_promise(world, scenario, commitment, term, phase))
         else:
             _settle_without_breach(world, commitment)

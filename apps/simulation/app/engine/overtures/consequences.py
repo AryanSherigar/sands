@@ -53,6 +53,14 @@ def apply_overture_declined(
     is_ignored: bool,
 ) -> list[EventLogEntry]:
     """Declining costs opinion; a demand also angers the sender, and a proud ruler who is ignored takes a ground."""
+    if overture.kind is OvertureKind.RANSOM_COUNTER:
+        return [
+            diplomacy_event(
+                OVERTURE_DECLINED,
+                [initiator_id, player_id],
+                {"is_ignored": int(is_ignored)},
+            )
+        ]
     tuning = scenario.tuning.overtures
     penalty = tuning.ignore_opinion_penalty
     if not is_ignored:

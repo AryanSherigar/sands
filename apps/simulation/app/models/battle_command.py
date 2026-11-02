@@ -26,13 +26,16 @@ from app.models.orders import (
     HandlePrisonerOrder,
     MapScoutOrder,
     MediateOrder,
+    MergeArmiesOrder,
     MobilizeOrder,
     MoveArmyOrder,
     RaiseArmyOrder,
     ReleaseVassalOrder,
     SendEnvoyOrder,
+    SetArmyPolicyOrder,
     SetPayOrder,
     SetTaxRateOrder,
+    SplitArmyOrder,
     SubsidizeOrder,
     SuePeaceOrder,
     TakeLoanOrder,
@@ -124,6 +127,9 @@ Command = Annotated[
     | SetTaxRateOrder
     | RaiseArmyOrder
     | DisbandArmyOrder
+    | MergeArmiesOrder
+    | SplitArmyOrder
+    | SetArmyPolicyOrder
     | MoveArmyOrder
     | AttackOrder
     | BesiegeOrder

@@ -59,6 +59,7 @@ class OrderKind(str, Enum):
     MERGE_ARMIES = "merge_armies"
     SPLIT_ARMY = "split_army"
     SET_PAY = "set_pay"
+    SET_ARMY_POLICY = "set_army_policy"
     SET_TAX_RATE = "set_tax_rate"
     TAKE_LOAN = "take_loan"
     DECLARE_DEFAULT = "declare_default"

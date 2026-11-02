@@ -35,6 +35,7 @@ class PromiseKind(str, Enum):
     NEVER_ATTACK_FACTION = "never_attack_faction"
     NEVER_ALLY_WITH = "never_ally_with"
     SPARE_PRISONERS = "spare_prisoners"
+    NEVER_OCCUPY_REGION = "never_occupy_region"
 
 
 class CedeRegionTerm(StrictModel):
@@ -126,6 +127,11 @@ class VassalTerm(StrictModel):
     duration_turns: WholeNumber = 0
 
 
+SUBJECT_PROMISE_KINDS = frozenset(
+    {PromiseKind.NEVER_ALLY_WITH, PromiseKind.NEVER_OCCUPY_REGION}
+)
+
+
 class SwornPromiseTerm(StrictModel):
     kind: Literal["sworn_promise"] = "sworn_promise"
     promisor_id: FactionId
@@ -138,7 +144,7 @@ class SwornPromiseTerm(StrictModel):
     def validate_parties_and_subject(self) -> "SwornPromiseTerm":
         if self.promisor_id == self.beneficiary_id:
             raise ValueError("a promise needs two different parties")
-        needs_subject = self.promise is PromiseKind.NEVER_ALLY_WITH
+        needs_subject = self.promise in SUBJECT_PROMISE_KINDS
         if needs_subject and self.subject_id is None:
             raise ValueError(f"{self.promise.value} needs a subject")
         if not needs_subject and self.subject_id is not None:

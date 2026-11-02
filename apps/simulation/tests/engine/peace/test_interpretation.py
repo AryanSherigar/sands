@@ -248,3 +248,24 @@ def test_treaty_ruleset_refuses_self_dealing_and_uncovered_tribute_in_peace() ->
             SceneDecision(action=PROPOSE, peace_tier=PeaceTier.SHORT, terms=[term]),
         )
         assert (result.proposal, result.reason) == (None, REASON_INVALID_TERMS)
+
+
+def test_a_peace_package_allows_conditional_clauses_only_from_treaty_ruleset_1() -> (
+    None
+):
+    legacy = make_world()
+    legacy.treaty_ruleset = 0
+    set_score(add_war(legacy), attacker=0, defender=33)
+    modern = make_world()
+    modern.treaty_ruleset = 1
+    set_score(add_war(modern), attacker=0, defender=33)
+
+    legacy_package, _ = _interpret(
+        legacy, SceneDecision(action=SceneAction.CONTINUE_TALK)
+    )
+    modern_package, _ = _interpret(
+        modern, SceneDecision(action=SceneAction.CONTINUE_TALK)
+    )
+
+    assert "conditional" not in legacy_package.allowed_outcomes[0].allowed_term_kinds
+    assert "conditional" in modern_package.allowed_outcomes[0].allowed_term_kinds

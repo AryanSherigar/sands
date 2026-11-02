@@ -1,6 +1,8 @@
 from uuid import uuid4
 
 import pytest
+import respx
+from app.config import get_settings
 from httpx import AsyncClient
 from psycopg import AsyncConnection
 from tests.engine.economy.builders import make_scenario
@@ -147,3 +149,62 @@ async def test_economy_choice_api(
     assert (
         await api.post(path, json=body | {"choice": choice})
     ).json() == completed.json()
+
+
+@respx.mock
+async def test_end_turn_syncs_turn_count_to_core_api(api: AsyncClient) -> None:
+    request = initialization().model_dump(mode="json")
+    headers = {"X-Internal-Service-Token": "internal"}
+    await api.post("/internal/v1/playthroughs", json=request, headers=headers)
+    playthrough_id = request["playthrough_id"]
+    base = f"/v1/playthroughs/{playthrough_id}"
+
+    settings = get_settings()
+    sync_url = f"{settings.core_api_url}/internal/v1/playthroughs/{playthrough_id}/turn"
+    sync_route = respx.patch(sync_url).respond(
+        status_code=200,
+        json={"playthrough_id": playthrough_id, "turn_count": 1, "status": "active"},
+    )
+
+    response = await api.post(
+        f"{base}/end-turn",
+        json=mutation("begin", 1).model_dump(),
+    )
+    assert response.status_code == 200
+    assert response.json()["turn"] == 1
+    assert sync_route.call_count == 1
+
+    # Idempotent replayed operation should not trigger another sync
+    replayed = await api.post(
+        f"{base}/end-turn",
+        json=mutation("begin", 1).model_dump(),
+    )
+    assert replayed.status_code == 200
+    assert sync_route.call_count == 1
+
+
+@respx.mock
+async def test_economy_choice_turn_completion_syncs_to_core_api(
+    api: AsyncClient, db_connection: AsyncConnection
+) -> None:
+    identity = await seed_world(db_connection, _world(), make_scenario())
+    base = f"/v1/playthroughs/{identity}"
+
+    settings = get_settings()
+    sync_url = f"{settings.core_api_url}/internal/v1/playthroughs/{identity}/turn"
+    sync_route = respx.patch(sync_url).respond(
+        status_code=200,
+        json={"playthrough_id": str(identity), "turn_count": 1, "status": "active"},
+    )
+
+    paused = await api.post(f"{base}/end-turn", json=mutation("begin", 1).model_dump())
+    assert paused.status_code == 200 and paused.json()["status"] == "awaiting_scene"
+    assert not sync_route.called  # scene pause -> turn NOT yet complete
+
+    path = f"{base}/scenes/{paused.json()['scene_id']}/choice"
+    body = mutation("choice", paused.json()["world_version"]).model_dump()
+    completed = await api.post(path, json=body | {"choice": "shortfall_take_loan"})
+    assert completed.status_code == 200 and completed.json()["turn"] == 1
+    assert sync_route.call_count == 1
+    request = sync_route.calls.last.request
+    assert b'"turn_count":1' in request.content

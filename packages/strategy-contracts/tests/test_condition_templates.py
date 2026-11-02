@@ -56,3 +56,29 @@ def test_unknown_template_is_rejected() -> None:
         ConditionClause.model_validate(
             {"template": "owns_moon", "faction_id": "aa", "value": 1}
         )
+
+
+@pytest.mark.parametrize(
+    "template", [ConditionTemplate.OWNS_REGION, ConditionTemplate.LOSES_REGION]
+)
+def test_region_templates_need_a_region_and_do_not_compile(template) -> None:
+    with pytest.raises(ValidationError):
+        ConditionClause(template=template, faction_id="aa")
+    clause = ConditionClause(template=template, faction_id="aa", region_id="reg_gate")
+    assert clause.value == 0
+    with pytest.raises(ValueError):
+        compile_clause(clause)
+
+
+def test_numeric_templates_refuse_a_region_and_omit_it_when_absent() -> None:
+    with pytest.raises(ValidationError):
+        ConditionClause(
+            template=ConditionTemplate.TREASURY_BELOW,
+            faction_id="aa",
+            value=5,
+            region_id="reg_gate",
+        )
+    numeric = ConditionClause(
+        template=ConditionTemplate.TREASURY_BELOW, faction_id="aa", value=5
+    )
+    assert "region_id" not in numeric.model_dump(mode="json")

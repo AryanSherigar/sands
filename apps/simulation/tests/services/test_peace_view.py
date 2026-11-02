@@ -132,6 +132,8 @@ def test_view_lists_the_players_wars_with_their_participants() -> None:
             "attacker_id": WRATHFUL_RIVAL,
             "defender_id": PLAYER,
             "participant_ids": [WRATHFUL_RIVAL, PLAYER],
+            "outlook": "even",
+            "goal_slots": 1,
         }
     ]
 

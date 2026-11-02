@@ -5,8 +5,11 @@ from app.engine.negotiation import apply_terms_card
 from app.engine.treaty.signing import validate_card
 from app.exceptions.command_exceptions import CampaignProgressError
 from app.models.world_diplomacy import CommitmentStatus
+from strategy_contracts.condition_templates import ConditionClause, ConditionTemplate
 from strategy_contracts.terms import (
     CedeRegionTerm,
+    ConditionalMode,
+    ConditionalTerm,
     HostageTerm,
     MilitaryAccessTerm,
     NonAggressionTerm,
@@ -198,3 +201,25 @@ def test_tribute_beyond_the_payers_treasury_is_rejected() -> None:
         _sign(world, _card(tribute))
 
     assert raised.value.code == "cannot_pay"
+
+
+def test_a_peace_card_can_carry_a_conditional_clause() -> None:
+    world = _world()
+    set_war_relation(world, PLAYER, WRATHFUL_RIVAL)
+    set_score(add_war(world), attacker=0, defender=90)
+    conditional = ConditionalTerm(
+        mode=ConditionalMode.TRIGGER,
+        when=ConditionClause(
+            template=ConditionTemplate.TURN_AFTER, faction_id=PLAYER, value=50
+        ),
+        expires_in_turns=TURNS,
+        inner=_trade(),
+    )
+    card = make_peace_card(PLAYER, WRATHFUL_RIVAL, [conditional])
+
+    _sign(world, card)
+
+    assert world.wars == []
+    statuses = {item.term.kind: item.status for item in world.commitments}
+    assert statuses["conditional"] is CommitmentStatus.DORMANT
+    assert "trade_deal" not in statuses

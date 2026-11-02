@@ -6,7 +6,11 @@ from app.engine.world_document import world_from_document
 from app.engine.world_init import new_world
 from app.exceptions.world_exceptions import UnknownPlayerFactionError
 from app.models.world_player import PlayerRuler
-from app.models.world_state import CURRENT_AI_RULESET, CURRENT_SUCCESSION_RULESET
+from app.models.world_state import (
+    CURRENT_AI_RULESET,
+    CURRENT_PEACE_RULESET,
+    CURRENT_SUCCESSION_RULESET,
+)
 from strategy_contracts.examples import load_three_crowns_expanded
 
 PLAYTHROUGH_ID = UUID("11111111-1111-1111-1111-111111111111")
@@ -96,7 +100,7 @@ def test_new_world_enables_pressure_ruleset() -> None:
 
 
 def test_new_world_enables_peace_ruleset() -> None:
-    assert _world().peace_ruleset == 1
+    assert _world().peace_ruleset == CURRENT_PEACE_RULESET
 
 
 def test_new_world_enables_alliance_ruleset() -> None:

@@ -17,7 +17,7 @@ def does_counterpart_accept(
     proposer_id, counterpart_id = card.proposer_id, card.counterpart_id
     if not can_afford(world, scenario, card, proposer_id, war):
         return False
-    concession = price_card(scenario, card, proposer_id).concession
+    concession = price_card(scenario, card, proposer_id, world).concession
     edge = side_score(war, proposer_id) - side_score(war, counterpart_id)
     limits = acceptance_range(world, scenario, proposer_id, counterpart_id)
     return edge + concession >= limits.accept_at

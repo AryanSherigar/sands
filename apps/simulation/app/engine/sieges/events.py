@@ -2,6 +2,7 @@ from app.models.world_events import EventCause, EventLogEntry, PhaseName, StateC
 from strategy_contracts.ids import ArmyId, FactionId, RegionId
 
 SIGNIFICANCE_CONQUEST = 10
+REGION_OCCUPIED = "region_occupied"
 
 
 def siege_started(
@@ -60,7 +61,7 @@ def siege_progressed(
 
 def region_occupied(faction_id: FactionId, region_id: RegionId) -> EventLogEntry:
     return _siege_event(
-        "region_occupied",
+        REGION_OCCUPIED,
         "siege.occupied",
         [faction_id, region_id],
         {},

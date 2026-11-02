@@ -15,6 +15,7 @@ from app.engine.pacts import (
 )
 from app.engine.peace.restoration import restore_treaty
 from app.engine.peace.signing import sign_peace
+from app.engine.pressure.captivity import captive_acceptance_shift
 from app.engine.pressure.effects import acceptance_shift, mediation_shift
 from app.engine.pressure.wars import find_war
 from app.engine.promises.signing import sign_sworn_promise
@@ -103,6 +104,7 @@ def acceptance_range(
         - warmth
         - acceptance_shift(world, scenario, counterpart_faction_id)
         - mediation_shift(world, scenario, counterpart_faction_id)
+        - captive_acceptance_shift(world, scenario, counterpart_faction_id)
         - crisis_acceptance_shift(world, scenario, counterpart_faction_id)
         + humiliation_shift(world, scenario, counterpart_faction_id)
         + coalition_shift(world, scenario, proposer_faction_id, counterpart_faction_id)

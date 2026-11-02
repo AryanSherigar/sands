@@ -59,4 +59,15 @@ async def store_letter_body(
     service: Exchanges,
 ) -> SceneExchangeResult:
     """Store the incoming letter once as the first exchange, so a reopened scene shows the same text."""
-    return await service.store_letter_body(scene_id, acting_user_id, body.text)
+    return await service.store_opening_text(scene_id, acting_user_id, body.text)
+
+
+@router.post("/{scene_id}/opening")
+async def store_scene_opening(
+    scene_id: UUID,
+    body: LetterBodySubmission,
+    acting_user_id: ActingUser,
+    service: Exchanges,
+) -> SceneExchangeResult:
+    """Store a letter or judgment scene's opening text once, so a reopened scene shows the same words."""
+    return await service.store_opening_text(scene_id, acting_user_id, body.text)

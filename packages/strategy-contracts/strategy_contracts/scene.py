@@ -6,6 +6,7 @@ from pydantic import Field, model_validator
 
 from strategy_contracts.base import StrictModel
 from strategy_contracts.ids import EntityId, FactionId, RegionId, TraitId
+from strategy_contracts.judgment import AdvisorStance, JudgmentOutcome, JudgmentSpec
 from strategy_contracts.limits import (
     MAX_CESSION_OPTIONS,
     MAX_GRUDGES_PER_SCENE,
@@ -90,6 +91,7 @@ class Participant(StrictModel):
     goals: list[str] = Field(default_factory=list)
     mood: str = ""
     memory_notes: list[str] = Field(default_factory=list)
+    stance: AdvisorStance | None = None
 
 
 class SituationFact(StrictModel):
@@ -233,7 +235,12 @@ class ProseOnlySpec(StrictModel):
 
 
 OutcomeSpec = Annotated[
-    TermsCardSpec | GradesSpec | VerdictSpec | ChoiceSpec | ProseOnlySpec,
+    TermsCardSpec
+    | GradesSpec
+    | VerdictSpec
+    | ChoiceSpec
+    | ProseOnlySpec
+    | JudgmentSpec,
     Field(discriminator="kind"),
 ]
 
@@ -301,7 +308,8 @@ SceneOutcome = Annotated[
     | GradesOutcome
     | VerdictOutcome
     | ChoiceOutcome
-    | ProseOnlyOutcome,
+    | ProseOnlyOutcome
+    | JudgmentOutcome,
     Field(discriminator="kind"),
 ]
 

@@ -4,6 +4,7 @@ from uuid import UUID
 
 from app.models.base import WorldModel
 from app.models.world_battle import BattleState
+from app.models.world_internal import UprisingArchetype
 from pydantic import Field, SerializerFunctionWrapHandler, model_serializer
 from strategy_contracts.conditions import ConditionScope
 from strategy_contracts.endings import EndingGrade
@@ -12,8 +13,10 @@ from strategy_contracts.ids import (
     EntityId,
     EventId,
     FactionId,
+    RegionId,
     WholeNumber,
 )
+from strategy_contracts.judgment import JudgmentSubjectKind
 from strategy_contracts.overtures import OvertureKind
 from strategy_contracts.scenario import EndingKind
 from strategy_contracts.summary import SummaryFact
@@ -156,11 +159,28 @@ class PendingLetter(WorldModel):
     cooldown_until_turn: WholeNumber
 
 
+class PendingJudgment(WorldModel):
+    subject_kind: JudgmentSubjectKind
+    subject_id: str
+    accused_faction_id: FactionId
+    trigger_event: str
+    cooldown_until_turn: WholeNumber
+
+
+class PendingRevoltTalk(WorldModel):
+    uprising_id: str
+    region_id: RegionId
+    faction_id: FactionId
+    archetype: UprisingArchetype
+
+
 class TurnProgress(WorldModel):
     phase: PhaseName | None = None
     pending_scene_id: UUID | None = None
     pending_negotiation: PendingNegotiation | None = None
     pending_letter: PendingLetter | None = None
+    pending_judgment: PendingJudgment | None = None
+    pending_revolt_talk: PendingRevoltTalk | None = None
     negotiation_counterpart_id: FactionId | None = None
     completed_waves: int = Field(default=0, ge=0, le=MAX_CAMPAIGN_WAVES)
     is_campaign_active: bool = False
@@ -177,6 +197,8 @@ class TurnProgress(WorldModel):
         defaults = {
             "pending_negotiation": None,
             "pending_letter": None,
+            "pending_judgment": None,
+            "pending_revolt_talk": None,
             "negotiation_counterpart_id": None,
             "completed_waves": 0,
             "is_campaign_active": False,

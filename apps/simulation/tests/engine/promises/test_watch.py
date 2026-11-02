@@ -15,6 +15,7 @@ from tests.engine.diplomacy.builders import (
     WRATHFUL_RIVAL,
     make_world,
 )
+from tests.engine.vassals.builders import add_vassalage
 
 TUNING = SCENARIO.tuning.diplomacy
 PHASE = PhaseName.DIPLOMACY
@@ -158,3 +159,35 @@ def test_execution_of_a_beneficiary_prisoner_breaks_spare_prisoners() -> None:
 
     assert [event.kind for event in broken] == [SWORN_PROMISE_BROKEN]
     assert world.commitments[0].status is CommitmentStatus.BREACHED
+
+
+def _vassal_war(vassal_id: str, target_id: str = PLAYER) -> EventLogEntry:
+    return diplomacy_event("war_declared", ["war_2", vassal_id, target_id])
+
+
+def test_a_controlled_vassals_war_breaches_its_overlords_never_attack() -> None:
+    world = make_world()
+    _promise(world)
+    add_vassalage(world, WRATHFUL_RIVAL, CAUTIOUS_RIVAL, is_controlled=True)
+
+    broken = _scan(world, [_vassal_war(CAUTIOUS_RIVAL)])
+
+    assert world.commitments[0].status is CommitmentStatus.BREACHED
+    assert [event.kind for event in broken] == [SWORN_PROMISE_BROKEN]
+
+
+def test_a_free_vassals_war_leaves_the_overlords_promise_standing() -> None:
+    world = make_world()
+    _promise(world)
+    add_vassalage(world, WRATHFUL_RIVAL, CAUTIOUS_RIVAL, is_controlled=False)
+
+    assert _scan(world, [_vassal_war(CAUTIOUS_RIVAL)]) == []
+    assert world.commitments[0].status is CommitmentStatus.ACTIVE
+
+
+def test_a_controlled_vassals_war_on_someone_else_is_no_breach() -> None:
+    world = make_world()
+    _promise(world)
+    add_vassalage(world, WRATHFUL_RIVAL, CAUTIOUS_RIVAL, is_controlled=True)
+
+    assert _scan(world, [_vassal_war(CAUTIOUS_RIVAL, "house_other")]) == []

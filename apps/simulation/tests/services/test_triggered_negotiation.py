@@ -86,3 +86,30 @@ async def test_heir_renewal_persists_a_negotiation_scene_with_the_old_tier(
     assert scene.package.scene_type is SceneType.NEGOTIATION
     exchanges = await scene_exchange_repo.list_exchanges(db_connection, scene_id)
     assert exchanges[0].proposal.terms[0].tier == "generation"
+
+
+async def test_oath_offer_persists_a_negotiation_scene_not_a_peace_scene(
+    db_connection,
+) -> None:
+    from app.engine.opinion import shift_opinion
+    from tests.engine.overtures.builders import (
+        CAUTIOUS_RIVAL,
+        PLAYER,
+        SCENARIO,
+        make_world,
+    )
+
+    await seed_playthrough(db_connection)
+    world = make_world()
+    world.playthrough_id = PLAYTHROUGH_ID
+    shift_opinion(world, CAUTIOUS_RIVAL, PLAYER, "shared_feast", 30, 0)
+    arm_triggered_negotiation(world, SCENARIO)
+    assert world.progress.pending_negotiation is not None
+
+    await persist_triggered_scene(db_connection, world, SCENARIO)
+
+    scene_id = world.progress.pending_scene_id
+    scene = await scene_repo.get_scene(db_connection, scene_id)
+    assert scene.package.scene_type is SceneType.NEGOTIATION
+    exchanges = await scene_exchange_repo.list_exchanges(db_connection, scene_id)
+    assert exchanges[0].proposal is not None

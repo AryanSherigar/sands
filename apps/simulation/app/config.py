@@ -1,6 +1,7 @@
 """Simulation service configuration module. The only place environment variables are read."""
 
 from functools import lru_cache
+from typing import Literal
 
 from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -18,7 +19,7 @@ DEFAULT_SECRET_KEY = "default-secret-key-change-in-production"
 MIN_PRODUCTION_SECRET_KEY_LENGTH = 32
 DEFAULT_JWT_ALGORITHM = "HS256"
 WORLD_SEED_UPPER_BOUND = 2**63
-DEFAULT_INTENT_TIMEOUT_SECONDS = 2.0
+DEFAULT_INTENT_TIMEOUT_SECONDS = 6.0
 DEFAULT_INTENT_WORKER_POLL_SECONDS = 0.25
 DEFAULT_INTENT_PROVIDER_MAX_TOKENS = 256
 DEFAULT_SPEECH_TIMEOUT_SECONDS = 8.0
@@ -26,6 +27,8 @@ DEFAULT_SPEECH_PROVIDER_MAX_TOKENS = 128
 DEFAULT_STANCE_TIMEOUT_SECONDS = 8.0
 DEFAULT_STANCE_PROVIDER_MAX_TOKENS = 128
 DEFAULT_STANCE_WORKER_POLL_SECONDS = 0.5
+DEFAULT_CORE_API_URL = "http://localhost:8000"
+DEFAULT_CORE_API_TIMEOUT_SECONDS = 5.0
 
 
 class Settings(BaseSettings):
@@ -47,8 +50,16 @@ class Settings(BaseSettings):
     secret_key: str = DEFAULT_SECRET_KEY
     jwt_algorithm: str = DEFAULT_JWT_ALGORITHM
     internal_service_token: str = ""
+    core_api_url: str = DEFAULT_CORE_API_URL
+    core_api_timeout_seconds: float = DEFAULT_CORE_API_TIMEOUT_SECONDS
     summary_lease_seconds: int = Field(default=120, ge=90, le=600)
     summary_max_attempts: int = Field(default=3, ge=1, le=10)
+    art_lease_seconds: int = Field(default=120, ge=90, le=600)
+    art_max_attempts: int = Field(default=3, ge=1, le=10)
+    dispatch_lease_seconds: int = Field(default=120, ge=90, le=600)
+    dispatch_max_attempts: int = Field(default=3, ge=1, le=10)
+    llm_provider_protocol: Literal["custom", "chat_completions"] = "custom"
+    llm_provider_reasoning_effort: str = ""
     intent_provider_enabled: bool = False
     intent_provider_url: str = ""
     intent_provider_api_key: str = ""

@@ -1,5 +1,11 @@
 from app.models.base import WorldModel
-from pydantic import Field, model_validator
+from pydantic import (
+    Field,
+    SerializerFunctionWrapHandler,
+    model_serializer,
+    model_validator,
+)
+from strategy_contracts.battle import ReservePolicy, WithdrawalPolicy
 from strategy_contracts.enums import OrderKind, PayLevel, TroopType
 from strategy_contracts.ids import (
     ArmyId,
@@ -57,6 +63,18 @@ class ArmyState(WorldModel):
     pay_level: PayLevel = PayLevel.FULL
     march: MarchState | None = None
     unpaid_turns: WholeNumber = 0
+    withdrawal_policy: WithdrawalPolicy | None = None
+    reserve_policy: ReservePolicy | None = None
+
+    @model_serializer(mode="wrap")
+    def omit_unset_policies(
+        self, handler: SerializerFunctionWrapHandler
+    ) -> dict[str, object]:
+        document = handler(self)
+        for key in ("withdrawal_policy", "reserve_policy"):
+            if document.get(key) is None:
+                document.pop(key, None)
+        return document
 
     @model_validator(mode="after")
     def validate_march_starts_at_location(self) -> "ArmyState":

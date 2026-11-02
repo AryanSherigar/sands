@@ -22,3 +22,6 @@ def require_internal_service_token(
         raise InternalEndpointDisabledError()
     if not hmac.compare_digest(presented.encode(), expected.encode()):
         raise InvalidInternalTokenError()
+
+
+verify_internal_token = require_internal_service_token

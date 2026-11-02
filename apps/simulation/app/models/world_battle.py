@@ -2,7 +2,13 @@ from enum import Enum
 
 from app.models.base import WorldModel
 from app.models.battle_intelligence import ReconReport, StrengthInterval
-from pydantic import Field, field_validator, model_validator
+from pydantic import (
+    Field,
+    SerializerFunctionWrapHandler,
+    field_validator,
+    model_serializer,
+    model_validator,
+)
 from strategy_contracts.battle import (
     Formation,
     ReservePolicy,
@@ -11,8 +17,11 @@ from strategy_contracts.battle import (
     Weather,
     WithdrawalPolicy,
 )
+from strategy_contracts.battle_speech import MAX_SPEECH_TALKS, CrowdReaction
 from strategy_contracts.enums import Terrain, TroopType
 from strategy_contracts.ids import ArmyId, FactionId, Percent, RegionId, WholeNumber
+from strategy_contracts.limits import MAX_TEXT_CHARS
+from strategy_contracts.scene import BattleSpeechOutcome
 
 
 class BattleAction(str, Enum):
@@ -44,6 +53,27 @@ class BattleControlMode(str, Enum):
     UNDECIDED = "undecided"
     PLAYER = "player"
     DELEGATED = "delegated"
+
+
+class BattleSpeechStatus(str, Enum):
+    PENDING = "pending"
+    DONE = "done"
+
+
+class BattleSpeechState(WorldModel):
+    status: BattleSpeechStatus = BattleSpeechStatus.PENDING
+    transcripts: list[str] = Field(default_factory=list, max_length=MAX_SPEECH_TALKS)
+    reactions: list[CrowdReaction] = Field(
+        default_factory=list, max_length=MAX_SPEECH_TALKS
+    )
+    outcome: BattleSpeechOutcome | None = None
+
+    @field_validator("transcripts")
+    @classmethod
+    def validate_transcript_length(cls, transcripts: list[str]) -> list[str]:
+        if any(len(text) > MAX_TEXT_CHARS for text in transcripts):
+            raise ValueError("a talk transcript exceeds the text limit")
+        return transcripts
 
 
 class BattleOutcome(str, Enum):
@@ -146,6 +176,16 @@ class BattleState(WorldModel):
     mission_ids: list[str] = Field(default_factory=list)
     capture_ids: list[str] = Field(default_factory=list)
     deferred_command_ids: list[str] = Field(default_factory=list)
+    speech: BattleSpeechState | None = None
+
+    @model_serializer(mode="wrap")
+    def omit_absent_speech(
+        self, handler: SerializerFunctionWrapHandler
+    ) -> dict[str, object]:
+        document = handler(self)
+        if self.speech is None:
+            document.pop("speech", None)
+        return document
 
     @field_validator("attacker_army_ids", "defender_army_ids")
     @classmethod
@@ -239,6 +279,8 @@ class ContingentView(WorldModel):
     plan: StandingPlan
     supply: SupplyState
     status: ContingentStatus
+    active: dict[TroopType, WholeNumber] = Field(default_factory=dict)
+    reserve: dict[TroopType, WholeNumber] = Field(default_factory=dict)
 
 
 class OpponentView(WorldModel):
@@ -257,12 +299,14 @@ class BattleView(WorldModel):
     total_exchanges: WholeNumber
     is_big: bool = False
     control_mode: BattleControlMode = BattleControlMode.UNDECIDED
+    speech_status: BattleSpeechStatus | None = None
     terrain: Terrain
     weather: Weather
     own_contingent: ContingentView | None = None
     opponents: list[OpponentView] = Field(default_factory=list)
     legal_commands: list[BattleAction] = Field(default_factory=list)
     command_cost: WholeNumber = 1
+    frontage: WholeNumber = 0
 
 
 class ExchangeReport(WorldModel):

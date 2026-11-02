@@ -158,8 +158,6 @@ def _validate(
 ) -> PeaceTerm:
     peace = _peace_term(card)
     pair = {peace.faction_a, peace.faction_b}
-    if card.proposer_id not in pair:
-        raise _reject("invalid_term")
     for term in card.terms:
         _check_term(world, term, pair)
     _check_guarantors(world, peace)
@@ -189,7 +187,7 @@ def apply_commitment(world: WorldState, term: Term, scene_id: UUID | str) -> Non
     )
 
 
-def _release_prisoners(world: WorldState, term: ReleasePrisonersTerm) -> None:
+def release_prisoners_for_term(world: WorldState, term: ReleasePrisonersTerm) -> None:
     for prisoner_id in term.prisoner_ids:
         prisoner = find_prisoner(world, prisoner_id)
         if prisoner is not None:
@@ -215,7 +213,7 @@ def _apply_term(
     if isinstance(term, HostageTerm):
         hold_hostage(world, term, truce.id)
     elif isinstance(term, ReleasePrisonersTerm):
-        _release_prisoners(world, term)
+        release_prisoners_for_term(world, term)
     elif isinstance(term, CedeRegionTerm):
         cede_region(world, scenario, term)
     elif isinstance(term, PayGoldTerm):

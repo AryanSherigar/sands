@@ -10,6 +10,7 @@ from app.engine.diplomacy.prisoners import (
 )
 from app.engine.outrage.mobilize import validate_mobilize
 from app.engine.peace.hostages import find_hostage
+from app.engine.pressure.captivity import is_captivity_active
 from app.engine.pressure.forcers import has_open_offer
 from app.engine.pressure.subsidies import validate_cut_subsidy, validate_subsidize
 from app.engine.trait_axes import axis_totals
@@ -188,7 +189,7 @@ def validate_prisoner_order(
         and find_exchange_counterpart(world, prisoner) is None
     ):
         raise _reject("no_exchange_counterpart")
-    if command.action == "ransom":
+    if command.action == "ransom" and not is_captivity_active(world):
         _require_ransom_payer(world, scenario, prisoner)
 
 

@@ -8,6 +8,8 @@ LOAN_TAKEN = "loan_taken"
 DEFAULT_DECLARED = "default_declared"
 ARMY_RAISED = "army_raised"
 ARMY_DISBANDED = "army_disbanded"
+ARMIES_MERGED = "armies_merged"
+ARMY_SPLIT = "army_split"
 INCOME_COLLECTED = "income_collected"
 UNREST_DRIFTED = "unrest_drifted"
 MANPOWER_REFILLED = "manpower_refilled"
@@ -100,6 +102,28 @@ def army_disbanded(
 ) -> EventLogEntry:
     return _entry(
         ARMY_DISBANDED, [faction_id, army_id], {"manpower_returned": returned}, changes
+    )
+
+
+def armies_merged(
+    faction_id: FactionId,
+    into_army_id: ArmyId,
+    merged_ids: list[ArmyId],
+    troop_total: int,
+) -> EventLogEntry:
+    return _entry(
+        ARMIES_MERGED,
+        [faction_id, into_army_id, *merged_ids],
+        {"armies_merged": len(merged_ids), "troops": troop_total},
+        [],
+    )
+
+
+def army_split(
+    faction_id: FactionId, army_id: ArmyId, new_army_id: ArmyId, troop_total: int
+) -> EventLogEntry:
+    return _entry(
+        ARMY_SPLIT, [faction_id, army_id, new_army_id], {"troops": troop_total}, []
     )
 
 

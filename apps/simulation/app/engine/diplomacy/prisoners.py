@@ -1,12 +1,16 @@
 from app.engine.coalitions.ledger import record_atrocity
 from app.engine.diplomacy.events import diplomacy_event
+from app.engine.diplomacy.ransom_verdict import RansomResponse, ransom_verdict
 from app.engine.diplomacy.reputation import shift_standing
 from app.engine.outrage.effects import denies_quarter
 from app.engine.peace.hostages import find_hostage, harm_hostage, release_hostage
+from app.engine.pressure.captivity import is_captivity_active, rally_after_execution
+from app.engine.pressure.mercy import record_mercy
 from app.engine.pressure.wars import find_war
 from app.models.orders import HandlePrisonerOrder
 from app.models.world_diplomacy import PrisonerKind, PrisonerState
 from app.models.world_events import EventLogEntry
+from app.models.world_peace import RansomCounter
 from app.models.world_state import HELD_PRISONER_EXECUTION_RULESET, WorldState
 from strategy_contracts.ids import FactionId
 from strategy_contracts.peace import PeaceTuning
@@ -15,6 +19,8 @@ from strategy_contracts.scenario import StrategyScenario
 PRISONER_RELEASED = "prisoner_released"
 PRISONER_RANSOMED = "prisoner_ransomed"
 PRISONER_EXCHANGED = "prisoner_exchanged"
+PRISONER_RANSOM_REFUSED = "prisoner_ransom_refused"
+PRISONER_RANSOM_COUNTERED = "prisoner_ransom_countered"
 PRISONER_EXECUTED = "prisoner_executed"
 EXCHANGE_TROOP_TOLERANCE = 1
 
@@ -82,6 +88,49 @@ def _ransom(
     ]
 
 
+def _queue_counter(
+    world: WorldState, prisoner: PrisonerState, gold: int
+) -> list[EventLogEntry]:
+    counters = world.peace.ransom_counters
+    counters[:] = [item for item in counters if item.prisoner_id != prisoner.id]
+    counters.append(
+        RansomCounter(
+            prisoner_id=prisoner.id,
+            holder_id=prisoner.held_by_id,
+            origin_id=prisoner.origin_faction_id,
+            gold=gold,
+            turn=world.clock.turn,
+        )
+    )
+    return [
+        diplomacy_event(
+            PRISONER_RANSOM_COUNTERED,
+            [prisoner.id, prisoner.held_by_id, prisoner.origin_faction_id],
+            {"gold": gold},
+        )
+    ]
+
+
+def _offer_ransom(
+    world: WorldState, scenario: StrategyScenario, prisoner: PrisonerState
+) -> list[EventLogEntry]:
+    tuning = scenario.tuning.peace
+    if not is_captivity_active(world):
+        return _ransom(world, tuning, prisoner)
+    price = ransom_price(prisoner, tuning)
+    verdict = ransom_verdict(world, scenario, prisoner, price)
+    if verdict.response is RansomResponse.ACCEPT:
+        return _ransom(world, tuning, prisoner)
+    if verdict.response is RansomResponse.HAGGLE:
+        return _queue_counter(world, prisoner, verdict.counter_gold)
+    return [
+        diplomacy_event(
+            PRISONER_RANSOM_REFUSED,
+            [prisoner.id, prisoner.held_by_id, prisoner.origin_faction_id],
+        )
+    ]
+
+
 def _exchange(
     world: WorldState, tuning: PeaceTuning, prisoner: PrisonerState
 ) -> list[EventLogEntry]:
@@ -99,7 +148,16 @@ def _exchange(
     ]
 
 
-def _release(world: WorldState, prisoner: PrisonerState) -> list[EventLogEntry]:
+def release_prisoner(
+    world: WorldState,
+    tuning: PeaceTuning,
+    scenario: StrategyScenario,
+    prisoner: PrisonerState,
+) -> list[EventLogEntry]:
+    record_mercy(world, scenario, prisoner)
+    shift_standing(
+        world.factions[prisoner.held_by_id], tuning.release_reputation_gain, 0
+    )
     free_prisoner(world, prisoner)
     return [
         diplomacy_event(
@@ -117,6 +175,7 @@ def execute_prisoner(
         world.factions[prisoner.held_by_id], -tuning.atrocity_reputation_cost, 0
     )
     record_atrocity(world, prisoner.held_by_id)
+    rally_after_execution(world, tuning, prisoner)
     return [
         diplomacy_event(
             PRISONER_EXECUTED,
@@ -143,11 +202,11 @@ def handle_prisoner(
     assert prisoner is not None
     tuning = scenario.tuning.peace
     if order.action == "ransom":
-        return _ransom(world, tuning, prisoner)
+        return _offer_ransom(world, scenario, prisoner)
     if order.action == "exchange":
         return _exchange(world, tuning, prisoner)
     if order.action == "release":
-        return _release(world, prisoner)
+        return release_prisoner(world, tuning, scenario, prisoner)
     return execute_prisoner(world, tuning, prisoner)
 
 

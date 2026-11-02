@@ -36,3 +36,16 @@ def test_ruler_and_profile_round_trip() -> None:
 def test_negative_counter_is_rejected() -> None:
     with pytest.raises(ValidationError):
         PlayerProfile(wars_declared=-1)
+
+
+def test_default_chronicler_is_omitted_from_world_dump() -> None:
+    assert "chronicler_id" not in _ruler().model_dump()
+
+
+def test_chosen_chronicler_is_kept_in_world_dump() -> None:
+    assert _ruler(chronicler_id="vaelen").model_dump()["chronicler_id"] == "vaelen"
+
+
+def test_a_missing_chronicler_reads_as_lucan() -> None:
+    restored = PlayerRuler.model_validate(_ruler().model_dump())
+    assert restored.chronicler_id == "lucan"

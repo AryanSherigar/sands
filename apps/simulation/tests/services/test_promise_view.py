@@ -61,3 +61,38 @@ def test_projection_omits_breached_promises() -> None:
     world.commitments[0].status = CommitmentStatus.BREACHED
 
     assert _view(world)["sworn_promises"] == []
+
+
+def test_projection_lists_resolved_promises_as_history_only() -> None:
+    world = make_world()
+    _swear(world, PLAYER, WRATHFUL_RIVAL)
+    _swear(world, CAUTIOUS_RIVAL, PLAYER, promise=PromiseKind.SPARE_PRISONERS)
+    world.commitments[0].status = CommitmentStatus.BREACHED
+    world.commitments[1].status = CommitmentStatus.FULFILLED
+
+    view = _view(world)
+
+    assert view["sworn_promises"] == []
+    assert [
+        (item["commitment_id"], item["outcome"])
+        for item in view["sworn_promise_history"]
+    ] == [("commitment_1", "breached"), ("commitment_2", "fulfilled")]
+
+
+def test_history_keeps_only_the_latest_ten_and_hides_uninvolved_promises() -> None:
+    world = make_world()
+    _swear(world, PLAYER, WRATHFUL_RIVAL)
+    original = world.commitments[0]
+    for index in range(2, 13):
+        world.commitments.append(
+            original.model_copy(update={"id": f"commitment_{index}"})
+        )
+    _swear(world, CAUTIOUS_RIVAL, WRATHFUL_RIVAL)
+    for commitment in world.commitments:
+        commitment.status = CommitmentStatus.EXPIRED
+
+    history = _view(world)["sworn_promise_history"]
+
+    assert len(history) == 10
+    assert history[0]["commitment_id"] == "commitment_3"
+    assert history[-1]["commitment_id"] == "commitment_12"

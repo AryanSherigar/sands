@@ -22,6 +22,7 @@ from app.services.campaign_transaction import (
     LockedCampaign,
     require_owner,
 )
+from app.services.judgment_summary import summarize_judgment_outcome
 from app.services.negotiation_closing import build_outcome, close_transition
 from app.services.negotiation_scene import (
     build_negotiation_package,
@@ -29,12 +30,25 @@ from app.services.negotiation_scene import (
 )
 from app.services.scene_grudges import voiced_grudges
 from psycopg import AsyncConnection
+from strategy_contracts.judgment import JudgmentOutcome, JudgmentSpec
 from strategy_contracts.scene import SceneStatus, SceneType, TermsResult
 from strategy_contracts.scene_exchange import SceneExchangeView
 from strategy_contracts.terms import TermsCard
 
 FINAL_STATUSES = (SceneStatus.RESOLVED, SceneStatus.DEFAULTED)
-EXCHANGE_FIELDS = {"sequence", "player_text", "leader_text", "proposal", "verdict"}
+DEFAULT_ONLY_SCENE_TYPES = (
+    SceneType.LETTER,
+    SceneType.JUDGMENT,
+    SceneType.REVOLT_TALK,
+)
+EXCHANGE_FIELDS = {
+    "sequence",
+    "player_text",
+    "leader_text",
+    "proposal",
+    "verdict",
+    "clause_bands",
+}
 
 
 def exchange_view(row: SceneExchangeRow) -> SceneExchangeView:
@@ -151,8 +165,8 @@ class NegotiationService:
     ) -> CampaignTransition:
         exchanges = await scene_exchange_repo.list_exchanges(self._connection, scene_id)
         scene = await scene_repo.get_scene(self._connection, scene_id)
-        if scene is not None and scene.scene_type is SceneType.LETTER:
-            return await self._decide_letter(guard, scene, is_confirmed, locked)
+        if scene is not None and scene.scene_type in DEFAULT_ONLY_SCENE_TYPES:
+            return await self._decide_default_only(guard, scene, is_confirmed, locked)
         if is_confirmed:
             proposal = _require_current_proposal(exchanges, proposal_sequence)
             card = proposal.model_copy(update={"is_confirmed_by_player": True})
@@ -167,7 +181,7 @@ class NegotiationService:
             self._connection, guard, scene_id, outcome, status, locked
         )
 
-    async def _decide_letter(
+    async def _decide_default_only(
         self,
         guard: OperationGuard,
         scene: SceneRow,
@@ -176,7 +190,7 @@ class NegotiationService:
     ) -> CampaignTransition:
         if is_confirmed:
             raise CampaignProgressError(
-                "a letter has no terms to confirm", "no_proposal", 422
+                "this scene has no terms to confirm", "no_proposal", 422
             )
         return await close_transition(
             self._connection,
@@ -213,6 +227,17 @@ def pending_proposal_sequence(
     return exchanges[-1].sequence
 
 
+def _outcome_summary(scene: SceneRow) -> list[str]:
+    if not isinstance(scene.outcome, JudgmentOutcome):
+        return []
+    spec = next(
+        item
+        for item in scene.package.allowed_outcomes
+        if isinstance(item, JudgmentSpec)
+    )
+    return summarize_judgment_outcome(scene.outcome, spec.subject_kind)
+
+
 def _scene_view(scene: SceneRow, exchanges: list[SceneExchangeRow]) -> SceneView:
     package = scene.package
     return SceneView(
@@ -229,6 +254,7 @@ def _scene_view(scene: SceneRow, exchanges: list[SceneExchangeRow]) -> SceneView
                 kind=item.kind,
                 name=item.name,
                 trait_ids=item.trait_ids,
+                stance=item.stance,
             )
             for item in package.participants
         ],
@@ -238,4 +264,5 @@ def _scene_view(scene: SceneRow, exchanges: list[SceneExchangeRow]) -> SceneView
         pending_proposal_sequence=pending_proposal_sequence(scene, exchanges),
         outcome=scene.outcome,
         voiced_grudges=voiced_grudges(scene.package, exchanges),
+        outcome_summary=_outcome_summary(scene),
     )

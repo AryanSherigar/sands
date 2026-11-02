@@ -33,6 +33,7 @@ from app.models.world_event_memory import EventMemory
 from app.models.world_events import (
     EndingState,
     PendingEvent,
+    PendingRevoltTalk,
     PendingSummaryFact,
     SignificanceTracker,
     SummaryRequest,
@@ -64,11 +65,14 @@ from strategy_contracts.ids import (
     LeaderId,
     RegionId,
 )
+from strategy_contracts.proclamation import ActiveProclamation
+from strategy_contracts.revolt import CovenantState
 
 WORLD_SCHEMA_VERSION = 6
 LEGACY_VISIBILITY_RULESET = 0
 CURRENT_VISIBILITY_RULESET = 1
 CURRENT_BATTLE_CONTROL_RULESET = 1
+CURRENT_BATTLE_SPEECH_RULESET = 1
 CURRENT_INTERNAL_RULESET = 2
 UPRISING_LIFECYCLE_RULESET = 2
 CURRENT_LOGISTICS_RULESET = 1
@@ -77,7 +81,8 @@ CURRENT_EVENTS_RULESET = 2
 DISASTER_EVENTS_RULESET = 2
 CURRENT_DIPLOMACY_RULESET = 1
 CURRENT_PRESSURE_RULESET = 1
-CURRENT_PEACE_RULESET = 1
+CAPTIVITY_RULESET = 2
+CURRENT_PEACE_RULESET = 2
 CURRENT_ALLIANCE_RULESET = 1
 CURRENT_VASSAL_RULESET = 1
 CURRENT_COALITION_RULESET = 1
@@ -93,6 +98,7 @@ CURRENT_SIEGE_RULESET = 1
 
 LEGACY_OMISSIONS: tuple[tuple[str, int, tuple[str, ...]], ...] = (
     ("battle_control_ruleset", 1, ("battle_control_ruleset",)),
+    ("battle_speech_ruleset", 1, ("battle_speech_ruleset",)),
     (
         "internal_ruleset",
         1,
@@ -161,13 +167,14 @@ class WorldState(WorldModel):
     schema_version: int = WORLD_SCHEMA_VERSION
     visibility_ruleset: int = LEGACY_VISIBILITY_RULESET
     battle_control_ruleset: int = Field(default=0, ge=0, le=1)
+    battle_speech_ruleset: int = Field(default=0, ge=0, le=1)
     internal_ruleset: int = Field(default=0, ge=0, le=2)
     logistics_ruleset: int = Field(default=0, ge=0, le=1)
     summary_ruleset: int = Field(default=0, ge=0, le=2)
     events_ruleset: int = Field(default=0, ge=0, le=2)
     diplomacy_ruleset: int = Field(default=0, ge=0, le=1)
     pressure_ruleset: int = Field(default=0, ge=0, le=1)
-    peace_ruleset: int = Field(default=0, ge=0, le=1)
+    peace_ruleset: int = Field(default=0, ge=0, le=2)
     alliance_ruleset: int = Field(default=0, ge=0, le=1)
     vassal_ruleset: int = Field(default=0, ge=0, le=1)
     coalition_ruleset: int = Field(default=0, ge=0, le=1)
@@ -227,6 +234,10 @@ class WorldState(WorldModel):
     stability_collapse_turns: int = Field(default=0, ge=0)
     negotiation_cooldowns: dict[str, int] = Field(default_factory=dict)
     letter_cooldowns: dict[FactionId, int] = Field(default_factory=dict)
+    judgment_cooldowns: dict[str, int] = Field(default_factory=dict)
+    revolt_talk_queue: list[PendingRevoltTalk] = Field(default_factory=list)
+    revolt_lockouts: dict[RegionId, int] = Field(default_factory=dict)
+    covenants: list[CovenantState] = Field(default_factory=list)
     overture_cooldowns: dict[FactionId, int] = Field(default_factory=dict)
     overture_renewals: list[str] = Field(default_factory=list)
     aims: dict[FactionId, AimState] = Field(default_factory=dict)
@@ -238,16 +249,24 @@ class WorldState(WorldModel):
     endings: EndingsWorldState = Field(default_factory=EndingsWorldState)
     succession: SuccessionWorldState = Field(default_factory=SuccessionWorldState)
     sieges: list[SiegeState] = Field(default_factory=list)
+    active_proclamation: ActiveProclamation | None = None
 
     @model_serializer(mode="wrap")
     def preserve_legacy_control(
         self, handler: SerializerFunctionWrapHandler
     ) -> dict[str, object]:
         document = handler(self)
+        if document.get("active_proclamation") is None:
+            document.pop("active_proclamation", None)
         if not document.get("negotiation_cooldowns"):
             document.pop("negotiation_cooldowns", None)
         if not document.get("letter_cooldowns"):
             document.pop("letter_cooldowns", None)
+        if not document.get("judgment_cooldowns"):
+            document.pop("judgment_cooldowns", None)
+        for key in ("revolt_talk_queue", "revolt_lockouts", "covenants"):
+            if not document.get(key):
+                document.pop(key, None)
         for ruleset, minimum, keys in LEGACY_OMISSIONS:
             if getattr(self, ruleset) < minimum:
                 for key in keys:

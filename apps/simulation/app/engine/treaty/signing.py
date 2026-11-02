@@ -4,7 +4,12 @@ from app.engine.alliances.signing import sign_alliance
 from app.engine.diplomacy.events import diplomacy_event
 from app.engine.diplomacy.transfers import cede_region, pay_gold
 from app.engine.pacts import has_active_pact, sign_pact
-from app.engine.peace.signing import apply_commitment, is_term_signable, sign_peace
+from app.engine.peace.signing import (
+    apply_commitment,
+    is_term_signable,
+    release_prisoners_for_term,
+    sign_peace,
+)
 from app.engine.pressure.wars import find_war
 from app.engine.promises.signing import sign_sworn_promise
 from app.engine.treaty.conditional import (
@@ -53,6 +58,7 @@ PEACETIME_ONLY_AT_PEACE = (NonAggressionTerm, TradeDealTerm, MilitaryAccessTerm)
 APPLY_ORDER = (
     CedeRegionTerm,
     PayGoldTerm,
+    ReleasePrisonersTerm,
     TributeTerm,
     AllianceTerm,
     VassalTerm,
@@ -78,7 +84,13 @@ def _signature(term: Term) -> tuple[object, ...] | None:
     if isinstance(term, SwornPromiseTerm):
         return (term.kind, term.promisor_id, term.promise, term.subject_id)
     if isinstance(term, ConditionalTerm):
-        return (term.kind, term.mode, term.when.template, _signature(term.inner))
+        return (
+            term.kind,
+            term.mode,
+            term.when.template,
+            term.when.region_id,
+            _signature(term.inner),
+        )
     return (term.kind, term_parties(term))
 
 
@@ -97,12 +109,19 @@ def _treasury(world: WorldState, faction_id: str) -> int:
     return world.factions[faction_id].treasury
 
 
+def _check_condition_region(world: WorldState, term: ConditionalTerm) -> None:
+    region_id = term.when.region_id
+    if region_id is not None and region_id not in world.regions:
+        raise _reject("invalid_term")
+
+
 def _check_peacetime_clause(world: WorldState, term: Term, pair: set[str]) -> None:
     if not isinstance(term, APPLY_ORDER):
         raise _reject("invalid_term")
     if term_parties(term) != pair:
         raise _reject("invalid_term")
     if isinstance(term, ConditionalTerm):
+        _check_condition_region(world, term)
         return
     first, second = sorted(pair)
     if isinstance(term, PEACETIME_ONLY_AT_PEACE) and find_war(world, first, second):
@@ -114,9 +133,16 @@ def _check_peacetime_clause(world: WorldState, term: Term, pair: set[str]) -> No
         and _treasury(world, term.payer_id) < term.gold_per_turn
     ):
         raise _reject("cannot_pay")
-    is_transfer = isinstance(term, CedeRegionTerm | PayGoldTerm)
+    is_transfer = isinstance(term, CedeRegionTerm | PayGoldTerm | ReleasePrisonersTerm)
     if is_transfer and not is_term_signable(world, term, pair):
         raise _reject("invalid_term")
+    if isinstance(term, ReleasePrisonersTerm):
+        _check_ransom_affordable(world, term)
+
+
+def _check_ransom_affordable(world: WorldState, term: ReleasePrisonersTerm) -> None:
+    if _treasury(world, term.recipient_id) < term.ransom_gold:
+        raise _reject("cannot_pay")
 
 
 def _signed(term: Term, subject_ids: list[str]) -> EventLogEntry:
@@ -186,6 +212,8 @@ def _apply_clause(
         cede_region(world, scenario, term)
     elif isinstance(term, PayGoldTerm):
         pay_gold(world, term)
+    elif isinstance(term, ReleasePrisonersTerm):
+        release_prisoners_for_term(world, term)
     else:
         apply_commitment(world, term, scene_id)
     return [_signed(term, sorted(term_parties(term)))]

@@ -1,11 +1,13 @@
 from app.engine.commands.ledger import PENDING_STATUSES
 from app.engine.economy.manpower import faction_manpower
+from app.engine.endings import find_ending_definition
 from app.engine.movement.knowledge import visible_regions
 from app.engine.movement.map_index import MapIndex, build_map_index
 from app.engine.pacts import active_pacts
 from app.models.api_battle import CampaignWorldView
 from app.models.api_world_view import (
     ArmyView,
+    EndingView,
     IntRange,
     OwnFactionView,
     PactView,
@@ -15,12 +17,16 @@ from app.models.api_world_view import (
     SiegeView,
     Visibility,
 )
+from app.models.world_army import ArmyState
 from app.models.world_internal import is_rebel_faction
 from app.models.world_state import WorldState
 from app.services.alliance_projection import project_alliances, project_calls
 from app.services.campaign_state import player_faction, project_state
 from app.services.coalition_projection import project_coalitions, project_own_threat
+from app.services.conditional_projection import project_conditional_clauses
+from app.services.covenant_projection import project_covenants
 from app.services.event_projection import project_event_memories, project_pending_events
+from app.services.ground_projection import project_usable_grounds
 from app.services.peace_projection import (
     project_hostages,
     project_mediations,
@@ -33,7 +39,12 @@ from app.services.pressure_projection import (
     project_rumors,
     project_subsidies,
 )
-from app.services.promise_projection import project_sworn_promises
+from app.services.prisoner_projection import project_prisoners
+from app.services.promise_projection import (
+    project_sworn_promise_history,
+    project_sworn_promises,
+)
+from app.services.succession_projection import project_succession
 from app.services.uprising_projection import project_uprisings
 from app.services.vassal_projection import (
     project_pending_demands,
@@ -104,6 +115,13 @@ def _commander_name(world: WorldState, commander_id: str | None) -> str | None:
     return None if commander is None else commander.name
 
 
+def _march_route(army: ArmyState) -> list[str] | None:
+    march = army.march
+    if march is None or march.is_halted or march.is_returning:
+        return None
+    return [*march.route, march.to_id]
+
+
 def own_armies(world: WorldState, faction_id: str) -> list[ArmyView]:
     return [
         ArmyView(
@@ -113,6 +131,9 @@ def own_armies(world: WorldState, faction_id: str) -> list[ArmyView]:
             pay_level=army.pay_level,
             troops=army.troops,
             commander_name=_commander_name(world, army.commander_id),
+            march_route=_march_route(army),
+            withdrawal_policy=army.withdrawal_policy,
+            reserve_policy=army.reserve_policy,
         )
         for _, army in sorted(world.armies.items())
         if army.owner_id == faction_id
@@ -186,6 +207,21 @@ def project_pacts(world: WorldState) -> list[PactView]:
     ]
 
 
+def project_ending(
+    world: WorldState, scenario: StrategyScenario | None = None
+) -> EndingView | None:
+    if world.ending is None:
+        return None
+    definition = find_ending_definition(scenario, world.ending.ending_id)
+    return EndingView(
+        ending_id=world.ending.ending_id,
+        kind=world.ending.kind,
+        turn=world.ending.turn,
+        grade=world.ending.grade,
+        name=definition.name if definition else None,
+    )
+
+
 def project_world(
     world: WorldState, scenario: StrategyScenario, version: int, digest: str
 ) -> CampaignWorldView:
@@ -196,7 +232,7 @@ def project_world(
     return CampaignWorldView(
         **state.model_dump(),
         clock=world.clock,
-        ending=world.ending,
+        ending=project_ending(world, scenario),
         ruler=world.ruler,
         my_faction=own_faction(world, faction_id),
         armies=own_armies(world, faction_id),
@@ -206,13 +242,18 @@ def project_world(
         rivals=project_rivals(world, scenario, faction_id),
         pacts=project_pacts(world),
         sworn_promises=project_sworn_promises(world, faction_id),
+        covenants=project_covenants(world, faction_id),
+        sworn_promise_history=project_sworn_promise_history(world, faction_id),
+        conditional_clauses=project_conditional_clauses(world, faction_id),
         uprisings=project_uprisings(world, scenario, faction_id),
         own_pressure=project_own_pressure(world, scenario, faction_id),
         rumors=project_rumors(world, faction_id),
         truces=project_truces(world, faction_id),
         own_hostages=project_hostages(world, faction_id),
+        own_prisoners=project_prisoners(world, scenario, faction_id),
         open_mediations=project_mediations(world, faction_id),
-        wars=project_wars(world, faction_id),
+        wars=project_wars(world, faction_id, scenario),
+        usable_grounds=project_usable_grounds(world, faction_id, scenario),
         subsidies=project_subsidies(world, faction_id),
         mobilization=project_mobilization(world, faction_id),
         alliances=project_alliances(world, faction_id),
@@ -221,6 +262,7 @@ def project_world(
         pending_demands=project_pending_demands(world, faction_id),
         coalitions=project_coalitions(world, faction_id),
         own_threat=project_own_threat(world, scenario, faction_id),
+        succession=project_succession(world, scenario, faction_id),
         regions=[
             project_region(world, identity, faction_id, index, visible)
             for identity in sorted(world.regions)

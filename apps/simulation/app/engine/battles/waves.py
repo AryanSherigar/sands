@@ -1,6 +1,7 @@
 from collections.abc import Mapping
 from dataclasses import dataclass
 
+from app.engine.battles.control import pending_speeches
 from app.engine.battles.exchange import resolve_exchange
 from app.engine.battles.phase import active_battles
 from app.engine.battles.policy import choose_instruction, select_intent
@@ -13,6 +14,7 @@ from app.engine.hashing import world_hash
 from app.engine.ordering import canonicalize_lists
 from app.engine.outrage.effects import has_press_bias
 from app.engine.summaries.triggers import evaluate_summary_triggers
+from app.exceptions.command_exceptions import CampaignProgressError
 from app.models.battle_command import Command
 from app.models.battle_intelligence import BattleIntent
 from app.models.world_battle import ExchangeReceipt, RetreatResolution
@@ -111,6 +113,8 @@ def advance_wave(
 ) -> WaveResult:
     """Freeze global commands before exchanges; caller persists this wave atomically."""
     require_window(world, expected_turn, expected_wave)
+    if pending_speeches(world):
+        raise CampaignProgressError("battle speech pending", "invalid_lifecycle")
     frozen, selected = _npc_decisions(world, scenario, recorded_intents or {})
     results = [
         resolve_exchange(

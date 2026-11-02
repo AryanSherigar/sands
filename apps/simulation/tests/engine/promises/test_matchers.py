@@ -70,3 +70,17 @@ def test_unrelated_event_kinds_never_match() -> None:
     ):
         event = _event("peace_signed", "war_1", PROMISOR, BENEFICIARY, THIRD)
         assert not is_breach(_term(promise, subject), event)
+
+
+def test_occupying_the_subject_region_breaches_never_occupy_region() -> None:
+    term = _term(PromiseKind.NEVER_OCCUPY_REGION, "reg_gate")
+
+    assert is_breach(term, _event("region_occupied", PROMISOR, "reg_gate"))
+
+
+def test_occupying_another_region_or_by_another_faction_is_no_breach() -> None:
+    term = _term(PromiseKind.NEVER_OCCUPY_REGION, "reg_gate")
+
+    assert not is_breach(term, _event("region_occupied", PROMISOR, "reg_other"))
+    assert not is_breach(term, _event("region_occupied", THIRD, "reg_gate"))
+    assert not is_breach(term, _event("siege_started", PROMISOR, "reg_gate"))

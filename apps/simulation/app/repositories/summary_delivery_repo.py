@@ -13,6 +13,8 @@ PAGE = """SELECT * FROM summary_deliveries WHERE playthrough_id=%(playthrough_id
 AND (%(after_id)s::uuid IS NULL OR (created_at,summary_id) > (
  SELECT created_at,summary_id FROM summary_deliveries WHERE summary_id=%(after_id)s AND playthrough_id=%(playthrough_id)s))
 ORDER BY created_at,summary_id LIMIT %(limit)s"""
+COMPLETED_NARRATIONS = """SELECT narration FROM summary_deliveries
+WHERE playthrough_id=%s AND status='completed' ORDER BY created_at, summary_id"""
 CLAIM = """UPDATE summary_deliveries SET status='generating', attempts=attempts+1,
 claim_id=%s, lease_token=%s, lease_expires_at=now()+make_interval(secs => %s), error_code=NULL
 WHERE playthrough_id=%s AND summary_id=%s AND status<>'completed' AND attempts<%s
@@ -61,6 +63,13 @@ async def page(
             PAGE, {"playthrough_id": identity, "after_id": after, "limit": limit}
         )
         return await cursor.fetchall()
+
+
+async def completed_narrations(
+    connection: AsyncConnection, identity: UUID
+) -> list[str]:
+    cursor = await connection.execute(COMPLETED_NARRATIONS, (identity,))
+    return [row[0] for row in await cursor.fetchall()]
 
 
 async def claim(

@@ -14,7 +14,12 @@ from app.engine.story_check import StoryCheckPhase
 from app.exceptions.command_exceptions import GameEndedError
 from app.models.world_events import PhaseName
 from app.models.world_state import WorldState
-from strategy_contracts.scenario import EndingKind, StrategyScenario
+from strategy_contracts.conditions import (
+    Comparison,
+    ConditionMetric,
+    ConditionOperator,
+)
+from strategy_contracts.scenario import EndingDefinition, EndingKind, StrategyScenario
 
 from tests.engine.economy.builders import (
     PLAYER,
@@ -238,3 +243,57 @@ def test_require_game_not_ended_blocks_an_ended_world() -> None:
         assert error.code == "game_ended"
     else:
         raise AssertionError("expected GameEndedError")
+
+
+def _creator_scenario(*definitions: EndingDefinition) -> StrategyScenario:
+    return StrategyScenario(is_using_default_endings=False, endings=list(definitions))
+
+
+def _holds_regions(ending_id: str, count: int, kind: EndingKind) -> EndingDefinition:
+    return EndingDefinition(
+        id=ending_id,
+        kind=kind,
+        name=f"The {ending_id}",
+        condition=Comparison(
+            metric=ConditionMetric.REGION_COUNT,
+            subject_id=PLAYER,
+            operator=ConditionOperator.GTE,
+            value=count,
+        ),
+    )
+
+
+def test_a_creator_ending_ends_the_game_when_its_condition_holds() -> None:
+    world = _world()
+    scenario = _creator_scenario(_holds_regions("golden_age", 1, EndingKind.VICTORY))
+
+    result = StoryCheckPhase().run(world, _context(scenario))
+
+    assert result.world.ending is not None
+    assert result.world.ending.ending_id == "golden_age"
+    assert result.world.ending.kind is EndingKind.VICTORY
+    assert [event.kind for event in result.events] == ["ending_reached"]
+
+
+def test_creator_endings_are_checked_in_authored_order() -> None:
+    world = _world()
+    scenario = _creator_scenario(
+        _holds_regions("second_best", 5, EndingKind.VICTORY),
+        _holds_regions("first_met", 1, EndingKind.DEFEAT),
+        _holds_regions("also_met", 1, EndingKind.VICTORY),
+    )
+
+    result = StoryCheckPhase().run(world, _context(scenario))
+
+    assert result.world.ending.ending_id == "first_met"
+
+
+def test_a_creator_scenario_ignores_the_default_endings() -> None:
+    world = _world()
+    world.regions[PLAYER_CAPITAL].owner_id = RIVAL
+    scenario = _creator_scenario(_holds_regions("unreachable", 9, EndingKind.VICTORY))
+
+    result = StoryCheckPhase().run(world, _context(scenario))
+
+    assert result.world.ending is None
+    assert result.world.stability_collapse_turns == 0

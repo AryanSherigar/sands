@@ -7,6 +7,7 @@ from app.models.battle_intelligence import ReconReport, ScoutCaptureStatus
 from app.models.intent_briefing import IntentBriefing
 from app.models.world_battle import (
     BattleAction,
+    BattleContingent,
     BattleControlMode,
     BattleState,
     BattleStatus,
@@ -50,7 +51,17 @@ def _own_contingent(
         plan=contingent.plan.model_copy(deep=True),
         supply=contingent.supply or SupplyState.ISOLATED,
         status=contingent.status,
+        active=_deployed(contingent, "active"),
+        reserve=_deployed(contingent, "reserve"),
     )
+
+
+def _deployed(contingent: BattleContingent, field: str) -> dict[TroopType, int]:
+    totals: dict[TroopType, int] = {}
+    for deployment in contingent.deployments.values():
+        for troop_type, count in getattr(deployment, field).items():
+            totals[troop_type] = totals.get(troop_type, 0) + count
+    return {troop_type: count for troop_type, count in totals.items() if count}
 
 
 def visible_reports(
@@ -168,12 +179,14 @@ def project_battle(
         total_exchanges=battle.total_exchanges,
         is_big=battle.is_big,
         control_mode=battle.control_mode,
+        speech_status=battle.speech.status if battle.speech else None,
         terrain=battle.terrain,
         weather=battle.weather or Weather.CLEAR,
         own_contingent=_own_contingent(world, battle, observer_faction_id),
         opponents=_opponents(world, battle, observer_faction_id),
         legal_commands=_legal_commands(world, battle, observer_faction_id),
         command_cost=scenario.tuning.battle.command_cost,
+        frontage=scenario.tuning.battle.frontage[battle.terrain],
     )
 
 

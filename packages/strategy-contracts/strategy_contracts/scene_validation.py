@@ -1,5 +1,6 @@
 from collections.abc import Callable
 
+from strategy_contracts.judgment import JudgmentOutcome, JudgmentSpec
 from strategy_contracts.limits import MAX_OUTCOME_GRADE
 from strategy_contracts.scene import (
     ChoiceOutcome,
@@ -16,9 +17,16 @@ from strategy_contracts.scene import (
     VerdictSpec,
 )
 
-OutcomeSpecType = TermsCardSpec | GradesSpec | VerdictSpec | ChoiceSpec | ProseOnlySpec
+OutcomeSpecType = (
+    TermsCardSpec | GradesSpec | VerdictSpec | ChoiceSpec | ProseOnlySpec | JudgmentSpec
+)
 OutcomeType = (
-    TermsCardOutcome | GradesOutcome | VerdictOutcome | ChoiceOutcome | ProseOnlyOutcome
+    TermsCardOutcome
+    | GradesOutcome
+    | VerdictOutcome
+    | ChoiceOutcome
+    | ProseOnlyOutcome
+    | JudgmentOutcome
 )
 
 
@@ -63,12 +71,24 @@ def _validate_prose_only(spec: ProseOnlySpec, outcome: ProseOnlyOutcome) -> list
     return []
 
 
+def _validate_judgment(spec: JudgmentSpec, outcome: JudgmentOutcome) -> list[str]:
+    offered = next(
+        (option for option in spec.options if option.verdict is outcome.verdict), None
+    )
+    if offered is None:
+        return [f"verdict '{outcome.verdict.value}' is not offered in this scene"]
+    if outcome.nuance is not None and outcome.nuance not in offered.nuances:
+        return [f"nuance '{outcome.nuance.value}' is not offered in this scene"]
+    return []
+
+
 _VALIDATORS: dict[str, Callable[[OutcomeSpecType, OutcomeType], list[str]]] = {
     "terms_card": _validate_terms,
     "grades": _validate_grades,
     "verdict": _validate_option,
     "choice": _validate_option,
     "prose_only": _validate_prose_only,
+    "judgment": _validate_judgment,
 }
 
 

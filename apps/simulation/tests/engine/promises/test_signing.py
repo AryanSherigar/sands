@@ -116,3 +116,22 @@ def test_never_ally_subject_must_be_a_faction() -> None:
 
     with pytest.raises(CampaignProgressError):
         sign_sworn_promise(world, term, SCENE_ID)
+
+
+def test_a_region_promise_signs_for_a_known_region() -> None:
+    world = make_world()
+    term = _term(promise=PromiseKind.NEVER_OCCUPY_REGION, subject_id="aldgate")
+
+    sign_sworn_promise(world, term, SCENE_ID)
+
+    assert world.commitments[-1].term == term
+
+
+def test_a_region_promise_for_an_unknown_region_is_rejected() -> None:
+    world = make_world()
+    term = _term(promise=PromiseKind.NEVER_OCCUPY_REGION, subject_id="nowhere")
+
+    with pytest.raises(CampaignProgressError) as error:
+        sign_sworn_promise(world, term, SCENE_ID)
+
+    assert error.value.status_code == 422

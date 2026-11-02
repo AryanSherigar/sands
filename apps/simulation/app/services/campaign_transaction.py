@@ -1,5 +1,6 @@
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
+from typing import NamedTuple
 from uuid import UUID
 
 from app.engine.hashing import world_hash
@@ -8,6 +9,7 @@ from app.engine.pipeline import TurnResult
 from app.engine.world_document import world_from_document
 from app.exceptions.access_exceptions import PlaythroughNotFoundError
 from app.exceptions.command_exceptions import CommandError
+from app.integrations.core_api_client import sync_turn_count
 from app.models.battle_command import AcceptedCommand
 from app.models.battle_progress import MutationResponse, OperationGuard
 from app.models.persistence import PlaythroughRow, WorldStateRow
@@ -32,6 +34,24 @@ from app.services.economy_scene import persist_pause
 from app.services.event_materialization import persist_event_deliveries
 from app.services.summary_materialization import persist_summary_requests
 from psycopg import AsyncConnection
+from strategy_contracts.scenario import EndingKind
+
+
+class TurnSyncTarget(NamedTuple):
+    turn_count: int
+    is_ended: bool
+    outcome_tag: str | None
+    outcome_title: str | None
+
+
+def _ending_outcome(world: WorldState) -> tuple[str | None, str | None]:
+    """Win or lose for the Core API lists; graded endings carry no binary outcome."""
+    ending = world.ending
+    if ending is None:
+        return None, None
+    tags = {EndingKind.VICTORY: "win", EndingKind.DEFEAT: "lose"}
+    title = ending.ending_id.replace("_", " ").title()
+    return tags.get(ending.kind), title
 
 
 @dataclass(frozen=True)
@@ -139,6 +159,7 @@ class CampaignTransaction:
         transition: TransitionFunction,
     ) -> MutationResponse:
         digest = request_hash(route_kind, payload)
+        sync_target: TurnSyncTarget | None = None
         async with self.connection.transaction():
             playthrough = await require_owner(self.connection, playthrough_id, user_id)
             previous = await replay_operation(
@@ -150,9 +171,12 @@ class CampaignTransaction:
             )
             if previous is not None:
                 return previous
-            return await self._locked(
+            response, sync_target = await self._locked(
                 playthrough, user_id, guard, route_kind, digest, transition
             )
+        if sync_target is not None:
+            await sync_turn_count(playthrough_id, *sync_target)
+        return response
 
     async def _locked(
         self,
@@ -162,7 +186,7 @@ class CampaignTransaction:
         route_kind: str,
         digest: str,
         transition: TransitionFunction,
-    ) -> MutationResponse:
+    ) -> tuple[MutationResponse, TurnSyncTarget | None]:
         identity = playthrough.playthrough_id
         row = await world_state_repo.get_world_state(
             self.connection, identity, should_lock=True
@@ -171,7 +195,7 @@ class CampaignTransaction:
             self.connection, identity, str(user_id), guard.operation_id, digest
         )
         if previous is not None:
-            return previous
+            return previous, None
         world = checked_world(row, guard)
         return await self._apply(
             LockedCampaign(playthrough, row, world),
@@ -190,7 +214,7 @@ class CampaignTransaction:
         route_kind: str,
         digest: str,
         transition: TransitionFunction,
-    ) -> MutationResponse:
+    ) -> tuple[MutationResponse, TurnSyncTarget | None]:
         result = await transition(locked)
         response = await self._persist(locked, operation_id, result)
         await operation_repo.insert_operation(
@@ -202,7 +226,16 @@ class CampaignTransaction:
             response,
             result.world.counters.get(CounterKind.EVENT_SEQ, 0),
         )
-        return response
+        sync_target = (
+            TurnSyncTarget(
+                result.world.clock.turn,
+                result.world.ending is not None,
+                *_ending_outcome(result.world),
+            )
+            if result.is_complete
+            else None
+        )
+        return response, sync_target
 
     async def _persist(
         self,

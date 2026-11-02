@@ -1,6 +1,7 @@
 from app.engine.economy.arithmetic import PERCENT, clamp
 from app.engine.internal import events
 from app.engine.internal.rebel_armies import disperse_rebel_army
+from app.engine.revolt.queueing import is_region_locked, queue_revolt_talk
 from app.exceptions.command_exceptions import CommandError
 from app.models.battle_command import ResolveUprisingCommand
 from app.models.world_events import EventLogEntry
@@ -11,6 +12,7 @@ from app.models.world_internal import (
     allowed_responses,
 )
 from app.models.world_state import UPRISING_LIFECYCLE_RULESET, WorldState
+from strategy_contracts.revolt import RevoltTalkTuning
 from strategy_contracts.scenario import InternalTuning
 
 
@@ -23,10 +25,16 @@ def validate_resolution(world: WorldState, command: ResolveUprisingCommand) -> N
     is_lifecycle = world.internal_ruleset >= UPRISING_LIFECYCLE_RULESET
     if is_lifecycle and command.response not in allowed_responses(uprising):
         raise CommandError("no one to answer the crowd", "no_spokesperson", 422)
+    is_locked = is_region_locked(world, uprising.region_id)
+    if command.response is UprisingResponse.NEGOTIATE and is_locked:
+        raise CommandError("the people will not talk again yet", "talks_refused", 422)
 
 
 def apply_resolution(
-    world: WorldState, command: ResolveUprisingCommand, tuning: InternalTuning
+    world: WorldState,
+    command: ResolveUprisingCommand,
+    tuning: InternalTuning,
+    revolt: RevoltTalkTuning | None = None,
 ) -> EventLogEntry:
     validate_resolution(world, command)
     uprising = next(item for item in world.uprisings if item.id == command.uprising_id)
@@ -34,6 +42,12 @@ def apply_resolution(
     faction = world.factions[command.faction_id]
     unrest_before, stability_before = region.unrest, faction.stability
     unrest_change, stability_change = _response_changes(command.response, tuning)
+    is_talk = command.response is UprisingResponse.NEGOTIATE and (
+        revolt is not None and revolt.is_enabled
+    )
+    if is_talk:
+        unrest_change = 0
+        queue_revolt_talk(world, uprising)
     region.unrest = clamp(region.unrest + unrest_change, 0, PERCENT)
     faction.stability = clamp(faction.stability + stability_change, 0, PERCENT)
     if world.internal_ruleset >= UPRISING_LIFECYCLE_RULESET:

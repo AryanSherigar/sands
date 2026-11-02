@@ -2,11 +2,10 @@
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
-from fastapi.responses import JSONResponse
-
 from app.models.health import HEALTH_STATUS_OK
 from app.services.health_service import HealthService, get_health_service
+from fastapi import APIRouter, Depends
+from fastapi.responses import JSONResponse
 
 router = APIRouter()
 

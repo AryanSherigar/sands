@@ -41,7 +41,12 @@ from app.models.orders import (
     QueuedOrder,
 )
 from app.models.world_army import ArmyState
-from app.models.world_battle import BattleControlMode, BattleState, BattleStatus
+from app.models.world_battle import (
+    BattleContingent,
+    BattleControlMode,
+    BattleState,
+    BattleStatus,
+)
 from app.models.world_state import WorldState
 from strategy_contracts.scenario import StrategyScenario
 
@@ -86,6 +91,17 @@ def validate_battle_command(
         return command.plan == contingent.plan
     if isinstance(command, CommitReservesCommand) and contingent.has_committed_reserves:
         raise CommandError("reserves already committed")
+    _validate_intelligence_command(world, battle, contingent, command, scenario)
+    return False
+
+
+def _validate_intelligence_command(
+    world: WorldState,
+    battle: BattleState,
+    contingent: BattleContingent,
+    command: Command,
+    scenario: StrategyScenario,
+) -> None:
     if isinstance(command, ReconCommand):
         opponent = battle.contingents.get(command.subject_faction_id)
         if opponent is None or opponent.side == contingent.side:
@@ -97,7 +113,6 @@ def validate_battle_command(
         resolve_capture_decision(
             world, command.capture_id, command.faction_id, command.decision, scenario
         )
-    return False
 
 
 def _require_player_control(
@@ -199,6 +214,9 @@ def _require_attackable(
         raise CommandError("attack target unavailable", problem.value, 422)
 
 
+UNIMPLEMENTED_KINDS = frozenset(("build_improvement", "propose_agreement"))
+
+
 def validate_empire_command(
     world: WorldState,
     command: Command,
@@ -206,6 +224,8 @@ def validate_empire_command(
     pending: Sequence[AcceptedCommand] = (),
 ) -> None:
     """Pass the faction's queued economy commands when accepting; omit them at execution, when the world already reflects every applied order."""
+    if command.kind in UNIMPLEMENTED_KINDS:
+        raise CommandError("order type not supported", "unimplemented_order", 422)
     if command.kind in DIPLOMACY_KINDS:
         validate_diplomacy_order(world, command, scenario)
         return

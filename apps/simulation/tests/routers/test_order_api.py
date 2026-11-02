@@ -125,3 +125,31 @@ async def test_accepting_a_besiege_order_for_the_wrong_region_is_refused(
 
     assert response.status_code == 422
     assert response.json()["code"] == "wrong_region"
+
+
+async def test_split_is_checked_queued_and_applied_at_turn_end(
+    api: AsyncClient,
+) -> None:
+    base, version = await start(api)
+    army = (await api.get(f"{base}/world")).json()["armies"][0]
+    kind = next(name for name, count in army["troops"].items() if count > 1)
+    taken = {kind: 1}
+    split = {
+        "kind": "split_army",
+        "faction_id": PLAYER_FACTION,
+        "army_id": army["army_id"],
+        "troops": taken,
+    }
+    too_many = split | {"troops": {kind: 10_000_000}}
+
+    flagged = await api.post(f"{base}/commands/check", json={"command": too_many})
+    ok = await api.post(f"{base}/commands/check", json={"command": split})
+    assert flagged.json()["flag"] is not None
+    assert ok.json()["flag"] is None
+
+    accepted = await api.post(
+        f"{base}/commands", json=guard("split", version) | {"command": split}
+    )
+    assert accepted.status_code == 200, accepted.text
+    queued = (await api.get(f"{base}/world")).json()["queued_orders"]
+    assert [item["order"]["kind"] for item in queued] == ["split_army"]

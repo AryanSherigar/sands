@@ -4,6 +4,7 @@ from uuid import UUID
 
 from app.engine.campaign_completion import complete_campaign
 from app.engine.hashing import world_hash
+from app.engine.judgments.arming import arm_judgment
 from app.engine.letters.arming import arm_letter
 from app.engine.negotiation_triggers import arm_triggered_negotiation
 from app.engine.ordering import canonicalize_lists
@@ -14,7 +15,10 @@ from app.engine.phases import (
     PhaseResult,
     ScenePause,
 )
+from app.engine.proclamations.lifecycle import tick_active_proclamation_turn
 from app.engine.promises.watch import scan_sworn_promises
+from app.engine.revolt.arming import arm_revolt_talk
+from app.engine.revolt.watch import scan_covenants
 from app.engine.rng import derive_rng
 from app.engine.stances.apply import apply_due_stances
 from app.engine.summaries.triggers import evaluate_summary_triggers
@@ -92,6 +96,7 @@ def _finalize_phase(
     if result.world.treaty_ruleset >= 1:
         result.events += scan_conditional_clauses(result.world, scenario, name)
     result.events += scan_sworn_promises(result.world, scenario, result.events, name)
+    result.events += scan_covenants(result.world, scenario, result.events, name)
     canonicalize_lists(result.world)
     return _stamp_events(result.world, name, result.events)
 
@@ -137,10 +142,13 @@ def _complete_turn(
         )
     evaluate_summary_triggers(world, scenario, events, previous)
     world.clock.turn += 1
+    tick_active_proclamation_turn(world)
     apply_due_stances(world, recorded_stances)
     world.progress = TurnProgress()
     arm_triggered_negotiation(world, scenario)
     arm_letter(world, scenario)
+    arm_judgment(world, scenario, events)
+    arm_revolt_talk(world, scenario)
     return TurnResult(world, events, TurnStatus.RESOLVED, None, world_hash(world))
 
 

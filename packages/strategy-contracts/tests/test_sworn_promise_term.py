@@ -78,3 +78,10 @@ def test_scene_decision_defaults_to_no_promise() -> None:
     decision = SceneDecision(action=SceneAction.CONTINUE_TALK)
     assert decision.promise_kind is None
     assert decision.is_promise_by_ruler is False
+
+
+def test_never_occupy_region_requires_a_region_subject() -> None:
+    with pytest.raises(ValidationError):
+        _term(promise=PromiseKind.NEVER_OCCUPY_REGION)
+    term = _term(promise=PromiseKind.NEVER_OCCUPY_REGION, subject_id="reg_gate")
+    assert term.subject_id == "reg_gate"

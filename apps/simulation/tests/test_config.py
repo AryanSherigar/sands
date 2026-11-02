@@ -55,9 +55,9 @@ def test_development_accepts_the_default_secret() -> None:
 def test_intent_provider_is_off_by_default_and_hard_bounded() -> None:
     settings = Settings()
     assert settings.intent_provider_enabled is False
-    assert settings.intent_provider_timeout_seconds == 2
+    assert settings.intent_provider_timeout_seconds == 6
     assert settings.intent_provider_max_output_tokens == 256
     with pytest.raises(ValidationError):
-        Settings(intent_provider_timeout_seconds=2.01)
+        Settings(intent_provider_timeout_seconds=6.01)
     with pytest.raises(ValidationError):
         Settings(intent_provider_max_output_tokens=257)

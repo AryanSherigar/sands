@@ -112,7 +112,12 @@ def _store_acceptance(
         accepted.command, ResolveUprisingCommand
     ) and not is_uprising_queued(owned)
     if is_immediate_answer:
-        event = apply_resolution(owned, accepted.command, scenario.tuning.internal)
+        event = apply_resolution(
+            owned,
+            accepted.command,
+            scenario.tuning.internal,
+            scenario.tuning.revolt_talk,
+        )
         accepted.status = CommandStatus.APPLIED
         accepted.applied_turn = owned.clock.turn
         accepted.applied_wave = 0

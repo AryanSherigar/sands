@@ -6,7 +6,12 @@ from app.engine.treaty.registry import term_parties
 from app.models.world_diplomacy import CommitmentState, CommitmentStatus
 from app.models.world_events import EventLogEntry, PhaseName
 from app.models.world_state import CounterKind, WorldState
-from strategy_contracts.condition_templates import compile_clause
+from strategy_contracts.condition_templates import (
+    REGION_TEMPLATES,
+    ConditionClause,
+    ConditionTemplate,
+    compile_clause,
+)
 from strategy_contracts.terms import ConditionalTerm
 
 CONDITIONAL_CLAUSE_SIGNED = "conditional_clause_signed"
@@ -22,7 +27,18 @@ def is_condition_met(world: WorldState, term: ConditionalTerm) -> bool:
     # which imports this module; importing it at module level closes the cycle.
     from app.engine.conditions import evaluate
 
-    return evaluate(world, compile_clause(term.when))
+    clause = term.when
+    if clause.template in REGION_TEMPLATES:
+        return _is_region_condition_met(world, clause)
+    return evaluate(world, compile_clause(clause))
+
+
+def _is_region_condition_met(world: WorldState, clause: ConditionClause) -> bool:
+    region = world.regions.get(clause.region_id or "")
+    is_owner = region is not None and region.owner_id == clause.faction_id
+    return (
+        is_owner if clause.template is ConditionTemplate.OWNS_REGION else not is_owner
+    )
 
 
 def add_conditional_commitment(

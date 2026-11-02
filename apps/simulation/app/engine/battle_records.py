@@ -1,4 +1,10 @@
-from app.models.world_battle import BattleContingent, BattleSide, BattleState
+from app.models.world_army import ArmyState
+from app.models.world_battle import (
+    BattleContingent,
+    BattleSide,
+    BattleState,
+    StandingPlan,
+)
 from app.models.world_state import WorldState
 
 
@@ -8,6 +14,16 @@ def populate_battle_contingents(world: WorldState, battle: BattleState) -> None:
         (BattleSide.DEFENDER, battle.defender_army_ids),
     ):
         _populate_side(world, battle, side, army_ids)
+
+
+def _preset_plan(armies: list[ArmyState]) -> StandingPlan:
+    plan = StandingPlan()
+    for army in armies:
+        if army.withdrawal_policy is not None:
+            plan.withdrawal_policy = army.withdrawal_policy
+        if army.reserve_policy is not None:
+            plan.reserve_policy = army.reserve_policy
+    return plan
 
 
 def _populate_side(
@@ -26,7 +42,11 @@ def _populate_side(
         owned = [army for army in participants if army.owner_id == owner]
         if owner not in battle.contingents:
             battle.contingents[owner] = BattleContingent(
-                faction_id=owner, side=side, army_ids=[], entry_troops=0
+                faction_id=owner,
+                side=side,
+                army_ids=[],
+                entry_troops=0,
+                plan=_preset_plan(owned),
             )
         contingent = battle.contingents[owner]
         new_armies = [army for army in owned if army.id not in contingent.army_ids]

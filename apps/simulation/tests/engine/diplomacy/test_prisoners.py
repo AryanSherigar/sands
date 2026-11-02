@@ -21,6 +21,13 @@ from tests.engine.peace.builders import (
 )
 
 TUNING = SCENARIO.tuning.peace
+EAGER_SCENARIO = SCENARIO.model_copy(
+    update={
+        "tuning": SCENARIO.tuning.model_copy(
+            update={"peace": TUNING.model_copy(update={"ransom_base_percent": 200})}
+        )
+    }
+)
 
 
 def _troops(
@@ -60,7 +67,7 @@ def test_ransom_moves_gold_frees_prisoner_and_scores_a_chip() -> None:
     payer_before = world.factions[WRATHFUL_RIVAL].treasury
     holder_before = world.factions[PLAYER].treasury
 
-    handle_prisoner(world, SCENARIO, _order("prisoner_1", "ransom"))
+    handle_prisoner(world, EAGER_SCENARIO, _order("prisoner_1", "ransom"))
 
     assert world.prisoners == []
     assert world.factions[WRATHFUL_RIVAL].treasury == payer_before - price
@@ -69,8 +76,9 @@ def test_ransom_moves_gold_frees_prisoner_and_scores_a_chip() -> None:
     assert world.peace.ransom_points[key] == TUNING.ransom_score_chip
 
 
-def test_ransom_fails_when_origin_cannot_pay() -> None:
+def test_legacy_ransom_fails_when_origin_cannot_pay() -> None:
     world = make_world()
+    world.peace_ruleset = 1
     add_war(world)
     _troops(world, PLAYER, WRATHFUL_RIVAL)
     world.factions[WRATHFUL_RIVAL].treasury = 0

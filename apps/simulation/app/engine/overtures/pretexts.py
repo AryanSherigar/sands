@@ -24,6 +24,21 @@ PRETEXTS: dict[OvertureKind, dict[str, str]] = {
         GENTLE: "Perhaps we can still speak before more is lost.",
         PLAIN: "We ask that our envoys meet and talk.",
     },
+    OvertureKind.RANSOM_DEMAND: {
+        PROUD: "Your people are ours to keep. Pay for them, or leave them to their fate.",
+        GENTLE: "Your people are well kept, but we would see them home for a price.",
+        PLAIN: "We hold your captives. Name their ransom and they go free.",
+    },
+    OvertureKind.RANSOM_COUNTER: {
+        PROUD: "Your price is an insult. This is what we will pay, and no more.",
+        GENTLE: "We cannot meet your price, but we offer what we can for our people.",
+        PLAIN: "We counter your ransom with this sum for the captives.",
+    },
+    OvertureKind.OATH_OFFER: {
+        PROUD: "We hold you worthy of our word. Let it be sworn that we will not make war on you.",
+        GENTLE: "We value the friendship between our realms and would swear to keep the peace.",
+        PLAIN: "We offer a sworn promise that we will not attack you.",
+    },
     OvertureKind.HEIR_RENEWAL: {
         PROUD: "The crown has passed to a new hand. Honor the old treaty to us.",
         GENTLE: "A new ruler asks that the peace our elders made be kept.",

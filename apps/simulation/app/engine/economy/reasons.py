@@ -16,6 +16,10 @@ class RejectReason(str, Enum):
     LOANS_DISABLED = "loans_disabled"
     INVALID_AMOUNT = "invalid_amount"
     NO_CREDIT = "no_credit"
+    ARMY_BUSY = "army_busy"
+    DIFFERENT_LOCATION = "different_location"
+    INVALID_MERGE = "invalid_merge"
+    INVALID_SPLIT = "invalid_split"
 
 
 SHORTFALL_TAKE_LOAN = "shortfall_take_loan"

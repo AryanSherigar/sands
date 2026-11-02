@@ -1,8 +1,14 @@
 from collections.abc import Callable
 
 from app.engine.alliances.pricing import alliance_price
-from app.engine.peace.pricing import CardPrice, price_term
+from app.engine.peace.pricing import (
+    CardPrice,
+    is_curved_release,
+    price_release,
+    price_term,
+)
 from app.engine.vassals.pricing import vassal_price
+from app.models.world_state import WorldState
 from strategy_contracts.ids import FactionId
 from strategy_contracts.limits import FULL_SHARE_PERCENT
 from strategy_contracts.scenario import StrategyScenario
@@ -96,8 +102,13 @@ CLAUSE_PRICERS: dict[type[Term], ClausePricer] = {
 
 
 def price_clause(
-    term: Term, signer_id: FactionId, scenario: StrategyScenario
+    term: Term,
+    signer_id: FactionId,
+    scenario: StrategyScenario,
+    world: WorldState | None = None,
 ) -> CardPrice:
+    if world is not None and is_curved_release(world, term):
+        return price_release(world, scenario, term, signer_id)
     pricer = CLAUSE_PRICERS.get(type(term))
     if pricer is not None:
         return pricer(term, signer_id, scenario)

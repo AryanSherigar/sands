@@ -1,6 +1,8 @@
 from collections import defaultdict
 from collections.abc import Sequence
 
+from app.engine.promises.signing import SWORN_PROMISE_MADE
+from app.engine.promises.watch import SWORN_PROMISE_BROKEN
 from app.models.api_turn import (
     BattleReport,
     BattleRoundReport,
@@ -10,11 +12,12 @@ from app.models.api_turn import (
     TurnReport,
 )
 from app.models.world_battle import BattleState, ExchangeReceipt
-from app.models.world_events import EventLogEntry
+from app.models.world_events import EventCause, EventLogEntry
 from app.models.world_state import WorldState
 from strategy_contracts.enums import TroopType
 
 BATTLE_EVENT_PREFIX = "battle_"
+ENDING_EVENT_KIND = "ending_reached"
 SIEGE_EVENT_KINDS = frozenset(
     {
         "siege_started",
@@ -24,6 +27,8 @@ SIEGE_EVENT_KINDS = frozenset(
         "occupation_lifted",
     }
 )
+OATH_EVENT_KINDS = frozenset({SWORN_PROMISE_MADE, SWORN_PROMISE_BROKEN})
+OATH_PARTY_COUNT = 2
 ECONOMY_CATEGORY_BY_KIND: dict[str, EconomyCategory] = {
     "income_collected": "tax",
     "upkeep_paid": "upkeep",
@@ -146,6 +151,13 @@ def _is_siege_event_visible(event: EventLogEntry, visible: set[str]) -> bool:
     )
 
 
+def _is_oath_event_visible(event: EventLogEntry, faction_id: str) -> bool:
+    return (
+        event.kind in OATH_EVENT_KINDS
+        and faction_id in event.cause.subject_ids[:OATH_PARTY_COUNT]
+    )
+
+
 def _visible_events(
     events: Sequence[EventLogEntry], world: WorldState, faction_id: str
 ) -> list[EventLogEntry]:
@@ -153,13 +165,21 @@ def _visible_events(
     return [
         event
         for event in events
-        if _is_siege_event_visible(event, visible)
+        if event.kind == ENDING_EVENT_KIND
+        or _is_siege_event_visible(event, visible)
+        or _is_oath_event_visible(event, faction_id)
         or (
             not event.kind.startswith(BATTLE_EVENT_PREFIX)
             and event.cause.subject_ids
             and set(event.cause.subject_ids) <= visible
         )
     ]
+
+
+def _player_safe_cause(event: EventLogEntry) -> EventCause:
+    if event.kind == ENDING_EVENT_KIND:
+        return event.cause.model_copy(update={"inputs": {}})
+    return event.cause
 
 
 def build_event_lines(
@@ -170,7 +190,7 @@ def build_event_lines(
             text_key=event.cause.summary_key,
             kind=event.kind,
             subject_ids=event.cause.subject_ids,
-            cause=event.cause,
+            cause=_player_safe_cause(event),
         )
         for event in _visible_events(events, world, faction_id)
     ]

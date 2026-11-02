@@ -3,6 +3,7 @@ from collections.abc import Callable, Sequence
 from app.engine.economy import events
 from app.engine.economy.arithmetic import ceil_division
 from app.engine.economy.armies import next_army_id, remove_army
+from app.engine.economy.army_reorg import apply_merge, apply_set_policy, apply_split
 from app.engine.economy.credit import available_credit
 from app.engine.economy.ledger import available_cash, change_treasury
 from app.engine.economy.loans import take_loan
@@ -12,10 +13,13 @@ from app.engine.economy.state import EconomyRun
 from app.models.orders import (
     DeclareDefaultOrder,
     DisbandArmyOrder,
+    MergeArmiesOrder,
     QueuedOrder,
     RaiseArmyOrder,
+    SetArmyPolicyOrder,
     SetPayOrder,
     SetTaxRateOrder,
+    SplitArmyOrder,
     TakeLoanOrder,
 )
 from app.models.world_army import ArmyState
@@ -31,6 +35,9 @@ ECONOMY_ORDER_TYPES = (
     DeclareDefaultOrder,
     RaiseArmyOrder,
     DisbandArmyOrder,
+    MergeArmiesOrder,
+    SplitArmyOrder,
+    SetArmyPolicyOrder,
 )
 ORDER_SUMMARY_LOAN = "order_take_loan"
 
@@ -207,6 +214,9 @@ HANDLERS: dict[type, Callable[[EconomyRun, object], None]] = {
     DeclareDefaultOrder: _apply_declare_default,
     RaiseArmyOrder: _apply_raise,
     DisbandArmyOrder: _apply_disband,
+    MergeArmiesOrder: apply_merge,
+    SplitArmyOrder: apply_split,
+    SetArmyPolicyOrder: apply_set_policy,
 }
 
 

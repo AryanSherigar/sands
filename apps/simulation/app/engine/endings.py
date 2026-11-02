@@ -1,6 +1,7 @@
 from collections.abc import Callable
 from typing import NamedTuple
 
+from app.engine.conditions import evaluate
 from app.engine.ending_rules.end_date import is_end_date_reached
 from app.engine.ending_rules.grade import compute_grade
 from app.engine.ending_rules.hegemony import is_hegemon
@@ -13,7 +14,7 @@ from app.models.world_events import EndingState
 from app.models.world_faction import FactionState
 from app.models.world_internal import is_rebel_faction
 from app.models.world_state import WorldState
-from strategy_contracts.scenario import EndingKind, StrategyScenario
+from strategy_contracts.scenario import EndingDefinition, EndingKind, StrategyScenario
 
 CAPITAL_LOST_ENDING_ID = "default_defeat_capital_lost"
 REVOLUTION_ENDING_ID = "default_defeat_revolution"
@@ -139,6 +140,26 @@ def evaluate_default_endings(
     if graded_id is None:
         return None
     return _graded_ending(graded_id, world, scenario)
+
+
+def evaluate_creator_endings(
+    world: WorldState, scenario: StrategyScenario
+) -> EndingState | None:
+    """The first authored ending, in authored order, whose condition holds."""
+    for definition in scenario.endings:
+        if evaluate(world, definition.condition):
+            return EndingState(
+                ending_id=definition.id, kind=definition.kind, turn=world.clock.turn
+            )
+    return None
+
+
+def find_ending_definition(
+    scenario: StrategyScenario | None, ending_id: str
+) -> EndingDefinition | None:
+    if scenario is None:
+        return None
+    return next((item for item in scenario.endings if item.id == ending_id), None)
 
 
 def require_game_not_ended(world: WorldState) -> None:
