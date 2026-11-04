@@ -7,6 +7,7 @@ const ENV: Env = {
   SIMULATION_ORIGIN: "https://simulation.example.run.app",
   INTERNAL_PROXY_TOKEN: "proxy-token",
   INTERNAL_SERVICE_TOKEN: "service-token",
+  MEDIA_BUCKET: { get: async () => null } as unknown as Env["MEDIA_BUCKET"],
 };
 const CLIENT_IP = "203.0.113.9";
 const SPOOFED_IP = "10.9.9.9";
@@ -147,6 +148,18 @@ describe("fetch handler", () => {
 
     expect(response.status).toBe(502);
     vi.unstubAllGlobals();
+  });
+});
+
+describe("fetch handler media route", () => {
+  it("serves /media/* from the bucket without calling a backend", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+
+    const response = await worker.fetch(incoming("/media/missing.png"), ENV);
+
+    expect(response.status).toBe(404);
+    expect(fetchSpy).not.toHaveBeenCalled();
+    fetchSpy.mockRestore();
   });
 });
 

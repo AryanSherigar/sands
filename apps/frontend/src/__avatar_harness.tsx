@@ -1,8 +1,7 @@
-import React from "react";
 import { createRoot } from "react-dom/client";
 import { AnimatedPortrait } from "@/shared/components/AnimatedPortrait/AnimatedPortrait";
 
-const AVATARS = ["mira", "hana", "aldric", "isolde"];
+const AVATARS = ["mira", "mei", "eleanor"];
 const ROWS = [
   { expression: "neutral", speaking: false },
   { expression: "smile", speaking: false },

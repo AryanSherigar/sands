@@ -2,12 +2,8 @@ import asyncio
 import os
 import shutil
 from playwright.async_api import async_playwright, expect
-from pathlib import Path
 
-REPO_ROOT = Path(__file__).resolve().parent.parent
-
-
-SCREENSHOTS_DIR = str(REPO_ROOT / "scripts" / "screenshots" / "war_council")
+SCREENSHOTS_DIR = "/data/sands/scripts/screenshots/war_council"
 ARTIFACT_DIR = "/home/aryan-sherigar/.gemini/antigravity-cli/brain/5e66f7ed-207b-4a71-a40c-a8783f2375c0"
 
 async def test_war_council_e2e():

@@ -26,6 +26,9 @@ export const FALLBACK_MOOD_MAP: Record<string, string> = {
 // resolves through FALLBACK_MOOD_MAP so playback never requests a missing file.
 export const STRATEGY_TRACK_MAP: Record<string, string> = {
   pax: "/audio/strategy/stems/pax.mp3",
+  vigilance: "/audio/strategy/stems/vigilance.mp3",
+  war: "/audio/strategy/stems/war.mp3",
+  desolation: "/audio/strategy/stems/desolation.mp3",
 };
 
 export function resolveStrategyTrackUrl(trackKey: string): string {

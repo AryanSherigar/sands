@@ -77,14 +77,25 @@ def _intent_worker_enabled(settings: Settings) -> bool:
     )
 
 
+PRODUCTION_ENVIRONMENT = "production"
+
+
+def docs_urls(environment: str) -> dict[str, str | None]:
+    if environment == PRODUCTION_ENVIRONMENT:
+        return {"docs_url": None, "redoc_url": None, "openapi_url": None}
+    return {"docs_url": "/docs", "redoc_url": "/redoc", "openapi_url": "/openapi.json"}
+
+
 def create_app() -> FastAPI:
     """Build the FastAPI app: configure logging, wire the pool lifespan, register routes."""
-    configure_logging(get_settings().log_level)
+    settings = get_settings()
+    configure_logging(settings.log_level)
     application = FastAPI(
         title=SERVICE_TITLE,
         description=SERVICE_DESCRIPTION,
         version=SERVICE_VERSION,
         lifespan=_lifespan,
+        **docs_urls(settings.environment),
     )
     setup_error_handlers(application)
     for route in (

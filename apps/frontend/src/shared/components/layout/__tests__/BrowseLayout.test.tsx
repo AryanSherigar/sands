@@ -16,8 +16,11 @@ const setAuth = (user: UserResponse | null, isLoading = false): void => {
     isAuthenticated: user !== null,
     isLoading,
     isGoogleLoading: false,
+    isEmailLoading: false,
     error: null,
+    emailError: null,
     loginWithGoogle: vi.fn(),
+    loginWithEmail: vi.fn(),
     loginAsDevUser: vi.fn(),
     logout: vi.fn(),
   });

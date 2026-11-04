@@ -1,3 +1,4 @@
+import { START_PLAYTHROUGH_TIMEOUT_MS } from "@/shared/constants/api";
 import { apiClient } from "@/shared/lib/api-client";
 import type { RuleSheetItem } from "@/shared/types/rule-sheet.types";
 import type { UserPlaythroughSummary } from "@/shared/types/playthroughSummary.types";
@@ -71,6 +72,7 @@ export async function createPlaythrough(
   const response = await apiClient.post<PlaythroughResponse>(
     "/v1/playthroughs",
     payload,
+    { timeout: START_PLAYTHROUGH_TIMEOUT_MS },
   );
   return response.data;
 }

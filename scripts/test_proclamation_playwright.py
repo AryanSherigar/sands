@@ -2,13 +2,9 @@ import asyncio
 import os
 import shutil
 from playwright.async_api import async_playwright, expect
-from pathlib import Path
 
-REPO_ROOT = Path(__file__).resolve().parent.parent
-
-
-SCREENSHOTS_DIR = str(REPO_ROOT / "scripts" / "screenshots" / "proclamation")
-DOCS_REPORT_PATH = str(REPO_ROOT / "docs" / "reports" / "proclamation-e2e-browser-test.png")
+SCREENSHOTS_DIR = "/data/sands/.worktrees/strategy-proclamation-scene/scripts/screenshots/proclamation"
+DOCS_REPORT_PATH = "/data/sands/.worktrees/strategy-proclamation-scene/docs/reports/proclamation-e2e-browser-test.png"
 ARTIFACT_DIR = "/home/aryan-sherigar/.gemini/antigravity-cli/brain/3030ffbf-83d8-46aa-8560-9291df55f700"
 
 MOCK_CLASSIFY_RESPONSE = {

@@ -16,8 +16,11 @@ describe("FloatingNav", () => {
       isAuthenticated: false,
       isLoading: false,
       isGoogleLoading: false,
+      isEmailLoading: false,
       error: null,
+      emailError: null,
       loginWithGoogle: vi.fn(),
+      loginWithEmail: vi.fn(),
       loginAsDevUser: vi.fn(),
       logout: vi.fn(),
     });

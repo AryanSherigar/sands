@@ -411,7 +411,9 @@ describe("StrategyAudioDirector", () => {
   describe("track resolution", () => {
     it("only maps stems that exist and routes everything else through the mood files", () => {
       expect(resolveStrategyTrackUrl("pax")).toBe("/audio/strategy/stems/pax.mp3");
-      expect(resolveStrategyTrackUrl("war")).toBe("/audio/moods/combat.wav");
+      expect(resolveStrategyTrackUrl("vigilance")).toBe("/audio/strategy/stems/vigilance.mp3");
+      expect(resolveStrategyTrackUrl("war")).toBe("/audio/strategy/stems/war.mp3");
+      expect(resolveStrategyTrackUrl("desolation")).toBe("/audio/strategy/stems/desolation.mp3");
       expect(resolveStrategyTrackUrl("unknown-key")).toBe("/audio/moods/peaceful.wav");
     });
   });

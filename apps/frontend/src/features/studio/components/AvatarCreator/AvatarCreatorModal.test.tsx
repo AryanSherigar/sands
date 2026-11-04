@@ -27,11 +27,11 @@ const PREMADE_AVATARS = [
     credit: "Miko © Yuki Shindo (AITuber OnAir)",
   },
   {
-    id: "aldric",
-    name: "King Aldric",
-    style: "Medieval",
-    avatar_url: "https://cdn.test/premade-avatars/aldric.mavatar",
-    preview_url: "https://cdn.test/premade-avatars/aldric.webp",
+    id: "mei",
+    name: "Mei",
+    style: "Anime",
+    avatar_url: "https://cdn.test/premade-avatars/mei.mavatar",
+    preview_url: "https://cdn.test/premade-avatars/mei.webp",
     credit: null,
   },
 ];
@@ -98,7 +98,7 @@ describe("AvatarCreatorModal for characters", () => {
   it("lets a creator attach a premade avatar without generating anything", async () => {
     const onSave = vi.fn();
     renderCharacterModal(onSave);
-    fireEvent.click(await screen.findByRole("button", { name: /Use premade avatar King Aldric/i }));
+    fireEvent.click(await screen.findByRole("button", { name: /Use premade avatar Mei/i }));
 
     expect(screen.getByTestId("mesh-avatar")).toHaveAttribute("data-src", PREMADE_AVATARS[1].avatar_url);
     fireEvent.click(screen.getByRole("button", { name: /Attach to character/i }));
@@ -110,7 +110,7 @@ describe("AvatarCreatorModal for characters", () => {
     expect(screen.queryByText(/Yuki Shindo/i)).not.toBeInTheDocument();
     fireEvent.click(await screen.findByRole("button", { name: /Use premade avatar Mira/i }));
     expect(screen.getByText(/Yuki Shindo/i)).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: /Use premade avatar King Aldric/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Use premade avatar Mei/i }));
     expect(screen.queryByText(/Yuki Shindo/i)).not.toBeInTheDocument();
   });
 });

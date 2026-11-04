@@ -33,11 +33,13 @@ class UserRepo:
         self,
         auth_provider_id: str,
         display_name: str,
+        show_mature: bool = False,
     ) -> User:
         """Persist a newly registered user account."""
         user = User(
             auth_provider_id=auth_provider_id,
             display_name=display_name,
+            show_mature=show_mature,
         )
         self.session.add(user)
         await self.session.flush()

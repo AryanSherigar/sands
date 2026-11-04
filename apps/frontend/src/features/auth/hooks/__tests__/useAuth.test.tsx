@@ -5,14 +5,18 @@ import { server } from "@/test/msw/server";
 import { useToastStore } from "@/shared/stores/toast.store";
 import { useAuthStore } from "../../stores/auth.store";
 import {
+  EMAIL_SIGN_IN_INVALID_MESSAGE,
   SIGN_IN_CANCELLED_MESSAGE,
   SIGN_IN_FAILED_MESSAGE,
 } from "../../constants/auth-messages";
 import { useAuth } from "../useAuth";
 
 const signInWithPopup = vi.fn();
+const signInWithEmailAndPassword = vi.fn();
 vi.mock("firebase/auth", () => ({
   signInWithPopup: (...args: unknown[]) => signInWithPopup(...args),
+  signInWithEmailAndPassword: (...args: unknown[]) =>
+    signInWithEmailAndPassword(...args),
 }));
 vi.mock("@/shared/lib/firebase", () => ({
   auth: { currentUser: null, signOut: vi.fn() },
@@ -92,5 +96,56 @@ describe("useAuth.loginWithGoogle", () => {
     });
     expect(result.current.error).toBe(SIGN_IN_FAILED_MESSAGE);
     expect(useAuthStore.getState().isAuthenticated).toBe(false);
+  });
+});
+
+describe("useAuth.loginWithEmail", () => {
+  beforeEach(() => {
+    signInWithEmailAndPassword.mockReset();
+    useAuthStore.setState({ user: null, accessToken: null, isAuthenticated: false });
+  });
+
+  it("signs in with the given credentials and stores the user", async () => {
+    signInWithEmailAndPassword.mockResolvedValue({
+      user: { getIdToken: () => Promise.resolve("firebase-token") },
+    });
+    server.use(
+      http.post("*/v1/auth/token", () =>
+        HttpResponse.json({ access_token: "jwt", user: API_USER }),
+      ),
+    );
+    const { result } = renderHook(() => useAuth());
+    let isSignedIn = false;
+    await act(async () => {
+      isSignedIn = await result.current.loginWithEmail("judge@example.com", "pw");
+    });
+    expect(isSignedIn).toBe(true);
+    expect(signInWithEmailAndPassword).toHaveBeenCalledWith(
+      expect.anything(),
+      "judge@example.com",
+      "pw",
+    );
+    expect(useAuthStore.getState().isAuthenticated).toBe(true);
+  });
+
+  it("explains wrong credentials without offering a retry-able failure", async () => {
+    signInWithEmailAndPassword.mockRejectedValue({ code: "auth/invalid-credential" });
+    const { result } = renderHook(() => useAuth());
+    let isSignedIn = true;
+    await act(async () => {
+      isSignedIn = await result.current.loginWithEmail("judge@example.com", "bad");
+    });
+    expect(isSignedIn).toBe(false);
+    expect(result.current.emailError).toBe(EMAIL_SIGN_IN_INVALID_MESSAGE);
+    expect(useAuthStore.getState().isAuthenticated).toBe(false);
+  });
+
+  it("reports a generic failure for other errors", async () => {
+    signInWithEmailAndPassword.mockRejectedValue(new Error("network"));
+    const { result } = renderHook(() => useAuth());
+    await act(async () => {
+      await result.current.loginWithEmail("judge@example.com", "pw");
+    });
+    expect(result.current.emailError).toBe(SIGN_IN_FAILED_MESSAGE);
   });
 });

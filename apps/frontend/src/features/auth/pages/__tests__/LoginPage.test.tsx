@@ -1,4 +1,5 @@
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createQueryWrapper } from "@/test/queryWrapper";
@@ -8,8 +9,11 @@ import { LoginPage } from "../LoginPage";
 vi.mock("../../hooks/useAuth", () => ({
   useAuth: () => ({
     error: null,
+    emailError: null,
     isGoogleLoading: false,
+    isEmailLoading: false,
     loginWithGoogle: vi.fn(),
+    loginWithEmail: vi.fn(),
     loginAsDevUser: vi.fn(),
   }),
 }));
@@ -99,5 +103,13 @@ describe("LoginPage signed out", () => {
     expect(screen.getByRole("button", { name: /continue with google/i })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Privacy Policy" })).toHaveAttribute("href", "/privacy");
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Step into a new world");
+  });
+
+  it("reveals the email form only after asking for it", async () => {
+    renderLogin("/login");
+    expect(screen.queryByLabelText("Email")).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Sign in with email" }));
+    expect(screen.getByLabelText("Email")).toBeInTheDocument();
+    expect(screen.getByLabelText("Password")).toBeInTheDocument();
   });
 });

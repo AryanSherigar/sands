@@ -12,7 +12,9 @@ from app.exceptions.strategy_map_exceptions import (
     StrategyMapModeError,
     StrategyMapNotFoundError,
 )
+from app.repositories.scenario_access_repo import ScenarioAccessRepo
 from app.repositories.scenario_repo import ScenarioRepo
+from app.services.scenario_access import ScenarioAccessChecker
 from app.services.scenario_edit_guard import ensure_not_publishing
 from app.services.strategy_map_validation import (
     FOREIGN_IMAGE_MESSAGE,
@@ -51,14 +53,29 @@ class StrategyMapService:
         _ensure_strategy_owner(scenario, user_id)
 
     async def get_map(self, scenario_id: uuid.UUID, user_id: uuid.UUID) -> MapDocument:
+        """The creator reads their own draft; players read a published scenario's map."""
         scenario = await self.scenario_repo.get_by_id(scenario_id)
-        _ensure_strategy_owner(scenario, user_id)
+        await self._ensure_can_read(scenario, user_id)
         stored_map = MapDocument.model_validate(
             scenario.strategy_document.get(MAP_KEY, {})
         )
         if not stored_map.regions:
             raise StrategyMapNotFoundError()
         return stored_map
+
+    async def _ensure_can_read(
+        self, scenario: Scenario | None, user_id: uuid.UUID
+    ) -> None:
+        if scenario is None or scenario.status == "archived":
+            raise ScenarioNotFoundError()
+        if scenario.mode != MODE_STRATEGY:
+            raise StrategyMapModeError()
+        if scenario.creator_id == user_id:
+            return
+        if scenario.published_at is None:
+            raise ScenarioAccessDeniedError()
+        access = ScenarioAccessChecker(ScenarioAccessRepo(self.scenario_repo.session))
+        await access.ensure_can_open(scenario, user_id)
 
 
 def _ensure_strategy_owner(scenario: Scenario | None, user_id: uuid.UUID) -> None:

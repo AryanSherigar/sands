@@ -17,8 +17,10 @@ def test_every_catalogue_entry_has_its_asset_files_in_the_repo():
 def test_list_premade_avatars_builds_urls_from_object_keys():
     listed = premade_avatars.list_premade_avatars()
     assert len(listed) == len(premade_avatars.PREMADE_AVATARS)
-    assert listed[2].avatar_url.endswith("/premade-avatars/aldric.mavatar")
-    assert listed[2].preview_url.endswith("/premade-avatars/aldric.webp")
+    assert listed[1].avatar_url.endswith("/premade-avatars/mei.mavatar")
+    assert listed[1].preview_url.endswith("/premade-avatars/mei.webp")
+    assert listed[2].avatar_url.endswith("/premade-avatars/eleanor.mavatar")
+    assert listed[2].name == "Queen Eleanor"
 
 
 def test_character_validation_accepts_a_premade_avatar_url():

@@ -1,9 +1,10 @@
-import React from "react";
+import React, { useState } from "react";
 import { useAuthStore } from "../stores/auth.store";
 import { useAuth } from "../hooks/useAuth";
 import { useLoginRedirect } from "../hooks/useLoginRedirect";
 import { LoginHero } from "../components/LoginHero/LoginHero";
 import { GoogleSignInButton } from "../components/GoogleSignInButton/GoogleSignInButton";
+import { EmailSignInForm } from "../components/EmailSignInForm/EmailSignInForm";
 import { LegalLine } from "../components/LegalLine/LegalLine";
 import { SignInError } from "../components/SignInError/SignInError";
 import { LayoutTextFlip } from "@/shared/components/ui/aceternity/layout-text-flip";
@@ -21,8 +22,16 @@ const FLIP_CLASSES =
 
 export const LoginPage: React.FC = () => {
   const isLoading = useAuthStore((state) => state.isLoading);
-  const { error, isGoogleLoading, loginWithGoogle, loginAsDevUser } =
-    useAuth();
+  const {
+    error,
+    emailError,
+    isGoogleLoading,
+    isEmailLoading,
+    loginWithGoogle,
+    loginWithEmail,
+    loginAsDevUser,
+  } = useAuth();
+  const [isEmailFormOpen, setIsEmailFormOpen] = useState(false);
   useLoginRedirect();
 
   if (isLoading) {
@@ -70,6 +79,21 @@ export const LoginPage: React.FC = () => {
             />
             {error && (
               <SignInError message={error} onRetry={loginWithGoogle} />
+            )}
+            <button
+              type="button"
+              aria-expanded={isEmailFormOpen}
+              onClick={() => setIsEmailFormOpen((isOpen) => !isOpen)}
+              className="self-start font-sans text-xs text-content-muted underline decoration-dotted underline-offset-4 transition hover:text-content focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-accent"
+            >
+              Sign in with email
+            </button>
+            {isEmailFormOpen && (
+              <EmailSignInForm
+                onSubmit={loginWithEmail}
+                isPending={isEmailLoading}
+                errorMessage={emailError}
+              />
             )}
           </div>
 

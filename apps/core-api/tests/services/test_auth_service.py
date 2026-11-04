@@ -248,3 +248,38 @@ async def test_new_accounts_throttled_per_ip_but_existing_users_sign_in(
 
     again = await auth_service._upsert_user(existing.auth_provider_id, "First", ip)
     assert again.user_id == existing.user_id
+
+
+@pytest.mark.asyncio
+async def test_new_accounts_hide_mature_stories_by_default(db_session: AsyncSession):
+    auth_service = AuthService(UserRepo(db_session))
+
+    user = await auth_service._upsert_user("mature-default-off", "Default User")
+
+    assert user.show_mature is False
+
+
+@pytest.mark.asyncio
+async def test_new_accounts_show_mature_stories_when_the_deployment_opts_in(
+    db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+):
+    monkeypatch.setattr(settings, "should_show_mature_by_default", True)
+    auth_service = AuthService(UserRepo(db_session))
+
+    user = await auth_service._upsert_user("mature-default-on", "Opted In User")
+
+    assert user.show_mature is True
+
+
+@pytest.mark.asyncio
+async def test_an_existing_account_keeps_its_own_mature_choice(
+    db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+):
+    auth_service = AuthService(UserRepo(db_session))
+    existing = await auth_service._upsert_user("mature-existing", "Existing User")
+    monkeypatch.setattr(settings, "should_show_mature_by_default", True)
+
+    returning = await auth_service._upsert_user("mature-existing", "Existing User")
+
+    assert returning.user_id == existing.user_id
+    assert returning.show_mature is False

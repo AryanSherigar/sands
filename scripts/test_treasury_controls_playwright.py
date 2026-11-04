@@ -3,12 +3,8 @@ import os
 import shutil
 import sys
 from playwright.async_api import async_playwright, expect
-from pathlib import Path
 
-REPO_ROOT = Path(__file__).resolve().parent.parent
-
-
-SCREENSHOTS_DIR = str(REPO_ROOT / "scripts")
+SCREENSHOTS_DIR = "/data/sands/scripts"
 ARTIFACT_DIR = "/home/aryan-sherigar/.gemini/antigravity-cli/brain/6b2f730e-fa74-4dd8-80ed-b2e5e4206ca0"
 
 async def test_treasury_controls():

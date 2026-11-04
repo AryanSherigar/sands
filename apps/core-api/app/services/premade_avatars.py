@@ -26,9 +26,8 @@ class PremadeAvatarEntry:
 
 PREMADE_AVATARS: tuple[PremadeAvatarEntry, ...] = (
     PremadeAvatarEntry("mira", "Mira", "Anime", MIKO_CREDIT),
-    PremadeAvatarEntry("hana", "Hana", "Anime"),
-    PremadeAvatarEntry("aldric", "King Aldric", "Medieval"),
-    PremadeAvatarEntry("isolde", "Queen Isolde", "Medieval"),
+    PremadeAvatarEntry("mei", "Mei", "Anime"),
+    PremadeAvatarEntry("eleanor", "Queen Eleanor", "Medieval"),
 )
 
 

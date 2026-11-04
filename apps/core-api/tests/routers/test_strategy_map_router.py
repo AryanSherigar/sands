@@ -293,3 +293,102 @@ async def test_save_is_rejected_while_publishing(
     )
 
     assert response.status_code == 409
+
+
+async def _publish_with_map(
+    async_client: AsyncClient,
+    db_session: AsyncSession,
+    headers,
+    scenario_id: str,
+    traced_map,
+    visibility: str,
+) -> None:
+    from datetime import UTC, datetime
+
+    from app.repositories.scenario_repo import ScenarioRepo
+
+    await async_client.put(_path(scenario_id), json=traced_map, headers=headers)
+    scenario_repo = ScenarioRepo(db_session)
+    scenario = await scenario_repo.get_by_id(uuid.UUID(scenario_id))
+    scenario.status = "published"
+    scenario.published_at = datetime.now(UTC)
+    scenario.visibility = visibility
+    await scenario_repo.update(scenario)
+
+
+@pytest.mark.asyncio
+async def test_a_player_can_read_the_map_of_a_published_public_scenario(
+    async_client: AsyncClient,
+    db_session: AsyncSession,
+    headers,
+    other_user,
+    strategy_scenario_id,
+    traced_map,
+):
+    await _publish_with_map(
+        async_client, db_session, headers, strategy_scenario_id, traced_map, "public"
+    )
+
+    loaded = await async_client.get(
+        _path(strategy_scenario_id),
+        headers={"x-dev-user-id": str(other_user.user_id)},
+    )
+
+    assert loaded.status_code == 200
+    assert loaded.json() == traced_map
+
+
+@pytest.mark.asyncio
+async def test_a_player_still_cannot_save_the_map_of_a_published_scenario(
+    async_client: AsyncClient,
+    db_session: AsyncSession,
+    headers,
+    other_user,
+    strategy_scenario_id,
+    traced_map,
+):
+    await _publish_with_map(
+        async_client, db_session, headers, strategy_scenario_id, traced_map, "public"
+    )
+
+    saved = await async_client.put(
+        _path(strategy_scenario_id),
+        json=traced_map,
+        headers={"x-dev-user-id": str(other_user.user_id)},
+    )
+
+    assert saved.status_code == 403
+
+
+@pytest.mark.asyncio
+async def test_a_published_private_scenario_hides_its_map_from_other_players(
+    async_client: AsyncClient,
+    db_session: AsyncSession,
+    headers,
+    other_user,
+    strategy_scenario_id,
+    traced_map,
+):
+    await _publish_with_map(
+        async_client, db_session, headers, strategy_scenario_id, traced_map, "private"
+    )
+
+    loaded = await async_client.get(
+        _path(strategy_scenario_id),
+        headers={"x-dev-user-id": str(other_user.user_id)},
+    )
+
+    assert loaded.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_the_creator_still_reads_the_map_of_their_own_draft(
+    async_client: AsyncClient, headers, strategy_scenario_id, traced_map
+):
+    await async_client.put(
+        _path(strategy_scenario_id), json=traced_map, headers=headers
+    )
+
+    loaded = await async_client.get(_path(strategy_scenario_id), headers=headers)
+
+    assert loaded.status_code == 200

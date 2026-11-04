@@ -4,11 +4,14 @@
  * Replaces apps/frontend/nginx.conf.template in production: it forwards /api,
  * /trs and /simulation, stamps the shared proxy token the backends require, and replaces
  * X-Forwarded-For with the real client address so rate limiting keys on the
- * right IP. Pages serves everything else. It also triggers the memory outbox
+ * right IP. It also serves /media from the R2 bucket binding, so media needs no
+ * public bucket URL. Pages serves everything else. It also triggers the memory outbox
  * relay on a cron.
  */
 
-export interface Env {
+import { MEDIA_PREFIX, serveMedia, type MediaEnv } from "./media";
+
+export interface Env extends MediaEnv {
   CORE_API_ORIGIN: string;
   TRS_ORIGIN: string;
   SIMULATION_ORIGIN: string;
@@ -82,6 +85,9 @@ export async function runMemoryRelay(
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
+    if (new URL(request.url).pathname.startsWith(MEDIA_PREFIX)) {
+      return serveMedia(request, env);
+    }
     const upstream = buildUpstreamRequest(request, env);
     if (!upstream) return new Response("Not found", { status: HTTP_NOT_FOUND });
     try {

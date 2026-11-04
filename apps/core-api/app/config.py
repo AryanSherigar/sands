@@ -37,6 +37,9 @@ class Settings(BaseSettings):
         "http://localhost:3000",
     ]
     environment: str = "development"
+    # NOTE: Skips the adult attestation for new accounts, so only a deployment that
+    # has decided every visitor may see mature stories (a judged demo) turns it on.
+    should_show_mature_by_default: bool = False
     frontend_base_url: str = "http://localhost:5173"
     log_level: str = "INFO"
     log_format: str = "json"

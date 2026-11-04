@@ -178,7 +178,7 @@ async def test_list_premade_avatars_returns_the_library(async_client: AsyncClien
     resp = await async_client.get("/v1/studio/avatars/premade", headers=headers)
     assert resp.status_code == 200
     avatars = resp.json()["avatars"]
-    assert [avatar["id"] for avatar in avatars] == ["mira", "hana", "aldric", "isolde"]
+    assert [avatar["id"] for avatar in avatars] == ["mira", "mei", "eleanor"]
     assert all(avatar["avatar_url"].endswith(".mavatar") for avatar in avatars)
     assert all(avatar["preview_url"].endswith(".webp") for avatar in avatars)
     assert avatars[0]["credit"] == "Miko © Yuki Shindo (AITuber OnAir)"

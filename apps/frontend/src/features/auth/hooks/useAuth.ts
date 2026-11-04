@@ -1,21 +1,34 @@
 import { useState } from "react";
-import { signInWithPopup } from "firebase/auth";
+import {
+  signInWithEmailAndPassword,
+  signInWithPopup,
+  type User as FirebaseUser,
+} from "firebase/auth";
 import { auth, googleProvider } from "@/shared/lib/firebase";
 import { useToastStore } from "@/shared/stores/toast.store";
 import { exchangeFirebaseToken, logoutUser } from "../api/auth.api";
 import { useAuthStore } from "../stores/auth.store";
 import { extractErrorMessage } from "@/shared/lib/extractErrorMessage";
 import {
+  EMAIL_INVALID_CREDENTIAL_ERROR_CODES,
+  EMAIL_SIGN_IN_INVALID_MESSAGE,
   POPUP_CANCELLED_ERROR_CODES,
   SIGN_IN_CANCELLED_MESSAGE,
   SIGN_IN_FAILED_MESSAGE,
 } from "../constants/auth-messages";
 
+const getErrorCode = (err: unknown): string =>
+  typeof err === "object" && err !== null && "code" in err
+    ? String((err as { code: unknown }).code)
+    : "";
+
+const getEmailSignInErrorMessage = (err: unknown): string =>
+  EMAIL_INVALID_CREDENTIAL_ERROR_CODES.includes(getErrorCode(err))
+    ? EMAIL_SIGN_IN_INVALID_MESSAGE
+    : SIGN_IN_FAILED_MESSAGE;
+
 const getSignInErrorMessage = (err: unknown): string => {
-  const code =
-    typeof err === "object" && err !== null && "code" in err
-      ? String((err as { code: unknown }).code)
-      : "";
+  const code = getErrorCode(err);
   return POPUP_CANCELLED_ERROR_CODES.includes(code)
     ? SIGN_IN_CANCELLED_MESSAGE
     : SIGN_IN_FAILED_MESSAGE;
@@ -32,23 +45,44 @@ export const useAuth = () => {
     logout: storeLogout,
   } = useAuthStore();
   const [error, setError] = useState<string | null>(null);
+  const [emailError, setEmailError] = useState<string | null>(null);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [isEmailLoading, setIsEmailLoading] = useState(false);
+
+  const completeSignIn = async (firebaseUser: FirebaseUser): Promise<void> => {
+    const idToken = await firebaseUser.getIdToken();
+    const { access_token, user: apiUser, is_account_restored } =
+      await exchangeFirebaseToken(idToken);
+    setAuth(access_token, apiUser);
+    if (is_account_restored) {
+      useToastStore.getState().showToast(ACCOUNT_RESTORED_MESSAGE, "success");
+    }
+  };
+
+  const loginWithEmail = async (
+    email: string,
+    password: string,
+  ): Promise<boolean> => {
+    setIsEmailLoading(true);
+    try {
+      const result = await signInWithEmailAndPassword(auth, email, password);
+      await completeSignIn(result.user);
+      setEmailError(null);
+      return true;
+    } catch (err: unknown) {
+      setEmailError(getEmailSignInErrorMessage(err));
+      return false;
+    } finally {
+      setIsEmailLoading(false);
+    }
+  };
 
   const loginWithGoogle = async (): Promise<boolean> => {
     setIsGoogleLoading(true);
     try {
       const result = await signInWithPopup(auth, googleProvider);
-      const idToken = await result.user.getIdToken();
-
-      const { access_token, user: apiUser, is_account_restored } =
-        await exchangeFirebaseToken(idToken);
-      setAuth(access_token, apiUser);
+      await completeSignIn(result.user);
       setError(null);
-      if (is_account_restored) {
-        useToastStore
-          .getState()
-          .showToast(ACCOUNT_RESTORED_MESSAGE, "success");
-      }
       return true;
     } catch (err: unknown) {
       setError(getSignInErrorMessage(err));
@@ -92,8 +126,11 @@ export const useAuth = () => {
     isAuthenticated,
     isLoading,
     isGoogleLoading,
+    isEmailLoading,
     error,
+    emailError,
     loginWithGoogle,
+    loginWithEmail,
     loginAsDevUser,
     logout,
   };

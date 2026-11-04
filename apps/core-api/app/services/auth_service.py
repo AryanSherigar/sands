@@ -81,7 +81,11 @@ class AuthService:
         if user:
             return user
         await self._reserve_account_slot(client_ip)
-        return await self.user_repo.create(auth_provider_id, display_name)
+        return await self.user_repo.create(
+            auth_provider_id,
+            display_name,
+            show_mature=settings.should_show_mature_by_default,
+        )
 
     async def _reserve_account_slot(self, client_ip: str | None) -> None:
         if self.quota_service is not None and client_ip is not None:

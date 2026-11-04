@@ -1,0 +1,10 @@
+# Pages project for the demo frontend. Run `npx wrangler pages deploy` from THIS
+# directory, never from apps/frontend (wrangler's autoconfig edits its
+# package.json there). Build the frontend first so ../../frontend/dist exists.
+name = "sands-demo"
+pages_build_output_dir = "../../frontend/dist"
+compatibility_date = "2026-10-27"
+
+[[services]]
+binding = "EDGE"
+service = "sands-edge-proxy"
