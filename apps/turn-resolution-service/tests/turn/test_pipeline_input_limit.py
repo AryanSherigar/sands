@@ -11,7 +11,7 @@ from app.db.models.scenario import Scenario
 from app.db.models.turn_log import TurnLog
 from app.db.models.user import User
 from app.models.auth import CurrentUser
-from app.models.turn import InputTruncation, TurnRequestInput
+from app.models.turn import TurnRequestInput
 from app.services.rate_limit.exemption_service import get_exemption_service
 from app.services.rate_limit.quota_service import QuotaService, user_quota_key
 from app.turn import pipeline
@@ -87,23 +87,6 @@ def seen_prompts(monkeypatch) -> list[str]:
     return prompts
 
 
-class _RecorderSpy:
-    def __init__(self) -> None:
-        self.recorded: list[tuple[uuid.UUID, InputTruncation]] = []
-
-    async def record_truncated(
-        self, user_id: uuid.UUID, truncation: InputTruncation
-    ) -> None:
-        self.recorded.append((user_id, truncation))
-
-
-@pytest.fixture
-def recorder_spy(monkeypatch) -> _RecorderSpy:
-    spy = _RecorderSpy()
-    monkeypatch.setattr(pipeline, "get_input_limit_event_recorder", lambda: spy)
-    return spy
-
-
 async def _run(db_session, playthrough, participant, quota_service, action_text, **kw):
     turn_input = TurnRequestInput(
         client_action_id=kw.pop("client_action_id", uuid.uuid4()),
@@ -121,7 +104,7 @@ async def _run(db_session, playthrough, participant, quota_service, action_text,
 
 
 async def test_over_cap_action_streams_notice_first_and_stores_truncated_text(
-    db_session, quota_service, seen_prompts, recorder_spy
+    db_session, quota_service, seen_prompts
 ) -> None:
     playthrough, participant = await _seed(db_session)
 
@@ -145,7 +128,7 @@ async def test_over_cap_action_streams_notice_first_and_stores_truncated_text(
 
 
 async def test_truncation_still_spends_exactly_one_turn_unit(
-    db_session, quota_service, seen_prompts, recorder_spy
+    db_session, quota_service, seen_prompts
 ) -> None:
     playthrough, participant = await _seed(db_session)
 
@@ -158,35 +141,17 @@ async def test_truncation_still_spends_exactly_one_turn_unit(
 
 
 async def test_under_cap_action_emits_no_notice(
-    db_session, quota_service, seen_prompts, recorder_spy
+    db_session, quota_service, seen_prompts
 ) -> None:
     playthrough, participant = await _seed(db_session)
 
     events = await _run(db_session, playthrough, participant, quota_service, "look")
 
     assert EVENT_NAME not in [event.event for event in events]
-    assert recorder_spy.recorded == []
-
-
-async def test_truncation_is_handed_to_the_event_recorder(
-    db_session, quota_service, seen_prompts, recorder_spy
-) -> None:
-    playthrough, participant = await _seed(db_session)
-
-    await _run(db_session, playthrough, participant, quota_service, OVERSIZED_ACTION)
-
-    assert recorder_spy.recorded == [
-        (
-            participant.user_id,
-            InputTruncation(
-                original_length=len(OVERSIZED_ACTION.strip()), max_length=SMALL_CAP
-            ),
-        )
-    ]
 
 
 async def test_replay_of_a_truncated_turn_emits_no_notice(
-    db_session, quota_service, seen_prompts, recorder_spy
+    db_session, quota_service, seen_prompts
 ) -> None:
     playthrough, participant = await _seed(db_session)
     client_action_id = uuid.uuid4()
@@ -209,4 +174,3 @@ async def test_replay_of_a_truncated_turn_emits_no_notice(
     )
 
     assert EVENT_NAME not in [event.event for event in replayed]
-    assert len(recorder_spy.recorded) == 1

@@ -228,7 +228,7 @@ describe("DiscoverPage", () => {
     await screen.findByRole("link", { name: "Story 1" });
     await userEvent.click(screen.getByRole("radio", { name: "Grid" }));
 
-    const card = screen.getByText("★ 4.5").closest("article");
+    const card = screen.getAllByText("4.5")[0].closest("article");
     expect(card).not.toBeNull();
     await userEvent.click(card as HTMLElement);
 

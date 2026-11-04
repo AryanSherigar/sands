@@ -13,6 +13,7 @@ import { ArchivedScenarioCard } from "./ArchivedScenarioCard";
 import { GenreCoverBadge } from "./GenreCoverBadge";
 import { SaveIconButton } from "./SaveIconButton";
 import type { ScenarioRowCardProps } from "./ScenarioRowCard.types";
+import { IconStarFilled } from "@tabler/icons-react";
 
 const PLAY_ICON_SIZE = 16;
 
@@ -79,8 +80,8 @@ export const ScenarioRowCard: React.FC<ScenarioRowCardProps> = ({
         </div>
         <div className="mt-2 flex flex-col justify-between gap-3 border-t border-border-subtle/70 pt-3 sm:flex-row sm:items-center">
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-xs text-content-faint">
-            <span className="font-medium text-content">
-              <span className="text-warning">★</span> {formatRating(scenario)}
+            <span className="inline-flex items-center gap-1 font-medium text-content">
+              <IconStarFilled size={14} aria-hidden="true" className="text-warning" />{formatRating(scenario)}
             </span>
             <span aria-hidden="true">·</span>
             <span>{formatPlayCount(scenario)}</span>

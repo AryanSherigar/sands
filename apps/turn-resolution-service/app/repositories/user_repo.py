@@ -18,9 +18,3 @@ class UserRepo:
         stmt = select(User).where(User.user_id == user_id)
         result = await self.session.execute(stmt)
         return result.scalars().first()
-
-    async def get_alpha_consent_version(self, user_id: uuid.UUID) -> str | None:
-        """Fetch the consent version the user last accepted, if any."""
-        stmt = select(User.alpha_consent_version).where(User.user_id == user_id)
-        result = await self.session.execute(stmt)
-        return result.scalar_one_or_none()

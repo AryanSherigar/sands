@@ -6,6 +6,7 @@ import type {
   StrategyTrait,
   PlayableFactionInfo,
 } from "./StrategyRulerSetup.types";
+import { DEFAULT_CHRONICLER_ID } from "../../constants/chroniclers";
 import { BUILTIN_STRATEGY_TRAITS } from "./builtinTraits";
 import { BUILTIN_STRATEGY_AMBITIONS } from "./builtinAmbitions";
 
@@ -144,6 +145,7 @@ function deriveLeaderDefaults(
       dynastyName: leader.dynasty_name || faction?.name || "",
       houseMotto: leader.house_motto || leader.houseMotto || "",
       houseBadge: leader.house_badge || leader.houseBadge || "",
+      chroniclerId: DEFAULT_CHRONICLER_ID,
     };
   }
 
@@ -157,6 +159,7 @@ function deriveLeaderDefaults(
     dynastyName: faction?.name || "",
     houseMotto: "",
     houseBadge: "",
+    chroniclerId: DEFAULT_CHRONICLER_ID,
   };
 }
 
@@ -217,13 +220,19 @@ export function useStrategySetupState(
   const setActiveFactionId = useCallback(
     (factionId: string) => {
       setActiveFactionIdState(factionId);
-      setRuler(deriveLeaderDefaults(factionId, factions, leaders));
+      setRuler((prev) => ({
+        ...deriveLeaderDefaults(factionId, factions, leaders),
+        chroniclerId: prev.chroniclerId,
+      }));
     },
     [factions, leaders],
   );
 
   const restoreDefaultRuler = useCallback(() => {
-    setRuler(deriveLeaderDefaults(activeFactionId, factions, leaders));
+    setRuler((prev) => ({
+      ...deriveLeaderDefaults(activeFactionId, factions, leaders),
+      chroniclerId: prev.chroniclerId,
+    }));
   }, [activeFactionId, factions, leaders]);
 
   const updateRuler = useCallback((updates: Partial<StrategyRulerState>) => {
@@ -243,24 +252,14 @@ export function useStrategySetupState(
     };
     try {
       const { data } = await apiClient.post<{ backstory: string }>(
-        "/api/v1/strategy/ruler-backstory",
+        "/v1/strategy/ruler-backstory",
         payload,
       );
       if (data?.backstory) {
         setRuler((prev) => ({ ...prev, backstory: data.backstory }));
       }
-    } catch {
-      try {
-        const { data } = await apiClient.post<{ backstory: string }>(
-          "/v1/strategy/ruler-backstory",
-          payload,
-        );
-        if (data?.backstory) {
-          setRuler((prev) => ({ ...prev, backstory: data.backstory }));
-        }
-      } catch (err) {
-        console.error("Failed to redraft backstory:", err);
-      }
+    } catch (err) {
+      console.error("Failed to redraft backstory:", err);
     } finally {
       setIsRedrafting(false);
     }

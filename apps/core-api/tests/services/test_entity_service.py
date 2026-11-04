@@ -1,0 +1,395 @@
+"""Unit/integration tests for EntityService."""
+
+import uuid
+
+import pytest
+from app.config import settings
+from app.db.models.user import User
+from app.exceptions.entity_exceptions import (
+    EntityNotFoundError,
+    EntityValidationError,
+)
+from app.exceptions.scenario_exceptions import (
+    ScenarioAccessDeniedError,
+    ScenarioNotFoundError,
+)
+from app.models.entity import AttributeFieldSchema, EntityCreate, EntityUpdate
+from app.models.fact import FactCreate
+from app.models.scenario import ScenarioCreate
+from app.repositories.entity_repo import EntityRepo
+from app.repositories.fact_repo import FactRepo
+from app.repositories.scenario_entity_type_repo import ScenarioEntityTypeRepo
+from app.repositories.scenario_repo import ScenarioRepo
+from app.repositories.user_repo import UserRepo
+from app.services.entity_service import EntityService
+from app.services.fact_service import FactService
+from app.services.scenario_service import ScenarioService, _build_entity_copy
+from sqlalchemy.ext.asyncio import AsyncSession
+
+
+@pytest.fixture
+async def creator(db_session: AsyncSession) -> User:
+    return await UserRepo(db_session).create(
+        auth_provider_id=f"test-auth-{uuid.uuid4()}", display_name="Creator"
+    )
+
+
+@pytest.fixture
+async def other_user(db_session: AsyncSession) -> User:
+    return await UserRepo(db_session).create(
+        auth_provider_id=f"test-auth-{uuid.uuid4()}", display_name="Other"
+    )
+
+
+@pytest.fixture
+async def master_scenario(db_session: AsyncSession, creator: User):
+    scenario_service = ScenarioService(ScenarioRepo(db_session))
+    return await scenario_service.create_scenario(
+        creator.user_id,
+        ScenarioCreate(
+            title="The Hollow Cairn", mode="master", complexity_tier="master"
+        ),
+    )
+
+
+@pytest.fixture
+def entity_service(db_session: AsyncSession) -> EntityService:
+    return EntityService(
+        EntityRepo(db_session),
+        ScenarioRepo(db_session),
+        FactRepo(db_session),
+        ScenarioEntityTypeRepo(db_session),
+    )
+
+
+@pytest.mark.asyncio
+async def test_character_avatar_reference_is_saved_and_removable(
+    entity_service: EntityService, master_scenario, creator: User
+):
+    avatar_url = f"{settings.core_api_public_url.rstrip('/')}/uploads/avatars/{uuid.uuid4()}.mavatar"
+    created = await entity_service.create_entity(
+        master_scenario.scenario_id,
+        creator.user_id,
+        EntityCreate(
+            entity_type="character", canonical_name="Asha", avatar_url=avatar_url
+        ),
+    )
+    assert created.avatar_url == avatar_url
+    fetched = await entity_service.get_entity(
+        master_scenario.scenario_id, created.entity_id, creator.user_id
+    )
+    assert fetched.avatar_url == avatar_url
+    saved_entity = await entity_service.entity_repo.get_by_id(created.entity_id)
+    assert _build_entity_copy(saved_entity, uuid.uuid4()).avatar_url == avatar_url
+    updated = await entity_service.update_entity(
+        master_scenario.scenario_id,
+        created.entity_id,
+        creator.user_id,
+        EntityUpdate(avatar_url=None),
+    )
+    assert updated.avatar_url is None
+
+
+@pytest.mark.asyncio
+async def test_avatar_reference_rejects_external_urls_and_noncharacters(
+    entity_service: EntityService, master_scenario, creator: User
+):
+    for entity_type, avatar_url in (
+        ("character", "https://example.com/avatar.mavatar"),
+        (
+            "location",
+            f"{settings.core_api_public_url.rstrip('/')}/uploads/avatars/{uuid.uuid4()}.mavatar",
+        ),
+    ):
+        with pytest.raises(EntityValidationError):
+            await entity_service.create_entity(
+                master_scenario.scenario_id,
+                creator.user_id,
+                EntityCreate(
+                    entity_type=entity_type, canonical_name="A", avatar_url=avatar_url
+                ),
+            )
+
+
+@pytest.mark.asyncio
+async def test_create_entity(
+    entity_service: EntityService, master_scenario, creator: User
+):
+    payload = EntityCreate(
+        entity_type="character",
+        canonical_name="The Warden",
+        aliases=["the Warden", "It"],
+        description="The cairn's undying guardian.",
+        attributes_schema={
+            "health": AttributeFieldSchema(type="number", initial=150, min=0, max=150)
+        },
+        narrator_instruction="Speaks rarely; grave and formal.",
+    )
+    result = await entity_service.create_entity(
+        master_scenario.scenario_id, creator.user_id, payload
+    )
+
+    assert result.canonical_name == "The Warden"
+    assert result.entity_type == "character"
+    assert result.attributes_schema["health"]["initial"] == 150
+    assert result.scenario_id == master_scenario.scenario_id
+
+
+@pytest.mark.asyncio
+async def test_create_entity_wrong_creator_denied(
+    entity_service: EntityService, master_scenario, other_user: User
+):
+    payload = EntityCreate(entity_type="location", canonical_name="Hollow Cairn")
+    with pytest.raises(ScenarioAccessDeniedError):
+        await entity_service.create_entity(
+            master_scenario.scenario_id, other_user.user_id, payload
+        )
+
+
+@pytest.mark.asyncio
+async def test_create_entity_nonexistent_scenario(
+    entity_service: EntityService, creator: User
+):
+    payload = EntityCreate(entity_type="item", canonical_name="Ember Sigil")
+    with pytest.raises(ScenarioNotFoundError):
+        await entity_service.create_entity(uuid.uuid4(), creator.user_id, payload)
+
+
+@pytest.mark.asyncio
+async def test_list_and_get_entity(
+    entity_service: EntityService, master_scenario, creator: User
+):
+    created = await entity_service.create_entity(
+        master_scenario.scenario_id,
+        creator.user_id,
+        EntityCreate(entity_type="faction", canonical_name="The Vigil"),
+    )
+
+    items = await entity_service.list_entities(
+        master_scenario.scenario_id, creator.user_id
+    )
+    assert len(items) == 1
+    assert items[0].entity_id == created.entity_id
+
+    fetched = await entity_service.get_entity(
+        master_scenario.scenario_id, created.entity_id, creator.user_id
+    )
+    assert fetched.canonical_name == "The Vigil"
+
+
+@pytest.mark.asyncio
+async def test_update_entity(
+    entity_service: EntityService, master_scenario, creator: User
+):
+    created = await entity_service.create_entity(
+        master_scenario.scenario_id,
+        creator.user_id,
+        EntityCreate(
+            entity_type="item", canonical_name="Rustbound Blade", obtainable=True
+        ),
+    )
+
+    updated = await entity_service.update_entity(
+        master_scenario.scenario_id,
+        created.entity_id,
+        creator.user_id,
+        EntityUpdate(description="A plain sword, better than bare hands."),
+    )
+    assert updated.description == "A plain sword, better than bare hands."
+    assert updated.canonical_name == "Rustbound Blade"  # untouched fields preserved
+
+
+@pytest.mark.asyncio
+async def test_delete_entity(
+    entity_service: EntityService, master_scenario, creator: User
+):
+    created = await entity_service.create_entity(
+        master_scenario.scenario_id,
+        creator.user_id,
+        EntityCreate(entity_type="character", canonical_name="Kestrel Vane"),
+    )
+
+    await entity_service.delete_entity(
+        master_scenario.scenario_id, created.entity_id, creator.user_id
+    )
+
+    with pytest.raises(EntityNotFoundError):
+        await entity_service.get_entity(
+            master_scenario.scenario_id, created.entity_id, creator.user_id
+        )
+
+
+@pytest.mark.asyncio
+async def test_cross_scenario_isolation(
+    entity_service: EntityService,
+    master_scenario,
+    creator: User,
+    db_session: AsyncSession,
+):
+    """An entity created under scenario A is not reachable via scenario B's path."""
+    scenario_service = ScenarioService(ScenarioRepo(db_session))
+    other_scenario = await scenario_service.create_scenario(
+        creator.user_id,
+        ScenarioCreate(title="Another World", mode="master", complexity_tier="master"),
+    )
+    created = await entity_service.create_entity(
+        master_scenario.scenario_id,
+        creator.user_id,
+        EntityCreate(entity_type="location", canonical_name="Ashfall Village"),
+    )
+
+    with pytest.raises(EntityNotFoundError):
+        await entity_service.get_entity(
+            other_scenario.scenario_id, created.entity_id, creator.user_id
+        )
+
+
+@pytest.mark.asyncio
+async def test_delete_entity_cascades_to_referencing_facts(
+    entity_service: EntityService,
+    master_scenario,
+    creator: User,
+    db_session: AsyncSession,
+):
+    """Deleting an entity referenced by facts as subject or object cascades (DB-level)."""
+    fact_repo = FactRepo(db_session)
+    fact_service = FactService(
+        fact_repo, EntityRepo(db_session), ScenarioRepo(db_session)
+    )
+
+    warden = await entity_service.create_entity(
+        master_scenario.scenario_id,
+        creator.user_id,
+        EntityCreate(entity_type="character", canonical_name="The Warden"),
+    )
+    cairn = await entity_service.create_entity(
+        master_scenario.scenario_id,
+        creator.user_id,
+        EntityCreate(entity_type="location", canonical_name="Hollow Cairn"),
+    )
+    # cairn as object of one fact, subject of another — both must cascade.
+    await fact_service.create_fact(
+        master_scenario.scenario_id,
+        creator.user_id,
+        FactCreate(
+            subject_entity_id=warden.entity_id,
+            predicate="located_at",
+            object_entity_id=cairn.entity_id,
+        ),
+    )
+    await fact_service.create_fact(
+        master_scenario.scenario_id,
+        creator.user_id,
+        FactCreate(
+            subject_entity_id=cairn.entity_id,
+            predicate="entrance_guarded_by",
+            object_literal="the_vigil",
+        ),
+    )
+    assert await fact_repo.count_referencing_entity(cairn.entity_id) == 2
+
+    await entity_service.delete_entity(
+        master_scenario.scenario_id, cairn.entity_id, creator.user_id
+    )
+
+    assert await fact_repo.count_referencing_entity(cairn.entity_id) == 0
+
+
+@pytest.mark.asyncio
+async def test_create_player_entity_success(
+    entity_service: EntityService, master_scenario, creator: User
+) -> None:
+    created = await entity_service.create_entity(
+        master_scenario.scenario_id,
+        creator.user_id,
+        EntityCreate(
+            entity_type="character",
+            canonical_name="The Protagonist",
+            is_player=True,
+        ),
+    )
+    assert created.is_player is True
+
+
+@pytest.mark.asyncio
+async def test_create_player_entity_non_character_rejected(
+    entity_service: EntityService, master_scenario, creator: User
+) -> None:
+    with pytest.raises(EntityValidationError):
+        await entity_service.create_entity(
+            master_scenario.scenario_id,
+            creator.user_id,
+            EntityCreate(
+                entity_type="location",
+                canonical_name="The Citadel",
+                is_player=True,
+            ),
+        )
+
+
+@pytest.mark.asyncio
+async def test_player_designation_unsets_previous_player(
+    entity_service: EntityService, master_scenario, creator: User
+) -> None:
+    first_player = await entity_service.create_entity(
+        master_scenario.scenario_id,
+        creator.user_id,
+        EntityCreate(
+            entity_type="character",
+            canonical_name="Hero One",
+            is_player=True,
+        ),
+    )
+    second_player = await entity_service.create_entity(
+        master_scenario.scenario_id,
+        creator.user_id,
+        EntityCreate(
+            entity_type="character",
+            canonical_name="Hero Two",
+            is_player=True,
+        ),
+    )
+    first_reloaded = await entity_service.get_entity(
+        master_scenario.scenario_id, first_player.entity_id, creator.user_id
+    )
+    assert second_player.is_player is True
+    assert first_reloaded.is_player is False
+
+
+@pytest.mark.asyncio
+async def test_delete_entity_removes_its_facts_and_lists_them(
+    db_session: AsyncSession,
+    entity_service: EntityService,
+    master_scenario,
+    creator: User,
+):
+    fact_service = FactService(
+        FactRepo(db_session), EntityRepo(db_session), ScenarioRepo(db_session)
+    )
+    scenario_id = master_scenario.scenario_id
+    mara = await entity_service.create_entity(
+        scenario_id,
+        creator.user_id,
+        EntityCreate(entity_type="character", canonical_name="Mara"),
+    )
+    lighthouse = await entity_service.create_entity(
+        scenario_id,
+        creator.user_id,
+        EntityCreate(entity_type="location", canonical_name="The Lighthouse"),
+    )
+    await fact_service.create_fact(
+        scenario_id,
+        creator.user_id,
+        FactCreate(
+            subject_entity_id=mara.entity_id,
+            predicate="lives in",
+            object_entity_id=lighthouse.entity_id,
+        ),
+    )
+
+    removed_link_count = await entity_service.delete_entity(
+        scenario_id, mara.entity_id, creator.user_id
+    )
+
+    assert removed_link_count == 1
+    assert await fact_service.list_facts(scenario_id, creator.user_id) == []

@@ -1,5 +1,10 @@
+import { parseTableRegions } from "../../../lib/tableRegions";
 import React, { useState } from "react";
-import { AI_INITIATOR, NEGOTIATION_SCENE_TYPE } from "../../../constants/scene.constants";
+import {
+  AI_INITIATOR,
+  NEGOTIATION_SCENE_TYPE,
+  REVOLT_TALK_SCENE_TYPE,
+} from "../../../constants/scene.constants";
 import { useSceneDialog } from "../../../hooks/useSceneDialog";
 import { useSimulationWorld } from "../../../hooks/useSimulationWorld";
 import type { SceneOutcome, SceneViewResponse } from "../../../types/scene.types";
@@ -12,6 +17,12 @@ import { NegotiationRulerDossier } from "./components/NegotiationRulerDossier";
 import { NegotiationTreatyDrawer } from "./components/NegotiationTreatyDrawer";
 import type { AvatarExpression } from "./components/RulerMeshAvatar.types";
 import type { StrategySceneDialogProps } from "./StrategySceneDialog.types";
+
+function getSceneHeaderTitle(sceneType: string, leaderName: string): string {
+  if (sceneType === REVOLT_TALK_SCENE_TYPE) return `Talks with ${leaderName}`;
+  if (sceneType === "peace") return `Peace Conference with ${leaderName}`;
+  return `Peace Talks with ${leaderName}`;
+}
 
 const DEFAULT_PREVIEW_SCENE: SceneViewResponse = {
   scene_id: "preview-scene-1",
@@ -199,7 +210,10 @@ export const StrategySceneDialog: React.FC<StrategySceneDialogProps> = ({
     : hookScene;
 
   const isSupportedScene =
-    scene && (scene.scene_type === NEGOTIATION_SCENE_TYPE || scene.scene_type === "peace");
+    scene &&
+    (scene.scene_type === NEGOTIATION_SCENE_TYPE ||
+      scene.scene_type === "peace" ||
+      scene.scene_type === REVOLT_TALK_SCENE_TYPE);
 
   if (!isSupportedScene) {
     if (world?.status === "awaiting_scene" || isPreview) {
@@ -318,10 +332,8 @@ export const StrategySceneDialog: React.FC<StrategySceneDialogProps> = ({
 
   const isDeclinable = scene.is_declinable !== false;
   const isOffer = scene.initiator === AI_INITIATOR;
-  const headerTitle =
-    scene.scene_type === "peace"
-      ? `Peace Conference with ${leaderName}`
-      : `Peace Talks with ${leaderName}`;
+  const isRevoltTalk = scene.scene_type === REVOLT_TALK_SCENE_TYPE;
+  const headerTitle = getSceneHeaderTitle(scene.scene_type, leaderName);
 
   return (
     <div
@@ -370,14 +382,17 @@ export const StrategySceneDialog: React.FC<StrategySceneDialogProps> = ({
             warningMessage={errorMessage}
           />
           <NegotiationConsole
+            regions={parseTableRegions(scene.situation.facts)}
             isDisabled={isBusy || isFinished}
             hasPendingProposal={Boolean(scene.pending_proposal)}
             isDrawerOpen={isTableDrawerOpen}
             isDeclinable={isDeclinable}
+            isTreatyAvailable={!isRevoltTalk}
             onSend={sendMessage}
             onToggleDrawer={() => setIsTableDrawerOpen((prev) => !prev)}
             onBreakTalks={handleBreakTalks}
           />
+          {isRevoltTalk ? null : (
           <NegotiationTreatyDrawer
             isOpen={isTableDrawerOpen}
             proposal={scene.pending_proposal ?? null}
@@ -385,10 +400,12 @@ export const StrategySceneDialog: React.FC<StrategySceneDialogProps> = ({
             counterpartName={leaderName}
             isBusy={isBusy || isFinished}
             verdict={scene.transcript.at(-1)?.verdict ?? null}
+            clauseBands={scene.transcript.at(-1)?.clause_bands ?? []}
             onClose={() => setIsTableDrawerOpen(false)}
             onSign={handleSign}
             onDecline={isDeclinable ? handleBreakTalks : undefined}
           />
+          )}
           {isFinished && (
             <NegotiationRatificationOverlay
               outcome={scene.outcome}

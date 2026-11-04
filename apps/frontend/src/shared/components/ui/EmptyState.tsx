@@ -11,7 +11,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
       <p className="text-sm font-medium text-zinc-300">{title}</p>
       <p className="mt-1 text-xs text-zinc-500">{description}</p>
       {example && (
-        <p className="mt-3 inline-block border border-zinc-800 bg-zinc-900 px-3 py-1.5 text-xs text-zinc-400">
+        <p className="mt-3 inline-block border border-border-subtle bg-surface-raised px-3 py-1.5 text-xs text-content-muted">
           {example}
         </p>
       )}

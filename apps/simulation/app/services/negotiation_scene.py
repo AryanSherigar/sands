@@ -143,6 +143,10 @@ def _realm_id_facts(
     return [
         SituationFact(label="Your realm id", value=counterpart_id),
         SituationFact(label="The player's realm id", value=player_id),
+        SituationFact(
+            label="The player's treasury",
+            value=f"{world.factions[player_id].treasury} gold",
+        ),
         _table_regions_fact(world, player_id, counterpart_id),
     ]
 

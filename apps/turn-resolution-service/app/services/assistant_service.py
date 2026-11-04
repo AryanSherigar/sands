@@ -15,6 +15,13 @@ from app.models.assistant import (
     AssistantMasterContext,
     AssistantScopedContext,
 )
+from app.services.assistant_strategy_prompt import (
+    STRATEGY_ACTION_SYNTAX_GUIDE,
+    STRATEGY_BASE_PERSONA,
+    STRATEGY_CONTEXT_HEADING,
+    format_strategy_context,
+)
+from app.services.assistant_strategy_validation import find_strategy_validations
 from app.services.expression_validator import (
     build_available_field_paths,
     validate_expression_tree,
@@ -251,6 +258,15 @@ def build_system_instruction(request: AssistantChatRequest) -> str:
             )
         return "\n".join(parts)
 
+    if request.mode == "strategy":
+        parts = [STRATEGY_BASE_PERSONA, STRATEGY_ACTION_SYNTAX_GUIDE]
+        if request.strategy_context is not None:
+            parts.append(
+                f"\n{STRATEGY_CONTEXT_HEADING}\n"
+                + format_strategy_context(request.strategy_context)
+            )
+        return "\n".join(parts)
+
     if request.mode == "master":
         parts = [_MASTER_BASE_PERSONA, _MASTER_ACTION_SYNTAX_GUIDE]
         if request.master_context is not None:
@@ -401,6 +417,20 @@ def _find_block_validations(
     return results
 
 
+def _collect_block_validations(
+    full_text: str, request: AssistantChatRequest
+) -> list[dict[str, object]]:
+    if request.mode == "strategy":
+        if request.strategy_context is None:
+            return []
+        blocks = [
+            (index, match.group(1).lower(), match.group(3))
+            for index, match in enumerate(_ACTION_BLOCK_RE.finditer(full_text))
+        ]
+        return find_strategy_validations(blocks, request.strategy_context)
+    return _find_block_validations(full_text, request.master_context)
+
+
 async def open_assistant_chat(
     request: AssistantChatRequest, user_id: uuid.UUID, quota_service: QuotaService
 ) -> AsyncIterator[ServerSentEvent]:
@@ -428,8 +458,8 @@ async def stream_assistant_chat(
             full_text_parts.append(chunk)
             yield ServerSentEvent(event="chunk", data=chunk)
 
-        block_validations = _find_block_validations(
-            "".join(full_text_parts), request.master_context
+        block_validations = _collect_block_validations(
+            "".join(full_text_parts), request
         )
         done_data = (
             json.dumps({"block_validation": block_validations})

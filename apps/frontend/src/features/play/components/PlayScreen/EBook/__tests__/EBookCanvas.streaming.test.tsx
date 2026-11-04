@@ -42,7 +42,6 @@ describe("EBookCanvas streaming", () => {
     stopGeneration.mockClear();
     server.use(
       http.get("*/v1/users/me", () => HttpResponse.json({ voice_output_enabled: false })),
-      http.get("*/v1/alpha/config", () => HttpResponse.json({ is_alpha_mode: false })),
     );
     Element.prototype.scrollTo = scrollTo;
     useReaderPreferencesStore.setState({ reduceSensoryEffects: false });

@@ -25,7 +25,6 @@ from app.models.scenario_endings import ScenarioEndingsResponse
 from app.repositories.endings_repo import EndingsRepo
 from app.repositories.scenario_repo import ScenarioRepo
 from app.routers.achievement_deps import get_achievement_service
-from app.routers.alpha_guards import forbid_in_alpha_mode, restrict_to_alpha_scenario
 from app.routers.playthroughs import get_playthrough_service
 from app.services.achievement_service import AchievementService
 from app.services.endings_service import EndingsService
@@ -64,7 +63,6 @@ def get_publish_service(
     "",
     response_model=ScenarioResponse,
     status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(forbid_in_alpha_mode)],
 )
 async def create_scenario(
     data: ScenarioCreate,
@@ -79,7 +77,6 @@ async def create_scenario(
     "/{scenario_id}/publish",
     response_model=ScenarioResponse,
     status_code=status.HTTP_202_ACCEPTED,
-    dependencies=[Depends(forbid_in_alpha_mode)],
 )
 async def publish_scenario(
     scenario_id: uuid.UUID,
@@ -105,7 +102,6 @@ async def publish_scenario(
     "/{scenario_id}/playtest",
     response_model=PlaythroughResponse,
     status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(forbid_in_alpha_mode)],
 )
 async def playtest_scenario(
     scenario_id: uuid.UUID,
@@ -125,6 +121,8 @@ async def playtest_scenario(
         user_id=user.user_id,
         setup_values=payload.setup_values,
         state_overrides=payload.state_overrides,
+        faction_id=payload.faction_id,
+        player_ruler=payload.player_ruler,
     )
 
 
@@ -132,7 +130,6 @@ async def playtest_scenario(
     "/{scenario_id}/duplicate",
     response_model=ScenarioResponse,
     status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(forbid_in_alpha_mode)],
 )
 async def duplicate_scenario(
     scenario_id: uuid.UUID,
@@ -152,7 +149,6 @@ async def duplicate_scenario(
     "/{scenario_id}",
     response_model=ScenarioResponse,
     status_code=status.HTTP_200_OK,
-    dependencies=[Depends(restrict_to_alpha_scenario)],
 )
 async def get_scenario(
     scenario_id: uuid.UUID,
@@ -170,7 +166,6 @@ async def get_scenario(
     "/{scenario_id}",
     response_model=ScenarioResponse,
     status_code=status.HTTP_200_OK,
-    dependencies=[Depends(forbid_in_alpha_mode)],
 )
 async def update_scenario(
     scenario_id: uuid.UUID,
@@ -187,7 +182,6 @@ async def update_scenario(
 @router.delete(
     "/{scenario_id}",
     status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(forbid_in_alpha_mode)],
 )
 async def delete_scenario(
     scenario_id: uuid.UUID,
@@ -262,7 +256,6 @@ async def list_scenarios(
 @router.post(
     "/{scenario_id}/bookmark",
     status_code=status.HTTP_200_OK,
-    dependencies=[Depends(restrict_to_alpha_scenario)],
 )
 async def toggle_bookmark(
     scenario_id: uuid.UUID,
@@ -280,7 +273,6 @@ async def toggle_bookmark(
     "/{scenario_id}/reviews",
     response_model=ScenarioReviewListResponse,
     status_code=status.HTTP_200_OK,
-    dependencies=[Depends(restrict_to_alpha_scenario)],
 )
 async def list_reviews(
     scenario_id: uuid.UUID,
@@ -302,7 +294,6 @@ async def list_reviews(
     "/{scenario_id}/endings",
     response_model=ScenarioEndingsResponse,
     status_code=status.HTTP_200_OK,
-    dependencies=[Depends(restrict_to_alpha_scenario)],
 )
 async def get_scenario_endings(
     scenario_id: uuid.UUID,
@@ -319,7 +310,6 @@ async def get_scenario_endings(
     "/{scenario_id}/reviews",
     response_model=ScenarioReviewResponse,
     status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(forbid_in_alpha_mode)],
 )
 async def create_review(
     scenario_id: uuid.UUID,
@@ -340,7 +330,6 @@ async def create_review(
     "/{scenario_id}/playthroughs",
     response_model=list[PublicPlaythroughSummary],
     status_code=status.HTTP_200_OK,
-    dependencies=[Depends(restrict_to_alpha_scenario)],
 )
 async def list_public_playthroughs(
     scenario_id: uuid.UUID,

@@ -2,7 +2,6 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { App } from "./App";
 import { logEvent } from "@/shared/lib/logger";
-import { emitClientError } from "@/shared/lib/alpha-client-error";
 import { initializeAuthInterceptors } from "@/features/auth/lib/setupAuthInterceptor";
 import "../index.css";
 
@@ -13,7 +12,6 @@ window.addEventListener("error", (event) => {
     message: event.message,
     stack: event.error?.stack,
   });
-  emitClientError("window_error", event.error);
 });
 
 window.addEventListener("unhandledrejection", (event) => {
@@ -21,7 +19,6 @@ window.addEventListener("unhandledrejection", (event) => {
     message: String(event.reason),
     stack: event.reason?.stack,
   });
-  emitClientError("unhandled_rejection", event.reason);
 });
 
 ReactDOM.createRoot(document.getElementById("root")!).render(

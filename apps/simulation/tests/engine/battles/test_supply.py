@@ -1,6 +1,6 @@
 from app.models.world_region import OccupationState
 from strategy_contracts.battle import SupplyState
-from strategy_contracts.scenario import FactionSetup
+from strategy_contracts.scenario import FactionSetup, LogisticsTuning
 
 from tests.engine.battles.builders import ATTACKER, DEFENDER, REGION, battle_fixture
 
@@ -36,6 +36,7 @@ def test_supply_alliance_routes_reject_occupied_intermediate_regions() -> None:
     scenario.factions = [
         FactionSetup(id=ATTACKER, name="A", color="#000000", capital_region_id="home_a")
     ]
+    scenario.tuning.logistics = LogisticsTuning(foreign_supply_reach=0)
     world.regions[REGION].owner_id = ALLY
     assert supply_state(world, REGION, ATTACKER, scenario) == SupplyState.SUPPLIED
     world.regions[REGION].occupation = OccupationState(

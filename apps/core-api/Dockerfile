@@ -7,11 +7,15 @@ ENV PYTHONUNBUFFERED=1 \
 
 COPY --from=ghcr.io/astral-sh/uv:0.5.29 /uv /uvx /bin/
 
-WORKDIR /build
+# NOTE: pyproject.toml resolves strategy-contracts as ../../packages/..., so
+# the builder keeps the repo layout.
+WORKDIR /build/apps/core-api
 
+COPY packages/strategy-contracts /build/packages/strategy-contracts
 COPY apps/core-api/pyproject.toml apps/core-api/uv.lock ./
 
-RUN uv sync --frozen --no-dev --no-install-project
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --no-dev --no-install-project
 
 # Stage 2: Final runtime image
 FROM python:3.11-slim AS runner
@@ -31,6 +35,7 @@ COPY packages/strategy-contracts ./strategy-contracts
 
 RUN groupadd -g 10001 appgroup && \
     useradd -u 10001 -g appgroup -s /usr/sbin/nologin -M appuser && \
+    mkdir -p /app/uploads && \
     chown -R appuser:appgroup /app
 USER 10001:10001
 

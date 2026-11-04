@@ -18,6 +18,7 @@ export interface StrategyCampaignLoaderProps {
   stageIntervalMs?: number;
   tips?: readonly StrategyTip[];
   className?: string;
+  startYear?: number;
 }
 
 export const StrategyCampaignLoader: React.FC<StrategyCampaignLoaderProps> = ({
@@ -26,6 +27,7 @@ export const StrategyCampaignLoader: React.FC<StrategyCampaignLoaderProps> = ({
   stageIntervalMs = 3000,
   tips = STRATEGY_TIPS,
   className = "",
+  startYear,
 }) => {
   const [currentTipIndex, setCurrentTipIndex] = useState(0);
   const [currentStageIndex, setCurrentStageIndex] = useState(0);
@@ -108,7 +110,7 @@ export const StrategyCampaignLoader: React.FC<StrategyCampaignLoaderProps> = ({
               <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gradient-to-b from-[#8C660D] to-[#614500] border border-[#FED16E]/70 shadow-inner flex flex-col items-center justify-center text-[#FED16E]">
                 <IconCrown className="w-10 h-10 sm:w-12 sm:h-12 drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)] animate-pulse" />
                 <span className="text-[9px] font-mono tracking-widest uppercase font-bold text-[#FFDF9D]/90 mt-0.5">
-                  ANNO 1042
+                  {startYear ? `ANNO ${startYear}` : "ANNO"}
                 </span>
               </div>
             </div>

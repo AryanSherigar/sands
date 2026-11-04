@@ -2,59 +2,43 @@ from typing import Final
 
 from strategy_contracts.proclamation import ProclamationBurden, ProclamationDomain
 
-BURDEN_FACTORS: Final[dict[ProclamationBurden, float]] = {
-    ProclamationBurden.LIGHT: 0.5,
-    ProclamationBurden.MODERATE: 1.0,
-    ProclamationBurden.SEVERE: 1.75,
-    ProclamationBurden.RADICAL: 2.5,
+PER_MILLE: Final[int] = 1000
+
+BURDEN_PER_MILLE: Final[dict[ProclamationBurden, int]] = {
+    ProclamationBurden.LIGHT: 500,
+    ProclamationBurden.MODERATE: 1000,
+    ProclamationBurden.SEVERE: 1750,
+    ProclamationBurden.RADICAL: 2500,
 }
+
+MODIFIER_MANPOWER_REGEN: Final[str] = "manpower_regen_percent"
+MODIFIER_UNREST_PER_TURN: Final[str] = "unrest_per_turn"
+MODIFIER_TAX_POINTS: Final[str] = "tax_percent_points"
+MODIFIER_TRADE_EFFICIENCY: Final[str] = "trade_efficiency_percent"
 
 BASE_IMMEDIATE_EFFECTS: Final[dict[ProclamationDomain, dict[str, int]]] = {
-    ProclamationDomain.MARTIAL_LEVIES: {
-        "manpower": 200,
-        "gold": -50,
-        "unrest": 5,
-    },
-    ProclamationDomain.EMERGENCY_TAXATION: {
-        "gold": 250,
-        "unrest": 15,
-    },
-    ProclamationDomain.RELIGIOUS_ORTHODOXY: {
-        "gold": -40,
-        "morale": 15,
-        "unrest": 0,
-    },
-    ProclamationDomain.NOBLE_PRIVILEGES: {
-        "morale": 10,
-        "loyalty": 20,
-    },
-    ProclamationDomain.POPULAR_RELIEF: {
-        "unrest": -20,
-        "gold": -100,
-    },
+    ProclamationDomain.MARTIAL_LEVIES: {"manpower": 200, "gold": -50, "unrest": 5},
+    ProclamationDomain.EMERGENCY_TAXATION: {"gold": 250, "unrest": 15},
+    ProclamationDomain.RELIGIOUS_ORTHODOXY: {"gold": -40, "morale": 15},
+    ProclamationDomain.NOBLE_PRIVILEGES: {"morale": 10},
+    ProclamationDomain.POPULAR_RELIEF: {"unrest": -20, "gold": -100},
 }
 
-BASE_ONGOING_MODIFIERS: Final[dict[ProclamationDomain, dict[str, float]]] = {
+BASE_ONGOING_MODIFIERS: Final[dict[ProclamationDomain, dict[str, int]]] = {
     ProclamationDomain.MARTIAL_LEVIES: {
-        "manpower_regen_delta": 25.0,
-        "unrest_delta": 3.0,
+        MODIFIER_MANPOWER_REGEN: 25,
+        MODIFIER_UNREST_PER_TURN: 3,
     },
     ProclamationDomain.EMERGENCY_TAXATION: {
-        "tax_rate_delta": 0.15,
-        "wealth_growth_delta": -0.10,
+        MODIFIER_TAX_POINTS: 15,
+        MODIFIER_TRADE_EFFICIENCY: -10,
     },
     ProclamationDomain.RELIGIOUS_ORTHODOXY: {
-        "unrest_delta": -2.0,
-        "trade_efficiency_delta": -0.05,
+        MODIFIER_UNREST_PER_TURN: -2,
+        MODIFIER_TRADE_EFFICIENCY: -5,
     },
-    ProclamationDomain.NOBLE_PRIVILEGES: {
-        "tax_rate_delta": -0.10,
-        "command_cost_discount": 0.20,
-    },
-    ProclamationDomain.POPULAR_RELIEF: {
-        "unrest_delta": -5.0,
-        "gold_maintenance_delta": 10.0,
-    },
+    ProclamationDomain.NOBLE_PRIVILEGES: {MODIFIER_TAX_POINTS: -10},
+    ProclamationDomain.POPULAR_RELIEF: {MODIFIER_UNREST_PER_TURN: -5},
 }
 
 RESCIND_UNREST_PENALTY: Final[int] = 10

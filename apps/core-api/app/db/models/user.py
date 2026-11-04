@@ -52,13 +52,6 @@ class User(Base, CreatedAtMixin):
     deletion_requested_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True, index=True
     )
-    alpha_consent_version: Mapped[str | None] = mapped_column(Text, nullable=True)
-    alpha_consented_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
-    alpha_suspended_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
     preferred_genres: Mapped[list[str]] = mapped_column(
         ARRAY(Text), server_default=text("'{}'"), default=list, nullable=False
     )

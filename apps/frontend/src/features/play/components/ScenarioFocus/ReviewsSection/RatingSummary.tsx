@@ -2,6 +2,7 @@ import React from "react";
 import { formatRatingLabel } from "../../../utils/scenarioPage.utils";
 import { ReviewStars } from "./ReviewStars";
 import type { RatingSummaryProps } from "./RatingSummary.types";
+import { IconStarFilled } from "@tabler/icons-react";
 
 const PROGRESS_CLASSES =
   "h-2 flex-1 appearance-none overflow-hidden rounded-full [&::-moz-progress-bar]:bg-accent [&::-webkit-progress-bar]:bg-surface-inset [&::-webkit-progress-value]:bg-accent";
@@ -26,7 +27,7 @@ export const RatingSummary: React.FC<RatingSummaryProps> = ({
     <ul className="space-y-1.5 font-mono text-xs" aria-hidden="true">
       {buckets.map(({ stars, percent }) => (
         <li key={stars} className="flex items-center gap-3">
-          <span className="w-7 text-content-muted">{stars} ★</span>
+          <span className="w-7 text-content-muted">{stars} <IconStarFilled size={12} aria-hidden="true" className="inline" /></span>
           <progress
             value={percent}
             max={100}

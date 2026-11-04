@@ -3,14 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { server } from "@/test/msw/server";
-import {
-  ALPHA_CONFIG,
-  ALPHA_CONSENT_VERSION,
-  NON_ALPHA_CONFIG,
-  alphaConfigHandler,
-} from "@/test/alphaFixtures";
 import { createQueryWrapper } from "@/test/queryWrapper";
-import { ALPHA_CONSENT_COPY } from "@/features/auth/constants/alpha-consent";
 import { useAuthStore } from "@/features/auth/stores/auth.store";
 import {
   SIGN_IN_CANCELLED_MESSAGE,
@@ -43,7 +36,6 @@ const openModal = (trigger: SignInTrigger): Promise<boolean> => {
 describe("SignInModal", () => {
   beforeEach(() => {
     signInWithPopup.mockReset();
-    server.use(alphaConfigHandler(NON_ALPHA_CONFIG));
     useAuthStore.setState({ user: null, accessToken: null, isAuthenticated: false });
     useSignInModalStore.setState({ trigger: null, resolvePending: null });
   });
@@ -114,21 +106,5 @@ describe("SignInModal", () => {
     await userEvent.click(screen.getByRole("button", { name: /continue with google/i }));
     await expect(pending).resolves.toBe(true);
     expect(screen.queryByRole("dialog")).toBeNull();
-  });
-
-  it("shows the alpha consent text before the Google button in alpha mode", async () => {
-    server.use(alphaConfigHandler(ALPHA_CONFIG));
-    render(<SignInModal />, { wrapper: createQueryWrapper() });
-    void openModal("save");
-    const consentTitle = await screen.findByText(
-      ALPHA_CONSENT_COPY[ALPHA_CONSENT_VERSION].title,
-    );
-    const googleButton = screen.getByRole("button", {
-      name: /continue with google/i,
-    });
-    expect(
-      consentTitle.compareDocumentPosition(googleButton) &
-        Node.DOCUMENT_POSITION_FOLLOWING,
-    ).toBeTruthy();
   });
 });

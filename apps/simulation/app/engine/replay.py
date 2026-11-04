@@ -7,6 +7,7 @@ from app.engine.commands.application import accept_command
 from app.engine.commands.cancellation import cancel_command
 from app.engine.hashing import world_hash
 from app.engine.negotiation import close_negotiation, open_negotiation
+from app.engine.proclamations.decision import enact_proclamation_decision
 from app.engine.scene_closing import close_scene
 from app.exceptions.world_exceptions import ReplayMismatchError
 from app.models.replay import (
@@ -15,6 +16,7 @@ from app.models.replay import (
     BeginCampaignReplayInput,
     BeginNegotiationReplayInput,
     CancelCommandReplayInput,
+    ProclamationDecisionReplayInput,
     ReplayStep,
     ResolveNegotiationReplayInput,
     ResolveSceneReplayInput,
@@ -99,6 +101,9 @@ def _apply_step(
         replay_input, SubmitSpeechTalkReplayInput | SkipBattleSpeechReplayInput
     ):
         return apply_speech_step(world, replay_input)
+    if isinstance(replay_input, ProclamationDecisionReplayInput):
+        enact_proclamation_decision(world, replay_input)
+        return world
     raise ReplayMismatchError(
         step.sequence, "known replay input", "unknown replay input"
     )

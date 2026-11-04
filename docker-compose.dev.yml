@@ -58,6 +58,12 @@ services:
       - /app/node_modules
     ports: !override
       - "${FRONTEND_PORT:-5173}:5173"
+    healthcheck: !override
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:5173/"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
     environment:
       # Hardcoded: the dev Vite server talks to core-api/TRS directly, not
       # through nginx, so it must ignore the /api, /trs prod defaults in .env.

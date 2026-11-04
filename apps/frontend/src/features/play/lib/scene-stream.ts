@@ -1,6 +1,5 @@
 import { useAuthStore } from "@/features/auth/stores/auth.store";
 import { TRS_BASE_URL } from "@/shared/constants/api";
-import { isAlphaPausedError } from "@/shared/lib/alpha-paused-error";
 import { isRateLimitError } from "@/shared/lib/rate-limit-error";
 import { generateRequestId, setCurrentRequestId } from "@/shared/lib/request-id";
 import { createPostSSEConnection, type SSEHandlers } from "@/shared/lib/sse-client";
@@ -16,7 +15,7 @@ export interface SceneMessageCallbacks {
 }
 
 const describeError = (error: unknown): string =>
-  isRateLimitError(error) || isAlphaPausedError(error)
+  isRateLimitError(error)
     ? error.message
     : SCENE_CONNECTION_LOST_MESSAGE;
 

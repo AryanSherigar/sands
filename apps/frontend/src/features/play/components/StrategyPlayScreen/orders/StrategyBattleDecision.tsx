@@ -21,10 +21,12 @@ export function StrategyBattleDecision({
             <button
               type="button"
               disabled={isPending || hasCommand}
-              onClick={() => {
-                choose({ kind: "take_command", faction_id: world.my_faction.id, battle_id: battle.id });
-                onTakeCommand?.(battle.id);
-              }}
+              onClick={() =>
+                choose(
+                  { kind: "take_command", faction_id: world.my_faction.id, battle_id: battle.id },
+                  { onSuccess: () => onTakeCommand?.(battle.id) },
+                )
+              }
               className="rounded-md bg-[#46606E] px-4 py-2 text-white hover:bg-[#354F5A] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50"
             >
               Take command

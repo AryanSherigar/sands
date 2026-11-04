@@ -202,7 +202,7 @@ def test_trait_ids_are_the_fallback_when_there_are_no_notes() -> None:
 
 
 def test_a_scene_type_without_a_prompt_profile_cannot_be_narrated() -> None:
-    package = _package().model_copy(update={"scene_type": SceneType.REVOLT_TALK})
+    package = _package().model_copy(update={"scene_type": SceneType.HOSTAGE})
 
     with pytest.raises(SceneTypeUnsupportedError):
         scene_prompt.build_system_instruction(package)

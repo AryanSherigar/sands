@@ -45,6 +45,11 @@ class StrategyMapService:
         await self.scenario_repo.update(scenario)
         return document
 
+    async def ensure_owner(self, scenario_id: uuid.UUID, user_id: uuid.UUID) -> None:
+        """Raises unless the user owns this existing strategy scenario."""
+        scenario = await self.scenario_repo.get_by_id(scenario_id)
+        _ensure_strategy_owner(scenario, user_id)
+
     async def get_map(self, scenario_id: uuid.UUID, user_id: uuid.UUID) -> MapDocument:
         scenario = await self.scenario_repo.get_by_id(scenario_id)
         _ensure_strategy_owner(scenario, user_id)

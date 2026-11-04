@@ -18,6 +18,7 @@ def _logistics_world():
         winter_attrition_percent=0,
         isolated_morale_loss=5,
         forced_withdrawal_after_isolated_turns=2,
+        foreign_supply_reach=0,
     )
     return world, scenario
 
@@ -78,3 +79,22 @@ def test_legacy_world_omits_the_logistics_gate_and_failure_ledger() -> None:
 
     assert "logistics_ruleset" not in legacy.model_dump(mode="json")
     assert "supply_failure_turns" not in legacy.model_dump(mode="json")
+
+
+def test_foreign_supply_reach_keeps_a_border_army_supplied() -> None:
+    from app.engine.logistics.supply import supply_assessment
+
+    world, scenario = _logistics_world()
+    army = next(iter(world.armies.values()))
+    world.regions[army.location_id].owner_id = None
+    scenario.tuning.logistics = scenario.tuning.logistics.model_copy(
+        update={"foreign_supply_reach": 0}
+    )
+    isolated = supply_assessment(world, army.location_id, army.owner_id, scenario)
+    scenario.tuning.logistics = scenario.tuning.logistics.model_copy(
+        update={"foreign_supply_reach": 1}
+    )
+    reached = supply_assessment(world, army.location_id, army.owner_id, scenario)
+
+    assert isolated.state.value == "isolated"
+    assert reached.state.value != "isolated"

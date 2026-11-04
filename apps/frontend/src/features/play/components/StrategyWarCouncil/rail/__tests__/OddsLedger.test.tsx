@@ -5,24 +5,22 @@ import type { TacticalOddsEstimate } from "../../StrategyWarCouncil.types";
 
 const mockOdds: TacticalOddsEstimate = {
   balancePercent: 58,
-  isRange: false,
-  minPercent: 58,
-  maxPercent: 58,
-  tierText: "Decisive",
+  tierText: "Favorable",
+  confidence: "medium",
+  basis: "assumed_even_mix",
   factors: [
     {
-      id: "terrain",
-      name: "Terrain: Sloped Ford",
-      icon: "landscape",
+      id: "weather",
+      name: "Weather",
+      icon: "cloud",
       valuePercent: 10,
       isPositive: true,
-      title: "Sloped Ford Mechanics",
-      explanation: "Holding defensive slope: +10% Net.",
+      title: "Weather modifier",
+      explanation: "How today's weather scales attack pressure for your troops.",
     },
   ],
-  playerLossEstimated: 140,
-  enemyLossEstimated: 480,
-  warScoreEstimated: 28,
+  playerLoss: { low: 90, expected: 140, high: 190 },
+  enemyLoss: { low: 400, expected: 480, high: 560 },
 };
 
 describe("OddsLedger", () => {
@@ -35,9 +33,9 @@ describe("OddsLedger", () => {
       />,
     );
 
-    expect(screen.getByText("+58% Decisive")).toBeInTheDocument();
+    expect(screen.getByText("58% Favorable")).toBeInTheDocument();
     expect(screen.getByText("Valenreach (58%)")).toBeInTheDocument();
     expect(screen.getByText("Ironmark (42%)")).toBeInTheDocument();
-    expect(screen.getByText("Terrain: Sloped Ford")).toBeInTheDocument();
+    expect(screen.getByText("Weather")).toBeInTheDocument();
   });
 });

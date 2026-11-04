@@ -57,6 +57,23 @@ class PlaythroughRepo:
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
 
+    async def find_initializing(
+        self, scenario_id: uuid.UUID, created_by: uuid.UUID, is_playtest: bool
+    ) -> list[Playthrough]:
+        """A user's playthroughs of a scenario still waiting on world creation."""
+        stmt = (
+            select(Playthrough)
+            .where(
+                Playthrough.scenario_id == scenario_id,
+                Playthrough.created_by == created_by,
+                Playthrough.status == INITIALIZING_STATUS,
+                Playthrough.is_playtest == is_playtest,
+            )
+            .order_by(Playthrough.created_at.desc())
+        )
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())
+
     async def list_by_user_with_scenarios(
         self, created_by: uuid.UUID, status: str | None = None
     ) -> list[tuple[Playthrough, Scenario]]:

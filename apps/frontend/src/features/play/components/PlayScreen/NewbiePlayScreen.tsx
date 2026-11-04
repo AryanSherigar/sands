@@ -135,7 +135,6 @@ export function NewbiePlayScreen() {
           outcomeTag={playthrough.ended_outcome_tag}
           outcomeTitle={playthrough.ended_outcome_title ?? "The End"}
           outcomeText={playthrough.ended_outcome_text ?? ""}
-          playthroughId={playthrough.playthrough_id}
           onBackToLibrary={() => navigate("/discover")}
         />
       )}

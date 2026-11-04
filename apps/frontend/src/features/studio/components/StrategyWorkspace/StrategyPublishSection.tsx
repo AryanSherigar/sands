@@ -7,14 +7,18 @@ import { StrategyIssueList } from "./StrategyIssueList";
 import type { StrategyPublishSectionProps } from "./StrategyWorkspace.types";
 
 const MAP_MISSING_MESSAGE = "Import a map before publishing.";
+const SAVE_FAILED_MESSAGE = "Your latest changes could not be saved, so nothing was published. Fix the problem and try again.";
+const CHECK_FAILED_MESSAGE = "The scenario has problems that must be fixed before publishing.";
 
 export const StrategyPublishSection: React.FC<StrategyPublishSectionProps> = ({
   scenario,
   report,
   isMapMissing,
   onFlush,
+  onRecheck,
   onOpenPanel,
 }) => {
+  const [gateMessage, setGateMessage] = React.useState<string | null>(null);
   const flow = usePublish(scenario.scenario_id);
   const blocking = report?.blocking ?? [];
   const warnings = report?.warnings ?? [];
@@ -23,7 +27,16 @@ export const StrategyPublishSection: React.FC<StrategyPublishSectionProps> = ({
   const failure = flow.triggerError ?? flow.publishError;
 
   const handlePublish = async (): Promise<void> => {
-    await onFlush();
+    setGateMessage(null);
+    if (!(await onFlush())) {
+      setGateMessage(SAVE_FAILED_MESSAGE);
+      return;
+    }
+    const freshReport = await onRecheck();
+    if (!freshReport || freshReport.blocking.length > 0) {
+      setGateMessage(CHECK_FAILED_MESSAGE);
+      return;
+    }
     if (!scenario.content_tag) {
       await updateScenarioContentTag(scenario.scenario_id, DEFAULT_CONTENT_TAG);
     }
@@ -36,6 +49,7 @@ export const StrategyPublishSection: React.FC<StrategyPublishSectionProps> = ({
       {isMapMissing && <p className="text-sm text-danger">{MAP_MISSING_MESSAGE}</p>}
       {blocking.length > 0 && <StrategyIssueList issues={blocking} tone="text-danger" onOpenPanel={onOpenPanel} />}
       {warnings.length > 0 && <StrategyIssueList issues={warnings} tone="text-content-muted" onOpenPanel={onOpenPanel} />}
+      {gateMessage && <p role="alert" className="text-sm text-danger">{gateMessage}</p>}
       {failure && <p role="alert" className="text-sm text-danger">{failure}</p>}
       {flow.status === "published" && <p role="status" className="text-sm text-success">Published.</p>}
       <Button variant="primary" disabled={isBlocked || isBusy} onClick={handlePublish}>

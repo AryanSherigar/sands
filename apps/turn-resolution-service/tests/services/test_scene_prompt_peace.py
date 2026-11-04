@@ -1,89 +1,13 @@
-import uuid
-
-from app.services import scene_prompt
-from strategy_contracts.peace import PeaceTier
+from app.services import scene_prompt, scene_prompt_peace
+from app.services.scene_prompt_treaty import verdict_hint
 from strategy_contracts.scene import (
-    AcceptanceRange,
-    CessionOption,
-    Grudge,
-    GrudgeBand,
-    GrudgeSource,
-    HiddenLimits,
-    Participant,
-    ParticipantKind,
-    PeaceBrief,
-    PeaceTierOption,
-    ScenePackage,
-    SceneSituation,
     SceneType,
-    SituationFact,
-    TermsCardOutcome,
-    TermsCardSpec,
-    TermsResult,
     WarStanding,
 )
 from strategy_contracts.scene_exchange import SceneExchangeView
-from strategy_contracts.terms import TermKind
+from strategy_contracts.treaty import Verdict
+from tests.services.peace_fixtures import peace_package as _package
 from tests.turn.prefix_stability import assert_shared_through
-
-
-def _brief(standing: WarStanding = WarStanding.LEADING) -> PeaceBrief:
-    return PeaceBrief(
-        player_faction_id="house_carrow",
-        player_faction_name="Carrow",
-        counterpart_faction_id="house_ashford",
-        counterpart_faction_name="Ashford",
-        standing=standing,
-        tiers=[
-            PeaceTierOption(tier=PeaceTier.SHORT, turns=6, needs_guarantor=False),
-            PeaceTierOption(tier=PeaceTier.GENERATION, turns=60, needs_guarantor=True),
-            PeaceTierOption(tier=PeaceTier.PERPETUAL, turns=0, needs_guarantor=True),
-        ],
-        player_regions=[CessionOption(region_id="elmstead", name="Elmstead")],
-        counterpart_regions=[CessionOption(region_id="brennmoor", name="Brennmoor")],
-    )
-
-
-def _package(standing: WarStanding = WarStanding.LEADING) -> ScenePackage:
-    return ScenePackage(
-        scene_id=uuid.uuid4(),
-        playthrough_id=uuid.uuid4(),
-        scene_type=SceneType.PEACE,
-        turn=5,
-        situation=SceneSituation(
-            summary="Valdren sues for peace with Mira.",
-            facts=[SituationFact(label="Your war score", value="12")],
-        ),
-        participants=[
-            Participant(
-                participant_id="mira",
-                kind=ParticipantKind.LEADER,
-                name="Mira of Ashford",
-                trait_ids=["proud"],
-                mood="hostile",
-            )
-        ],
-        hidden_limits=HiddenLimits(
-            acceptance=AcceptanceRange(accept_at=37, haggle_at=21),
-            peace_brief=_brief(standing),
-            grudges=[
-                Grudge(
-                    id="g1",
-                    text="You raided our granaries.",
-                    source=GrudgeSource.OPINION,
-                    band=GrudgeBand.FIRM,
-                )
-            ],
-        ),
-        allowed_outcomes=[
-            TermsCardSpec(
-                allowed_term_kinds=[TermKind.PEACE, TermKind.PAY_GOLD],
-                war_score_available=12,
-            )
-        ],
-        exchange_cap=6,
-        default_outcome=TermsCardOutcome(result=TermsResult.REFUSED),
-    )
 
 
 def _exchange(sequence: int, player: str, leader: str) -> SceneExchangeView:
@@ -194,3 +118,28 @@ def test_the_peace_directive_keeps_the_marker_the_harness_keys_on() -> None:
     directive = scene_prompt.profile_for(SceneType.PEACE).decision_directive
 
     assert "Answer with only a JSON" in directive
+
+
+def test_rules_stop_a_goal_from_being_read_as_a_holding() -> None:
+    assert "not something the player holds" in scene_prompt_peace.PEACE_RULES
+
+
+def test_a_refused_peace_offer_is_hinted_in_the_final_turn_only() -> None:
+    package = _package()
+    profile = scene_prompt.profile_for_package(package)
+    refused = SceneExchangeView(
+        sequence=1, player_text="Peace.", leader_text="Terms?", verdict=Verdict.REFUSE
+    )
+
+    contents = scene_prompt.build_reply_contents(
+        [refused], "Again.", 6, profile=profile
+    )
+
+    hint = verdict_hint(Verdict.REFUSE)
+    assert hint is not None and hint in contents[-1].parts[0].text
+    assert all(hint not in part.text for item in contents[:-1] for part in item.parts)
+    assert hint not in scene_prompt.build_system_instruction(package)
+
+
+def test_rules_stop_the_ruler_inventing_troop_movements() -> None:
+    assert "Never state where armies are" in scene_prompt_peace.PEACE_RULES

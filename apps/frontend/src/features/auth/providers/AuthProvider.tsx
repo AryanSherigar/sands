@@ -1,8 +1,6 @@
 import React, { useEffect } from "react";
 import { useAuthStore } from "../stores/auth.store";
 import { refreshAccessToken } from "../api/auth.api";
-import { captureInviteFromUrl } from "../lib/inviteStorage";
-import { markSuspendedIfRefused } from "../lib/accountSuspension";
 
 interface AuthProviderProps {
   children: React.ReactNode;
@@ -12,10 +10,6 @@ const AUTH_INIT_TIMEOUT_MS = 3000;
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const { setAuth, logout, setLoading } = useAuthStore();
-
-  useEffect(() => {
-    captureInviteFromUrl();
-  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -32,8 +26,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         if (isMounted) {
           setAuth(access_token, user);
         }
-      } catch (error) {
-        if (isMounted && !markSuspendedIfRefused(error)) {
+      } catch {
+        if (isMounted) {
           logout();
         }
       } finally {

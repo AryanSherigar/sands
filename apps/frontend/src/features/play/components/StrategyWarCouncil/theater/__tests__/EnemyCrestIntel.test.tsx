@@ -26,7 +26,7 @@ const mockOpponent: OpponentView = {
 };
 
 describe("EnemyCrestIntel", () => {
-  it("labels wing cards as illustrative and lists real scouting reports", () => {
+  it("shows only real intel: strength, scouted reserves and posture", () => {
     render(
       <EnemyCrestIntel
         scoutedTurnText="Latest scouting report from turn 2"
@@ -37,8 +37,12 @@ describe("EnemyCrestIntel", () => {
     );
 
     expect(screen.getByText("Latest scouting report from turn 2")).toBeInTheDocument();
-    expect(screen.getByText(/Enemy Left Wing \(Illustrative\)/)).toBeInTheDocument();
-    expect(screen.getByText(/reserves 100–200/)).toBeInTheDocument();
+    expect(screen.getByText(/800–1,200 troops/)).toBeInTheDocument();
+    expect(screen.getByText("Reserves 100–200")).toBeInTheDocument();
+    expect(screen.getByText("Posture: holding")).toBeInTheDocument();
+    expect(screen.getByText(/Unknown. Scout their composition/)).toBeInTheDocument();
+    expect(screen.queryByText(/illustrative/i)).not.toBeInTheDocument();
+    expect(screen.getByText(/reserves 100–200 •/)).toBeInTheDocument();
     expect(screen.getByText(/high confidence/)).toBeInTheDocument();
   });
 

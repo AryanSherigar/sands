@@ -59,10 +59,11 @@ class Settings(BaseSettings):
     muse_text_reasoning_effort: str = "minimal"
     text_generation_timeout_seconds: int = 30
     image_generation_timeout_seconds: int = 90
-    lyria_model_name: str = "lyria-002"
     simulation_url: str = "http://localhost:8081"
     simulation_internal_token: str = ""
     simulation_initialize_timeout_seconds: float = 15.0
+    internal_service_token: str = ""
+    play_count_increment_turn_threshold: int = 10
     memory_url: str = "http://localhost:8080"
     memory_service_name: str = "core-api"
     is_memory_iam_auth_enabled: bool = False
@@ -92,24 +93,6 @@ class Settings(BaseSettings):
     stats_overview_reviews_limit: int = 5
     stats_listed_statuses: list[str] = ["published", "archived"]
 
-    is_alpha_mode: bool = False
-    alpha_scenario_id: uuid.UUID | None = None
-    is_alpha_signup_enabled: bool = True
-    alpha_consent_version: str = "alpha-1"
-    alpha_public_url: str = ""
-    alpha_tension_prompt_every_turns: int = 15
-    alpha_event_max_batch: int = 50
-    alpha_event_max_body_bytes: int = 32 * 1024
-    alpha_health_window_hours: int = 24
-    alpha_stale_run_hours: int = 24
-    alpha_max_turns_without_metrics_ratio: float = 0.01
-    alpha_max_memory_degraded_rate: float = 0.20
-    alpha_min_completion_rate: float = 0.0
-    alpha_daily_budget_usd: float = 0.0
-    alpha_spend_alert_fraction: float = 0.8
-    alpha_prompt_usd_per_million_tokens: float = 0.0
-    alpha_completion_usd_per_million_tokens: float = 0.0
-
     is_rate_limit_enabled: bool = True
     # NOTE: Count of proxies appending to X-Forwarded-For in front of this
     # service; the client is that many entries from the right. Locally nginx
@@ -122,7 +105,6 @@ class Settings(BaseSettings):
     rate_limit_window_seconds: int = 60
     rate_limit_auth_per_window: int = 10
     rate_limit_logs_per_window: int = 30
-    rate_limit_alpha_events_per_window: int = 30
     rate_limit_ai_generation_per_window: int = 10
     rate_limit_upload_per_window: int = 20
     rate_limit_write_per_window: int = 60
@@ -131,8 +113,8 @@ class Settings(BaseSettings):
     rate_limit_ip_ceiling_per_window: int = 600
     quota_cover_image_per_user: int = 10
     quota_cover_image_global: int = 150
-    quota_music_generation_per_user: int = 10
-    quota_music_generation_global: int = 60
+    quota_ruler_backstory_per_user: int = 30
+    quota_ruler_backstory_global: int = 450
     quota_publish_per_user: int = 10
     quota_publish_global: int = 100
     new_accounts_per_ip_per_day: int = 3
@@ -188,15 +170,6 @@ class Settings(BaseSettings):
                 "FATAL: R2 object storage must be configured in production "
                 "(R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, "
                 "R2_BUCKET_NAME, R2_PUBLIC_BASE_URL)"
-            )
-        return self
-
-    @model_validator(mode="after")
-    def validate_alpha_scenario(self) -> "Settings":
-        """Refuse to boot in alpha mode without the playable scenario id."""
-        if self.is_alpha_mode and self.alpha_scenario_id is None:
-            raise ValueError(
-                "FATAL: ALPHA_SCENARIO_ID is required when IS_ALPHA_MODE is on"
             )
         return self
 

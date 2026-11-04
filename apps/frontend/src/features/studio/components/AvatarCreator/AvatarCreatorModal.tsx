@@ -3,6 +3,15 @@ import { Button } from "@/shared/components/ui/Button";
 import { AnimatedPortrait } from "@/shared/components/AnimatedPortrait/AnimatedPortrait";
 import type { AvatarExpression } from "@/shared/components/AnimatedPortrait/AnimatedPortrait.types";
 import { optimizeAvatarPrompt, buildMeshAvatar, generateLeaderPortrait } from "../../api/avatarStudio.api";
+import { fetchPortraitBlob, readPortraitAsDataUrl } from "./portraitImage";
+import { PremadeAvatarPicker } from "./PremadeAvatarPicker";
+import type { PremadeAvatar } from "../../types/premade_avatar.types";
+import { logEvent } from "@/shared/lib/logger";
+
+// NOTE: mirrors FRAMING_DIRECTIVE in core-api avatar_prompt_service.py; used only when the optimize call fails.
+const AVATAR_FRAMING_DIRECTIVE =
+  "face centered and symmetrical, eyes level about 42% of the way down the frame, head top near the upper edge, chin about three quarters of the way down, shoulders cropped by the bottom edge, hair kept clear of the eyes";
+const BUILD_AVATAR_FALLBACK_MESSAGE = "Could not build the avatar. Check your portrait and try again.";
 
 interface AvatarCreatorModalProps {
   isOpen: boolean;
@@ -58,7 +67,7 @@ export const AvatarCreatorModal: React.FC<AvatarCreatorModalProps> = ({
     } catch {
       // Fallback local optimization
       setOptimizedPrompt(
-        `Front-facing bust portrait of ${description}, head and shoulders centered in frame, resting closed mouth, clean eye contours, crisp lighting, isolated neutral background.`
+        `Front-facing bust portrait of ${description}, head and shoulders, ${AVATAR_FRAMING_DIRECTIVE}, resting closed mouth, clean eye contours, crisp lighting, isolated neutral background.`
       );
     } finally {
       setIsOptimizing(false);
@@ -83,27 +92,25 @@ export const AvatarCreatorModal: React.FC<AvatarCreatorModalProps> = ({
     setIsGenerating(true);
     setErrorMessage(null);
     try {
-      const image = portrait ?? await fetch(portraitUrl!).then((response) => {
-        if (!response.ok) throw new Error("Portrait could not be loaded");
-        return response.blob();
-      });
-      if (!image) throw new Error("Portrait could not be loaded");
-      if (image.size > 5 * 1024 * 1024) throw new Error("Portrait exceeds 5 MB");
-      const imageUrl = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => typeof reader.result === "string" ? resolve(reader.result) : reject(new Error("Could not read portrait"));
-        reader.onerror = () => reject(new Error("Could not read portrait"));
-        reader.readAsDataURL(image);
-      });
+      const image = portrait ?? await fetchPortraitBlob(portraitUrl!);
+      const imageUrl = await readPortraitAsDataUrl(image);
       const res = await buildMeshAvatar(characterName, imageUrl);
       setPreviewError(false);
       setPreviewVerified(false);
       setPreviewAvatarUrl(res.avatar_url);
-    } catch {
-      setErrorMessage("Could not build the avatar. Check your portrait and try again.");
+    } catch (error) {
+      logEvent("warning", "avatar_build_failed", { error: String(error), has_upload: Boolean(portrait) });
+      setErrorMessage(BUILD_AVATAR_FALLBACK_MESSAGE);
     } finally {
       setIsGenerating(false);
     }
+  };
+
+  const handleSelectPremade = (avatar: PremadeAvatar) => {
+    setErrorMessage(null);
+    setPreviewError(false);
+    setPreviewVerified(false);
+    setPreviewAvatarUrl(avatar.avatar_url);
   };
 
   const handleSave = async () => {
@@ -144,6 +151,7 @@ export const AvatarCreatorModal: React.FC<AvatarCreatorModalProps> = ({
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-4">
+            <PremadeAvatarPicker selectedAvatarUrl={previewAvatarUrl} onSelect={handleSelectPremade} />
             <div>
               <label className="block text-xs font-semibold text-text-secondary mb-1">
                 Character Concept Description
@@ -174,11 +182,11 @@ export const AvatarCreatorModal: React.FC<AvatarCreatorModalProps> = ({
                 <div className="p-2.5 bg-surface-overlay text-xs text-text-secondary rounded border border-border-subtle italic">
                   {optimizedPrompt}
                 </div>
-                {onSavePortrait && <Button type="button" variant="secondary" size="sm" className="w-full" disabled={isPortraitGenerating} onClick={handleGeneratePortrait}>{isPortraitGenerating ? "Generating..." : `${portraitUrl ? "Regenerate" : "Generate"} Portrait`}</Button>}
+                <Button type="button" variant="secondary" size="sm" className="w-full" disabled={isPortraitGenerating} onClick={handleGeneratePortrait}>{isPortraitGenerating ? "Generating..." : `${portraitUrl ? "Regenerate" : "Generate"} Portrait`}</Button>
               </div>
             )}
 
-            {portraitUrl && onSavePortrait && <div className="space-y-2"><img src={portraitUrl} alt="Portrait preview" className="w-full max-h-56 object-contain rounded border border-border-subtle" /><Button type="button" variant="secondary" size="sm" onClick={() => onSavePortrait(portraitUrl)}>Use this portrait</Button></div>}
+            {portraitUrl && <div className="space-y-2"><img src={portraitUrl} alt="Portrait preview" className="w-full max-h-56 object-contain rounded border border-border-subtle" />{onSavePortrait && <Button type="button" variant="secondary" size="sm" onClick={() => onSavePortrait(portraitUrl)}>Use this portrait</Button>}</div>}
 
             <label className="block text-xs font-semibold text-text-secondary">
               Choose portrait (PNG, JPEG or WebP; up to 5 MB)

@@ -1,5 +1,6 @@
 from uuid import UUID
 
+from app.engine.battles.outlook import estimate_outlook
 from app.engine.battles.views import observed_battle, project_battle
 from app.engine.world_document import world_from_document
 from app.exceptions.access_exceptions import PlaythroughNotFoundError
@@ -46,9 +47,12 @@ class BattleService:
             if row is None:
                 raise PlaythroughNotFoundError()
             world = world_from_document(row.document)
-            return project_battle(
-                world, battle_id, player_faction(world), playthrough.scenario
+            observer = player_faction(world)
+            view = project_battle(world, battle_id, observer, playthrough.scenario)
+            view.outlook = estimate_outlook(
+                world, battle_id, observer, playthrough.scenario
             )
+            return view
 
     async def list_battles(
         self, playthrough_id: UUID, user_id: UUID, after_id: str, limit: int

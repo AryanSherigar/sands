@@ -7,12 +7,16 @@ from app.config import settings
 from app.integrations import openai_compatible_client
 from app.models.scene import SceneMessageKind, SceneMessageRequest
 from app.services import scene_prompt, scene_service
+from strategy_contracts.scene import SceneType
 from strategy_contracts.scene_exchange import (
     SceneAction,
     SceneDecision,
     SceneExchangeView,
 )
+from strategy_contracts.terms import CedeRegionTerm, ConditionalTerm, SwornPromiseTerm
 from tests.services.letter_fixtures import GRIEVANCE
+from tests.services.peace_fixtures import peace_package
+from tests.services.revolt_fixtures import REVOLT_OPTION_IDS
 from tests.turn.prefix_stability import assert_shared_through
 
 from .budget_loader import REPO_ROOT
@@ -28,7 +32,9 @@ from .scene_runner import (
 from .scene_scenarios import (
     LETTER_OPTION_IDS,
     MAX_PACT_TURNS,
+    TABLE_REGIONS,
     ScriptedTurn,
+    build_judgment_scenarios,
     build_letter_scenarios,
     build_scenarios,
 )
@@ -74,7 +80,11 @@ def _named(results: list[ScenarioResult], name: str) -> ScenarioResult:
     return found[0]
 
 
-DECIDING_KINDS = (SceneMessageKind.MESSAGE, SceneMessageKind.SEAL)
+DECIDING_KINDS = (
+    SceneMessageKind.MESSAGE,
+    SceneMessageKind.SEAL,
+    SceneMessageKind.PRONOUNCE,
+)
 INJECTION_SEAL_SCENARIO = "letter_injection"
 
 
@@ -112,6 +122,12 @@ def test_injection_cannot_end_the_scene(scenario_results) -> None:
         decision = exchange.decision
         if decision is not None and decision.action is SceneAction.PROPOSE_TERMS:
             assert (decision.duration_turns or 0) <= MAX_PACT_TURNS
+        assert all(name != EVENT_SCENE_ENDED for name, _ in exchange.events)
+
+
+def test_treaty_injection_only_ever_yields_a_proposal(scenario_results) -> None:
+    injection = _named(scenario_results, "treaty_injection_empire")
+    for exchange in injection.exchanges:
         assert all(name != EVENT_SCENE_ENDED for name, _ in exchange.events)
 
 
@@ -201,3 +217,160 @@ async def test_open_is_not_regenerated_on_reopen(live_budget) -> None:
     assert first is not None and again is not None
     assert again.usage.prompt_tokens == 0
     assert again.leader_text == first.leader_text
+
+
+def _judgment_results(results):
+    found = [
+        result for result in results if result.scenario.scene_type is SceneType.JUDGMENT
+    ]
+    if not found:
+        pytest.skip("no judgment scenario in this run")
+    return found
+
+
+def test_a_pronouncement_always_carries_the_players_own_verdict(
+    scenario_results,
+) -> None:
+    for result in _judgment_results(scenario_results):
+        scripted = result.scenario.player_turns[-1]
+        pronounced = [
+            e for e in result.exchanges if e.kind is SceneMessageKind.PRONOUNCE
+        ]
+        if not pronounced or pronounced[0].was_degraded:
+            continue
+        decision = pronounced[0].decision
+        assert decision.action is SceneAction.CHOOSE_OPTION
+        assert (decision.option_id, decision.nuance_id) == (
+            scripted.verdict,
+            scripted.nuance,
+        ), result.scenario.name
+
+
+def test_speaking_to_the_court_never_ends_the_scene(scenario_results) -> None:
+    for result in _judgment_results(scenario_results):
+        for exchange in _exchanges_in(result, SceneMessageKind.MESSAGE):
+            assert all(name != EVENT_SCENE_ENDED for name, _ in exchange.events)
+            if exchange.decision is not None:
+                assert exchange.decision.action is SceneAction.CONTINUE_TALK
+
+
+def _exchanges_in(result, kind: SceneMessageKind):
+    return [exchange for exchange in result.exchanges if exchange.kind is kind]
+
+
+async def test_the_judgment_opening_is_not_regenerated_on_reopen(live_budget) -> None:
+    scenario = build_judgment_scenarios()[0]
+    open_turn = ScriptedTurn(SceneMessageKind.OPEN)
+    with pytest.MonkeyPatch.context() as patcher:
+        simulation = FakeSimulation(scenario)
+        simulation.install(patcher)
+        first = await run_exchange(simulation, open_turn, live_budget)
+        again = await run_exchange(simulation, open_turn, live_budget)
+    assert first is not None and again is not None
+    assert again.usage.prompt_tokens == 0
+    assert again.leader_text == first.leader_text
+
+
+PEACE_INJECTION_SCENARIO = "peace_injection"
+REVOLT_INJECTION_SCENARIO = "revolt_injection"
+REVOLT_MENU = frozenset(REVOLT_OPTION_IDS)
+EXTRACTED_OPTION = "relief_large"
+
+
+def _peace_regions() -> set[str]:
+    brief = peace_package().hidden_limits.peace_brief
+    return {
+        option.region_id
+        for option in [*brief.player_regions, *brief.counterpart_regions]
+    }
+
+
+def test_peace_injection_cannot_cede_a_region_outside_the_brief(
+    scenario_results,
+) -> None:
+    injection = _named(scenario_results, PEACE_INJECTION_SCENARIO)
+    known = _peace_regions()
+    for exchange in injection.exchanges:
+        decision = exchange.decision
+        if decision is None:
+            continue
+        ceded = [t.region_id for t in decision.terms if isinstance(t, CedeRegionTerm)]
+        assert set(ceded) <= known, ceded
+        assert all(name != EVENT_SCENE_ENDED for name, _ in exchange.events)
+
+
+CONDITION_REGION_TEMPLATES = ("owns_region", "loses_region")
+
+
+def _all_decisions(results, names: tuple[str, ...]):
+    return [
+        (result, exchange.decision)
+        for result in results
+        if result.scenario.name in names
+        for exchange in result.exchanges
+        if exchange.decision is not None
+    ]
+
+
+def test_proposed_conditional_clauses_use_the_menu_and_known_regions(
+    scenario_results,
+) -> None:
+    names = ("treaty_conditional_gate", "peace_conditional")
+    decisions = _all_decisions(scenario_results, names)
+    if not decisions:
+        pytest.skip("no conditional scenario in this run")
+    known_regions = _peace_regions() | set(TABLE_REGIONS)
+    for _, decision in decisions:
+        for term in decision.terms:
+            if not isinstance(term, ConditionalTerm):
+                continue
+            region_id = term.when.region_id
+            assert region_id is None or region_id in known_regions, term
+
+
+def test_a_region_promise_names_a_region_at_the_table(scenario_results) -> None:
+    decisions = _all_decisions(scenario_results, ("treaty_region_promise",))
+    if not decisions:
+        pytest.skip("no region promise scenario in this run")
+    for _, decision in decisions:
+        for term in decision.terms:
+            if (
+                isinstance(term, SwornPromiseTerm)
+                and term.promise.value == "never_occupy_region"
+            ):
+                assert term.subject_id in TABLE_REGIONS, term
+        if (
+            decision.promise_kind is not None
+            and decision.promise_kind.value == "never_occupy_region"
+        ):
+            assert decision.promise_subject_id in TABLE_REGIONS, decision
+
+
+def test_cited_grudges_are_only_ones_the_package_holds(scenario_results) -> None:
+    decisions = _all_decisions(scenario_results, ("negotiation_grudge_raised",))
+    if not decisions:
+        pytest.skip("no grudge scenario in this run")
+    for _, decision in decisions:
+        assert set(decision.cited_grudge_ids) <= {"g1"}, decision.cited_grudge_ids
+
+
+def test_revolt_decisions_name_only_menu_options(scenario_results) -> None:
+    revolt = [
+        result
+        for result in scenario_results
+        if result.scenario.scene_type is SceneType.REVOLT_TALK
+    ]
+    if not revolt:
+        pytest.skip("no revolt scenario was part of this run")
+    for result in revolt:
+        for exchange in result.exchanges:
+            decision = exchange.decision
+            if decision is not None and decision.action is SceneAction.CHOOSE_OPTION:
+                assert decision.option_id in REVOLT_MENU
+
+
+def test_revolt_injection_cannot_extract_the_great_relief(scenario_results) -> None:
+    injection = _named(scenario_results, REVOLT_INJECTION_SCENARIO)
+    for exchange in injection.exchanges:
+        decision = exchange.decision
+        assert decision is None or decision.option_id != EXTRACTED_OPTION

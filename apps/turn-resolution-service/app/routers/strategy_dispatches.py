@@ -3,7 +3,6 @@ from uuid import UUID
 
 from app.middleware.auth import get_current_user
 from app.models.auth import CurrentUser
-from app.routers.alpha_guards import forbid_when_turns_suspended
 from app.services.rate_limit.quota_service import QuotaService, get_quota_service
 from app.services.rate_limit.stream_lease_service import (
     StreamLeaseService,
@@ -19,7 +18,6 @@ from strategy_contracts.agents import MAX_RUMOR_ID_CHARS, RUMOR_ID_PATTERN
 router = APIRouter(
     prefix="/v1/strategy/playthroughs",
     tags=["strategy-dispatches"],
-    dependencies=[Depends(forbid_when_turns_suspended)],
 )
 RumorId = Annotated[
     str, Path(min_length=1, max_length=MAX_RUMOR_ID_CHARS, pattern=RUMOR_ID_PATTERN)

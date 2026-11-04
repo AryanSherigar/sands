@@ -13,7 +13,16 @@ export type ActionTarget =
   | "condition"
   | "invariant"
   | "end_condition"
-  | "minigame";
+  | "minigame"
+  | "faction"
+  | "leader_history"
+  | "relation"
+  | "claim"
+  | "grudge"
+  | "region_setup"
+  | "army"
+  | "timing"
+  | "rules";
 
 export const MASTER_STRUCTURED_TARGETS: ActionTarget[] = [
   "entity",
@@ -26,6 +35,62 @@ export const MASTER_EXPRESSION_TARGETS: ActionTarget[] = [
   "invariant",
   "end_condition",
 ];
+
+export const STRATEGY_TARGETS: ActionTarget[] = [
+  "faction",
+  "leader_history",
+  "relation",
+  "claim",
+  "grudge",
+  "region_setup",
+  "army",
+  "timing",
+  "rules",
+];
+
+export interface AssistantStrategyContextPayload {
+  title: string;
+  timing: { start_year: number; start_month: number; end_year: number };
+  factions: {
+    faction_id: string;
+    name: string;
+    leader_id: string | null;
+    leader_name: string;
+    leader_history: string;
+    capital_region_id: string | null;
+    treasury: number;
+    manpower: number;
+    stability: number;
+    is_playable: boolean;
+  }[];
+  regions: {
+    region_id: string;
+    name: string;
+    owner_id: string | null;
+    population: number;
+    wealth: number;
+    manpower: number;
+    unrest: number;
+    garrison: number;
+  }[];
+  relations: { faction_a: string; faction_b: string; status: string }[];
+  claims: { faction_id: string; region_id: string }[];
+  grudges: {
+    holder_id: string;
+    target_id: string;
+    opinion: number;
+    reason: string;
+  }[];
+  armies: {
+    army_id: string;
+    owner_id: string;
+    location_id: string;
+    troops: Record<string, number>;
+    commander_name: string;
+  }[];
+  rules: Record<string, unknown>;
+  active_panel: string;
+}
 
 export interface AssistantScopedContextPayload {
   one_line_idea: string;
@@ -111,4 +176,13 @@ export const ACTION_TARGET_LABELS: Record<ActionTarget, string> = {
   invariant: "Always-True Rule",
   end_condition: "Win/Lose Condition",
   minigame: "Minigame",
+  faction: "Faction",
+  leader_history: "Ruler History",
+  relation: "Relation",
+  claim: "Claim",
+  grudge: "Grudge",
+  region_setup: "Region Setup",
+  army: "Army",
+  timing: "Calendar",
+  rules: "Diplomacy Rules",
 };

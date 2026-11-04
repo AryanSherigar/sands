@@ -7,7 +7,6 @@ from app.config import settings
 from app.middleware.auth import get_current_user
 from app.models.auth import CurrentUser
 from app.models.scene import SceneMessageRequest
-from app.routers.alpha_guards import forbid_in_alpha_mode
 from app.services.rate_limit.stream_lease_service import (
     StreamLeaseService,
     get_stream_lease_service,
@@ -21,7 +20,6 @@ from sse_starlette.sse import EventSourceResponse
 router = APIRouter(
     prefix="/v1/scenes",
     tags=["Scenes"],
-    dependencies=[Depends(forbid_in_alpha_mode)],
 )
 
 

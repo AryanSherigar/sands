@@ -4,15 +4,7 @@ import {
   useStrategySummaries,
   useStrategySummaryStream,
 } from "../../../hooks/useStrategySummaries";
-import {
-  CHRONICLERS,
-  DEFAULT_CHRONICLER_ID,
-  getChronicler,
-} from "../../../constants/chroniclers";
-import {
-  readChroniclerAttribution,
-  recordChroniclerAttribution,
-} from "../../../lib/chroniclerAttribution";
+import { getChronicler } from "../../../constants/chroniclers";
 import { StrategyArtSlot } from "../art/StrategyArtSlot";
 import type { StrategySummaryView } from "../../../types/simulation.types";
 import type { LiveChronicleFeedProps } from "./LiveChronicleFeed.types";
@@ -34,7 +26,7 @@ function SummaryEntry({ playthroughId, summary, isStreaming, onOpen, onJumpToReg
   isStreaming: boolean;
   onOpen: () => void;
   onJumpToRegion: (regionId: string) => void;
-  chroniclerName: string | null;
+  chroniclerName: string;
 }) {
   const regionId = summary.region_ids[0];
   const isReady = summary.status === "completed";
@@ -63,12 +55,12 @@ function SummaryEntry({ playthroughId, summary, isStreaming, onOpen, onJumpToReg
             {summary.narration}
           </p>
           <span className="text-[10px] text-content-muted italic">
-            {chroniclerName ? `Inscribed by ${chroniclerName}` : "Inscribed in the realm's chronicle"}
+            Inscribed by {chroniclerName}
           </span>
         </div>
       ) : (
         <p className="mt-2 text-body text-content-muted">
-          {isStreaming ? "Inscribing…" : "Ready to be recorded."}
+          {isStreaming ? `Inscribing through ${chroniclerName}…` : `Ready to be recorded by ${chroniclerName}.`}
         </p>
       )}
       <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -95,14 +87,12 @@ function SummaryEntry({ playthroughId, summary, isStreaming, onOpen, onJumpToReg
 
 export const LiveChronicleFeed: React.FC<LiveChronicleFeedProps> = ({
   playthroughId,
+  chroniclerId,
   onJumpToRegion,
 }) => {
   const summaries = useStrategySummaries(playthroughId);
   const stream = useStrategySummaryStream(playthroughId);
-  const [selectedChroniclerId, setSelectedChroniclerId] = useState<string>(DEFAULT_CHRONICLER_ID);
-  const [attribution, setAttribution] = useState(() => readChroniclerAttribution(playthroughId));
-
-  const activeChronicler = getChronicler(selectedChroniclerId);
+  const activeChronicler = getChronicler(chroniclerId);
 
   if (summaries.isLoading) {
     return <div className="p-3 text-body text-content-muted">Loading chronicle…</div>;
@@ -128,24 +118,10 @@ export const LiveChronicleFeed: React.FC<LiveChronicleFeedProps> = ({
         </div>
       </div>
 
-      <div className="flex flex-col gap-1.5 p-2 rounded-lg bg-[#FAF0E6]/80 border border-[#3A3128]/15">
-        <div className="flex items-center justify-between gap-1">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-[#72787C]">
-            Active Chronicler
-          </span>
-          <select
-            value={selectedChroniclerId}
-            onChange={(e) => setSelectedChroniclerId(e.target.value)}
-            aria-label="Select Chronicler"
-            className="text-xs font-bold text-[#3A3128] bg-white/80 border border-[#3A3128]/20 rounded px-1.5 py-0.5 focus:outline-none focus:ring-1 focus:ring-[#46606E]"
-          >
-            {CHRONICLERS.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name} ({c.title})
-              </option>
-            ))}
-          </select>
-        </div>
+      <div className="flex flex-col gap-1 p-2 rounded-lg bg-[#FAF0E6]/80 border border-[#3A3128]/15">
+        <span className="text-xs font-bold text-[#3A3128]">
+          {activeChronicler.name} ({activeChronicler.title})
+        </span>
         <p className="text-[11px] text-[#554A40] italic leading-tight">
           "{activeChronicler.tagline}"
         </p>
@@ -171,12 +147,9 @@ export const LiveChronicleFeed: React.FC<LiveChronicleFeedProps> = ({
             playthroughId={playthroughId}
             summary={summary}
             isStreaming={stream.streaming?.summaryId === summary.summary_id}
-            onOpen={() => {
-              setAttribution(recordChroniclerAttribution(playthroughId, summary.summary_id, selectedChroniclerId));
-              stream.start(summary, selectedChroniclerId);
-            }}
+            onOpen={() => stream.start(summary)}
             onJumpToRegion={onJumpToRegion}
-            chroniclerName={attribution[summary.summary_id] ? getChronicler(attribution[summary.summary_id]).name : null}
+            chroniclerName={activeChronicler.name}
           />
         ))
       )}

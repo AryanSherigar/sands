@@ -47,7 +47,7 @@ describe("StrategyReplayAuditPill", () => {
     expect(mockedVerify).toHaveBeenCalledWith("pt-1", 3);
 
     await waitFor(() => {
-      expect(screen.getByText(/verified turn 3/i)).toBeInTheDocument();
+      expect(screen.getByText(/history verified/i)).toBeInTheDocument();
     });
 
     expect(onVerified).toHaveBeenCalledWith(verifiedData);
@@ -64,11 +64,11 @@ describe("StrategyReplayAuditPill", () => {
     fireEvent.click(screen.getByRole("button", { name: /verify replay/i }));
 
     await waitFor(() => {
-      expect(screen.getByText(/verified turn 2/i)).toBeInTheDocument();
+      expect(screen.getByText(/history verified/i)).toBeInTheDocument();
     });
 
     // Popover is closed initially or can be opened
-    const verifiedBtn = screen.getByRole("button", { name: /verified turn 2/i });
+    const verifiedBtn = screen.getByRole("button", { name: /history verified/i });
     fireEvent.click(verifiedBtn);
 
     expect(screen.getByText(/mathematical replay verification/i)).toBeInTheDocument();
@@ -97,11 +97,11 @@ describe("StrategyReplayAuditPill", () => {
     mockedVerify.mockResolvedValueOnce({ verified_turn: 3, world_hash: "abcdef1234", step_count: 5 });
     const { rerender } = render(<StrategyReplayAuditPill playthroughId="pt-1" throughTurn={3} />);
     fireEvent.click(screen.getByRole("button", { name: /verify replay/i }));
-    await waitFor(() => expect(screen.getByText(/Verified Turn 3/)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText(/history verified/i)).toBeInTheDocument());
 
     rerender(<StrategyReplayAuditPill playthroughId="pt-1" throughTurn={4} />);
 
-    expect(screen.queryByText(/Verified Turn 3/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/history verified/i)).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Verify Turn 4 \(last: Turn 3\)/ })).toBeInTheDocument();
   });
 });

@@ -122,7 +122,6 @@ class AccountPurgeService:
         await self.purge_repo.reassign_retained_scenarios(
             user_id, settings.deleted_user_id
         )
-        await self.purge_repo.delete_music_generation_records(user_id)
         await self.purge_repo.delete_owned_scenarios(user_id)
         return cover_urls
 

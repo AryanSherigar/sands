@@ -2,7 +2,6 @@ import React, { Suspense, lazy } from "react";
 import { createBrowserRouter, Navigate } from "react-router-dom";
 import { BrowseLayout } from "@/shared/components/layout/BrowseLayout";
 import { AuthGuard } from "@/features/auth/components/AuthGuard/AuthGuard";
-import { AlphaLockedRoute } from "@/shared/components/AlphaLockedRoute/AlphaLockedRoute";
 import { RouteLoadingSpinner } from "@/shared/components/feedback/RouteLoadingSpinner";
 import { LandingPage } from "@/features/landing/pages/LandingPage";
 
@@ -92,6 +91,16 @@ const StrategyPlayScreen = lazy(() =>
     default: m.StrategyPlayScreen,
   })),
 );
+const StrategyWarCouncilPreviewPage = lazy(() =>
+  import("@/features/play/pages/StrategyWarCouncilPreviewPage").then((m) => ({
+    default: m.StrategyWarCouncilPreviewPage,
+  })),
+);
+const FantasyPreviewPage = lazy(() =>
+  import("@/features/play/pages/FantasyPreviewPage").then((m) => ({
+    default: m.FantasyPreviewPage,
+  })),
+);
 
 const WelcomePage = lazy(() =>
   import("@/features/onboarding/pages/WelcomePage").then((m) => ({
@@ -125,27 +134,15 @@ export const router = createBrowserRouter([
       { path: "/discover", element: withSuspense(DiscoverPage) },
       {
         path: "/studio",
-        element: (
-          <AlphaLockedRoute>
-            <AuthGuard>{withSuspense(StudioPage)}</AuthGuard>
-          </AlphaLockedRoute>
-        ),
+        element: <AuthGuard>{withSuspense(StudioPage)}</AuthGuard>,
       },
       {
         path: "/studio/stats",
-        element: (
-          <AlphaLockedRoute>
-            <AuthGuard>{withSuspense(CreatorStatsPage)}</AuthGuard>
-          </AlphaLockedRoute>
-        ),
+        element: <AuthGuard>{withSuspense(CreatorStatsPage)}</AuthGuard>,
       },
       {
         path: "/studio/:id/stats",
-        element: (
-          <AlphaLockedRoute>
-            <AuthGuard>{withSuspense(ScenarioStatsPage)}</AuthGuard>
-          </AlphaLockedRoute>
-        ),
+        element: <AuthGuard>{withSuspense(ScenarioStatsPage)}</AuthGuard>,
       },
       { path: "/scenario/:id", element: withSuspense(ScenarioFocusPage) },
       {
@@ -165,40 +162,34 @@ export const router = createBrowserRouter([
     element: <AuthGuard>{withSuspense(WelcomePage)}</AuthGuard>,
   },
   { path: "/play", element: <Navigate to="/discover" replace /> },
-  { path: "/play/strategy-preview", element: withSuspense(StrategyPlayScreen) },
+  ...(import.meta.env.DEV
+    ? [
+        { path: "/play/strategy-preview", element: withSuspense(StrategyPlayScreen) },
+        { path: "/play/war-council-preview", element: withSuspense(StrategyWarCouncilPreviewPage) },
+      ]
+    : []),
+  ...(import.meta.env.DEV ? [{ path: "/play/fantasy-preview", element: withSuspense(FantasyPreviewPage) }] : []),
   { path: "/play/:id", element: withSuspense(PlayPage) },
   { path: "/setup/:id", element: withSuspense(SetupPage) },
   {
     path: "/spectate/:id",
-    element: <AlphaLockedRoute>{withSuspense(SpectatorPage)}</AlphaLockedRoute>,
+    element: withSuspense(SpectatorPage),
   },
   {
     path: "/join",
-    element: <AlphaLockedRoute>{withSuspense(JoinPage)}</AlphaLockedRoute>,
+    element: withSuspense(JoinPage),
   },
   {
     path: "/studio/new",
-    element: (
-          <AlphaLockedRoute>
-            <AuthGuard>{withSuspense(StudioWorkspacePage)}</AuthGuard>
-          </AlphaLockedRoute>
-        ),
+    element: <AuthGuard>{withSuspense(StudioWorkspacePage)}</AuthGuard>,
   },
   {
     path: "/studio/:id/edit",
-    element: (
-          <AlphaLockedRoute>
-            <AuthGuard>{withSuspense(StudioWorkspacePage)}</AuthGuard>
-          </AlphaLockedRoute>
-        ),
+    element: <AuthGuard>{withSuspense(StudioWorkspacePage)}</AuthGuard>,
   },
   {
     path: "/studio/:id/region-map",
-    element: (
-          <AlphaLockedRoute>
-            <AuthGuard>{withSuspense(RegionMapPage)}</AuthGuard>
-          </AlphaLockedRoute>
-        ),
+    element: <AuthGuard>{withSuspense(RegionMapPage)}</AuthGuard>,
   },
   {
     path: "/invite/:token",

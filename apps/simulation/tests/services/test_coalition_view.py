@@ -39,6 +39,7 @@ def test_own_threat_shows_a_band_and_named_factors() -> None:
         "treaty_breaking",
         "atrocity",
         "balance",
+        "hoard",
     }
 
 

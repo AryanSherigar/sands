@@ -36,7 +36,9 @@ def test_build_cover_prompt_omits_missing_optional_fields() -> None:
 async def test_generate_and_upload_cover_image_uses_scenario_covers_prefix(
     monkeypatch,
 ) -> None:
-    async def fake_generate_image(prompt: str, timeout_seconds: int) -> bytes:
+    async def fake_generate_image(
+        prompt: str, timeout_seconds: int, size: str | None = None
+    ) -> bytes:
         return b"RIFF\x00\x00\x00\x00WEBPfake-image-bytes"
 
     captured_object_keys: list[str] = []
@@ -56,6 +58,33 @@ async def test_generate_and_upload_cover_image_uses_scenario_covers_prefix(
 
     assert url.startswith("https://storage.googleapis.com/fake-bucket/scenario-covers/")
     assert captured_object_keys[0].startswith("scenario-covers/")
+
+
+async def test_generate_and_upload_cover_image_forwards_requested_size(
+    monkeypatch,
+) -> None:
+    captured_sizes: list[str | None] = []
+
+    async def fake_generate_image(
+        prompt: str, timeout_seconds: int, size: str | None = None
+    ) -> bytes:
+        captured_sizes.append(size)
+        return b"RIFF\x00\x00\x00\x00WEBPfake-image-bytes"
+
+    async def fake_upload_image(
+        content: bytes, content_type: str, object_key: str
+    ) -> str:
+        return f"https://storage.googleapis.com/fake-bucket/{object_key}"
+
+    monkeypatch.setattr(image_gen_client, "generate_image", fake_generate_image)
+    monkeypatch.setattr(storage_client, "upload_image", fake_upload_image)
+
+    service = UploadService()
+    request = CoverImageGenerationRequest(title="A Title", genre_tags=[])
+    await service.generate_and_upload_cover_image(request, user=None, size="1792x1008")
+    await service.generate_and_upload_cover_image(request, user=None)
+
+    assert captured_sizes == ["1792x1008", None]
 
 
 async def test_upload_scenario_audio_accepts_valid_mp3_signature(monkeypatch) -> None:

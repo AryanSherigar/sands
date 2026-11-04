@@ -6,10 +6,6 @@ import { BrowseLayout } from "../BrowseLayout";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import type { UserResponse } from "@/features/auth/types/auth.types";
 
-vi.mock("@/shared/hooks/useIsAlphaMode", () => ({
-  useIsAlphaMode: () => false,
-}));
-
 vi.mock("@/features/auth/hooks/useAuth");
 
 const mockUseAuth = vi.mocked(useAuth);

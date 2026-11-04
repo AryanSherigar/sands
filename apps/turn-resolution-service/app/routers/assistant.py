@@ -6,7 +6,6 @@ from app.config import settings
 from app.middleware.auth import get_current_user
 from app.models.assistant import AssistantChatRequest
 from app.models.auth import CurrentUser
-from app.routers.alpha_guards import forbid_in_alpha_mode
 from app.services.assistant_service import open_assistant_chat
 from app.services.rate_limit.quota_service import QuotaService, get_quota_service
 from app.services.rate_limit.stream_lease_service import (
@@ -20,7 +19,6 @@ from sse_starlette.sse import EventSourceResponse
 router = APIRouter(
     prefix="/v1/studio",
     tags=["Studio Assistant"],
-    dependencies=[Depends(forbid_in_alpha_mode)],
 )
 
 

@@ -12,12 +12,8 @@ const PRIMARY_NAV_LINKS: readonly PrimaryNavLink[] = [
   { to: STUDIO_PATH, label: "Studio", isExact: false },
 ];
 
-export const getPrimaryNavLinks = (
-  isAlphaMode: boolean,
-): readonly PrimaryNavLink[] =>
-  isAlphaMode
-    ? PRIMARY_NAV_LINKS.filter((link) => link.to !== STUDIO_PATH)
-    : PRIMARY_NAV_LINKS;
+export const getPrimaryNavLinks = (): readonly PrimaryNavLink[] =>
+  PRIMARY_NAV_LINKS;
 
 export const DESKTOP_MEDIA_QUERY = "(min-width: 768px)";
 export const SCROLL_CONDENSE_THRESHOLD_PX = 24;

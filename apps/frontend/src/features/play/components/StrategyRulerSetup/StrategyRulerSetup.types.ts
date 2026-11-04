@@ -32,6 +32,7 @@ export interface StrategyRulerState {
   dynastyName?: string;
   houseMotto?: string;
   houseBadge?: string;
+  chroniclerId: string;
 }
 
 export interface FactionCrisisInfo {

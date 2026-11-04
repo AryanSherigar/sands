@@ -30,12 +30,26 @@ def _wealth_dominance(world: WorldState, scenario: StrategyScenario) -> bool:
         for key, faction in world.factions.items()
         if not faction.is_destroyed and not is_rebel_faction(key)
     }
-    percent = scenario.tuning.endings.hegemony_wealth_percent
-    return _owns_share(wealth.get(player_id, 0), sum(wealth.values()), percent)
+    tuning = scenario.tuning.endings
+    has_enough_land = (
+        owned_region_percent(world) >= tuning.hegemony_wealth_min_region_percent
+    )
+    is_rich = _owns_share(
+        wealth.get(player_id, 0), sum(wealth.values()), tuning.hegemony_wealth_percent
+    )
+    return has_enough_land and is_rich
+
+
+def _is_realm_stable(world: WorldState, scenario: StrategyScenario) -> bool:
+    stability = world.factions[player_faction_id(world)].stability
+    return stability >= scenario.tuning.endings.hegemony_min_stability
 
 
 def is_hegemonic_position(world: WorldState, scenario: StrategyScenario) -> bool:
-    return _region_dominance(world, scenario) or _wealth_dominance(world, scenario)
+    is_dominant = _region_dominance(world, scenario) or _wealth_dominance(
+        world, scenario
+    )
+    return is_dominant and _is_realm_stable(world, scenario)
 
 
 def is_hegemon(world: WorldState, scenario: StrategyScenario) -> bool:

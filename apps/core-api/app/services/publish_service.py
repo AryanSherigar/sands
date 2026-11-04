@@ -8,6 +8,7 @@ request-scoped session is gone by the time it executes.
 
 from __future__ import annotations
 
+import copy
 import uuid
 from datetime import UTC, datetime
 
@@ -177,6 +178,8 @@ def _mark_publish_succeeded(
     scenario.published_at = scenario.published_at or datetime.now(UTC)
     scenario.published_content_edited_at = content_edited_at_at_job_start
     scenario.publish_error = None
+    if scenario.mode == STRATEGY_MODE:
+        scenario.published_strategy_document = copy.deepcopy(scenario.strategy_document)
 
 
 def _mark_publish_failed(scenario: Scenario, exc: Exception) -> None:

@@ -6,6 +6,7 @@ import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useAuthStore } from "@/features/auth/stores/auth.store";
 import { MatureAttestationDialog } from "@/shared/components/MatureAttestationDialog/MatureAttestationDialog";
+import { useAppThemeStore } from "@/shared/stores/appTheme.store";
 import { useReaderPreferencesStore } from "@/shared/stores/readerPreferences.store";
 import { useMatureAttestationStore } from "@/shared/stores/matureAttestation.store";
 import { server } from "@/test/msw/server";
@@ -66,6 +67,7 @@ const getSwitch = (): HTMLElement =>
 describe("SettingsPage", () => {
   beforeEach(() => {
     useMatureAttestationStore.setState({ isOpen: false, resolvePending: null });
+    useAppThemeStore.setState({ theme: "light" });
   });
 
   it("shows the mature switch off by default under a Content section", () => {
@@ -170,12 +172,25 @@ describe("SettingsPage", () => {
     renderSettings();
 
     const [nav] = screen.getAllByRole("navigation", { name: "Settings sections" });
-    for (const label of ["Account", "Reading", "Content", "Notifications"]) {
+    for (const label of ["Appearance", "Account", "Reading defaults", "Content preferences", "Notifications"]) {
       expect(within(nav).getByRole("link", { name: label })).toBeInTheDocument();
     }
+    expect(screen.getByRole("heading", { level: 2, name: "Appearance" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { level: 2, name: "Account" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { level: 2, name: "Reading defaults" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { level: 2, name: "Notifications" })).toBeInTheDocument();
+  });
+
+  it("updates app theme when appearance option is selected", async () => {
+    const user = userEvent.setup();
+    setSignedIn(false);
+    renderSettings();
+
+    const interfaceThemeGroup = screen.getByRole("radiogroup", { name: "Interface theme" });
+    const darkOption = within(interfaceThemeGroup).getByRole("radio", { name: /Dark/i });
+    await user.click(darkOption);
+
+    expect(useAppThemeStore.getState().theme).toBe("dark");
   });
 
   it("shows the member-since date from the account summary", async () => {

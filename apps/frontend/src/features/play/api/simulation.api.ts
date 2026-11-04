@@ -8,13 +8,13 @@ import { parseCampaignWorld } from "../lib/campaignWorldParser";
 import { adaptHistoricalWorld } from "../lib/historicalWorld";
 import type { TurnReportResponse } from "../types/turnReportApi.types";
 import type {
-  BattleSpeechResponse,
   CampaignWorldView,
   EconomyChoice,
   MutationResponse,
   OperationGuard,
   OrderCheckResponse,
   StrategyDispatchView,
+  StrategyEpilogueView,
   StrategySummaryPage,
   StrategySummaryView,
   StrategyOrder,
@@ -123,12 +123,35 @@ export async function getTurnReport(
 
 export async function getStrategySummaries(
   playthroughId: string,
+  afterId?: string,
+  limit?: number,
 ): Promise<StrategySummaryPage> {
+  const isPaged = afterId !== undefined || limit !== undefined;
+  const config = isPaged
+    ? { ...SIMULATION_REQUEST_CONFIG, params: { after_id: afterId, limit } }
+    : SIMULATION_REQUEST_CONFIG;
   const { data } = await apiClient.get<StrategySummaryPage>(
     `${playthroughPath(playthroughId)}/summaries`,
-    SIMULATION_REQUEST_CONFIG,
+    config,
   );
   return data;
+}
+
+const SUMMARY_PAGE_SIZE = 50;
+const MAX_SUMMARY_PAGES = 20;
+
+export async function getAllStrategySummaries(
+  playthroughId: string,
+): Promise<StrategySummaryView[]> {
+  const items: StrategySummaryView[] = [];
+  let afterId: string | undefined;
+  for (let page = 0; page < MAX_SUMMARY_PAGES; page += 1) {
+    const result = await getStrategySummaries(playthroughId, afterId, SUMMARY_PAGE_SIZE);
+    items.push(...result.items);
+    if (!result.next_after_id) break;
+    afterId = result.next_after_id;
+  }
+  return items;
 }
 
 export async function getStrategySummary(
@@ -146,6 +169,19 @@ export const getStrategySummaryStreamPath = (
   playthroughId: string,
   summaryId: string,
 ): string => `/trs/v1/strategy/playthroughs/${playthroughId}/summaries/${summaryId}/stream`;
+
+export async function getStrategyEpilogue(
+  playthroughId: string,
+): Promise<StrategyEpilogueView> {
+  const { data } = await apiClient.get<StrategyEpilogueView>(
+    `${playthroughPath(playthroughId)}/epilogue`,
+    SIMULATION_REQUEST_CONFIG,
+  );
+  return data;
+}
+
+export const getStrategyEpilogueStreamPath = (playthroughId: string): string =>
+  `/trs/v1/strategy/playthroughs/${playthroughId}/epilogue/stream`;
 
 export async function getStrategyDispatches(
   playthroughId: string,
@@ -195,20 +231,6 @@ export interface ReplayVerificationResponse {
   step_count: number;
 }
 
-export async function postBattleSpeech(
-  playthroughId: string,
-  battleId: string,
-  speechText: string,
-  guard: OperationGuard,
-): Promise<BattleSpeechResponse> {
-  const { data } = await apiClient.post<BattleSpeechResponse>(
-    `${playthroughPath(playthroughId)}/battles/${battleId}/speech`,
-    { ...guard, speech_text: speechText },
-    SIMULATION_REQUEST_CONFIG,
-  );
-  return data;
-}
-
 export async function getHistoricalWorld(
   playthroughId: string,
   turn: number,
@@ -232,3 +254,4 @@ export async function verifyPlaythroughReplay(
   );
   return data;
 }
+

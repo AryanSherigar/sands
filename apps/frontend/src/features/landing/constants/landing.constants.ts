@@ -1,6 +1,7 @@
 import type { LandingRowConfig } from "../types/landing.types";
 
 export const LANDING_ROW_LIMIT = 18;
+export const STRATEGY_HERO_LIMIT = 6;
 export const CONTINUE_ROW_LIMIT = 10;
 export const LANDING_STALE_TIME_MS = 60_000;
 export const FALLBACK_COVER_IMAGE_URLS = [

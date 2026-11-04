@@ -34,7 +34,7 @@ export const ChronicleBackstoryField: React.FC<ChronicleBackstoryFieldProps> = (
   isRedrafting,
   onChangeBackstory,
   onRedraft,
-  chronicleYearLabel = "Anno 1042 Chronicle Entry",
+  chronicleYearLabel = "Chronicle Entry",
 }) => {
   const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     onChangeBackstory(e.target.value);

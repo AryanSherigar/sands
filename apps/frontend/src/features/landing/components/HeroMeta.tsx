@@ -10,16 +10,16 @@ export const HeroMeta: React.FC<HeroMetaProps> = ({
   const rating = Number.parseFloat(ratingAvg);
 
   return (
-    <div className="mt-3.5 mb-6 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-meta text-content-muted">
-      <span className="inline-flex items-center gap-1 text-content-muted">
-        <IconHistory size={14} stroke={1.5} className="text-content-faint" />
+    <div className="mt-3.5 mb-6 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-meta text-white/75">
+      <span className="inline-flex items-center gap-1 text-white/75">
+        <IconHistory size={14} stroke={1.5} className="text-white/60" />
         Turn 0
       </span>
       <span>·</span>
       {estimatedPlaytime && (
         <>
           <span className="inline-flex items-center gap-1">
-            <IconClock size={14} stroke={1.5} className="text-content-faint" />
+            <IconClock size={14} stroke={1.5} className="text-white/60" />
             {estimatedPlaytime} length
           </span>
           <span>·</span>

@@ -11,6 +11,7 @@ DEFAULT_AIM_MAX_TURNS = 12
 DEFAULT_SITUATION_BONUS = 6
 DEFAULT_LOW_TREASURY = 50
 DEFAULT_LOW_STABILITY = 40
+DEFAULT_HOARD_WAR_BONUS = 12
 DEFAULT_LOAN_CAP = 200
 DEFAULT_MIN_LEVY = 20
 DEFAULT_MAX_LEVY = 60
@@ -83,6 +84,7 @@ class AiTuning(StrictModel):
     supply_strained_penalty: int = Field(default=DEFAULT_SUPPLY_STRAINED_PENALTY, ge=0)
     supply_isolated_penalty: int = Field(default=DEFAULT_SUPPLY_ISOLATED_PENALTY, ge=0)
     war_base_bonus: int = Field(default=DEFAULT_WAR_BASE_BONUS, ge=0)
+    hoard_war_bonus: int = Field(default=DEFAULT_HOARD_WAR_BONUS, ge=0)
     ground_strength_divisor: int = Field(default=DEFAULT_GROUND_STRENGTH_DIVISOR, ge=1)
     ratio_divisor: int = Field(default=DEFAULT_RATIO_DIVISOR, ge=1)
     second_front_penalty: int = Field(default=DEFAULT_SECOND_FRONT_PENALTY, ge=0)

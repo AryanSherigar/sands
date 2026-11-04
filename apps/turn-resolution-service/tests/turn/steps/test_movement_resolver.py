@@ -7,6 +7,7 @@ CORRIDOR = "loc-corridor"
 APPROACH = "loc-approach"
 CABIN = "loc-cabin"
 LOBBY = "loc-lobby"
+ROAD = "loc-road"
 
 
 def _location(
@@ -35,6 +36,7 @@ SNAPSHOT: dict[str, object] = {
         ),
         _location(CABIN, "Cabin 14", ["the cabin"], "interior"),
         _location(LOBBY, "Elevator lobby", ["the lobby"]),
+        _location(ROAD, "The Old Road", ["old road"]),
         {"entity_id": "item-1", "entity_type": "item", "canonical_name": "Brass key"},
     ],
 }
@@ -67,6 +69,35 @@ def _resolve(text: str, mode: str = "do", location: str = CORRIDOR):
 )
 def test_verb_and_place_pick_the_destination(text: str, expected: str) -> None:
     assert _resolve(text).destination_id == expected
+
+
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        ("I take the old road", ROAD),
+        ("I follow the old road", ROAD),
+        ("travel to the lobby", LOBBY),
+        ("I set out for the lobby", LOBBY),
+        ("I make my way to the lobby", LOBBY),
+        ("I climb toward Cabin 14", APPROACH),
+        ("I leave the lobby and take the old road toward Cabin 14", APPROACH),
+    ],
+)
+def test_travel_phrasings_pick_the_destination(text: str, expected: str) -> None:
+    assert _resolve(text).destination_id == expected
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "I take the Brass key from the lobby",
+        "I leave the lobby",
+        "I do not take the old road",
+        "I tell her about the old road",
+    ],
+)
+def test_non_travel_phrasings_do_not_move(text: str) -> None:
+    assert _resolve(text).destination_id is None
 
 
 def test_last_mentioned_place_wins() -> None:

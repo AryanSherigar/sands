@@ -3,15 +3,19 @@ import os
 import shutil
 import sys
 from playwright.async_api import async_playwright, expect
+from pathlib import Path
 
-SCREENSHOTS_DIR = "/data/sands/scripts"
+REPO_ROOT = Path(__file__).resolve().parent.parent
+
+
+SCREENSHOTS_DIR = str(REPO_ROOT / "scripts")
 ARTIFACT_DIR = "/home/aryan-sherigar/.gemini/antigravity-cli/brain/6b2f730e-fa74-4dd8-80ed-b2e5e4206ca0"
 
 async def test_treasury_controls():
     print("=== STARTING PLAYWRIGHT E2E TEST FOR TREASURY & FISCAL CONTROLS ===")
     os.makedirs(SCREENSHOTS_DIR, exist_ok=True)
     os.makedirs(ARTIFACT_DIR, exist_ok=True)
-
+    
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True)
         context = await browser.new_context(
@@ -24,7 +28,7 @@ async def test_treasury_controls():
         print("[1/6] Navigating to http://127.0.0.1:5173/play/strategy-preview...")
         await page.goto("http://127.0.0.1:5173/play/strategy-preview", wait_until="networkidle")
         await page.wait_for_timeout(1000)
-
+        
         initial_shot = os.path.join(SCREENSHOTS_DIR, "playwright-01-strategy-preview-initial.png")
         await page.screenshot(path=initial_shot)
         print(f" -> Screenshot saved: {initial_shot}")
@@ -53,7 +57,7 @@ async def test_treasury_controls():
         low_btn = page.locator('button:has-text("Low")')
         normal_btn = page.locator('button:has-text("Normal")')
         high_btn = page.locator('button:has-text("High")')
-
+        
         await expect(low_btn).to_be_visible()
         await expect(normal_btn).to_be_visible()
         await expect(high_btn).to_be_visible()
@@ -62,7 +66,7 @@ async def test_treasury_controls():
         print(" -> Clicking High Tax...")
         await high_btn.click()
         await page.wait_for_timeout(400)
-
+        
         # Verify income estimate text appears for high tax
         high_income_text = page.locator("text=/~.*income this turn at high tax/i")
         await expect(high_income_text).to_be_visible()
@@ -127,11 +131,11 @@ async def test_treasury_controls():
 
         full_pay_btn = page.locator('button:has-text("Full Pay")')
         reduced_pay_btn = page.locator('button:has-text("Reduced Pay")')
-
+        
         await expect(full_pay_btn).to_be_visible()
         await expect(reduced_pay_btn).to_be_visible()
         await expect(full_pay_btn).to_have_attribute("aria-pressed", "true")
-
+        
         print(" -> Clicking Reduced Pay...")
         await reduced_pay_btn.click()
         await page.wait_for_timeout(400)

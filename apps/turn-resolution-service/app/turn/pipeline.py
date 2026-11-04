@@ -107,8 +107,6 @@ from app.repositories.participant_repo import ParticipantRepo
 from app.repositories.playthrough_repo import PlaythroughRepo
 from app.repositories.scenario_repo import ScenarioRepo
 from app.repositories.turn_log_repo import TurnLogRepo
-from app.repositories.turn_metrics_repo import TurnMetricsRepo
-from app.services.input_limit_event_recorder import get_input_limit_event_recorder
 from app.services.rate_limit.policies import QuotaFeature
 from app.services.rate_limit.quota_service import QuotaService
 from app.session import notification_manager, spectator_manager
@@ -169,7 +167,6 @@ EVENT_SSE_STREAM_OPENED = "sse_stream_opened"
 EVENT_SSE_STREAM_CLOSED = "sse_stream_closed"
 EVENT_SSE_STREAM_ERROR = "sse_stream_error"
 EVENT_PLAYTHROUGH_ENDING_WRITE_FAILED = "playthrough_ending_write_failed"
-EVENT_TURN_REPLAY_COUNT_FAILED = "turn_replay_count_failed"
 EVENT_INPUT_TRUNCATED = "input_truncated"
 CHECK_KIND_DICE = "dice"
 CHECK_KIND_MINIGAME = "minigame"
@@ -195,7 +192,7 @@ async def run_turn(
     quota_service: QuotaService | None = None,
 ) -> EventSourceResponse:
     """Validate, generate narration, persist, and stream a single turn."""
-    metrics = TurnMetricsCollector(is_enabled=settings.is_alpha_mode)
+    metrics = TurnMetricsCollector(is_enabled=True)
     async with session_factory() as session:
         completed_turn = await _find_replay(turn_input, session, current_user)
         if completed_turn is None:
@@ -214,7 +211,7 @@ async def run_turn(
         _resolve_fantasy_intake(turn_request, loaded_state)
     turn_quota = TurnQuota(quota_service, current_user.user_id)
     await turn_quota.reserve_turn()
-    await _record_input_truncation(turn_request, current_user)
+    _log_input_truncation(turn_request)
     deps = _TurnDeps(session_factory, turn_quota, metrics)
     events = _run_turn_events(turn_request, loaded_state, deps)
     return await response_streamer.build_sse_response(events)
@@ -223,15 +220,11 @@ async def run_turn(
 async def _find_replay(
     turn_input: TurnRequestInput, session: AsyncSession, current_user: CurrentUser
 ) -> TurnLog | None:
-    await state_loader.assert_alpha_scenario(
-        turn_input.playthrough_id, PlaythroughRepo(session)
-    )
     completed_turn = await request_receiver.find_completed_turn(
         turn_input, TurnLogRepo(session), ParticipantRepo(session), current_user
     )
     if completed_turn is not None:
         session.expunge(completed_turn)
-        await _count_replay(session, completed_turn.turn_id)
     return completed_turn
 
 
@@ -253,9 +246,7 @@ async def _receive_and_load(
     return turn_request, loaded_state
 
 
-async def _record_input_truncation(
-    turn_request: TurnRequest, current_user: CurrentUser
-) -> None:
+def _log_input_truncation(turn_request: TurnRequest) -> None:
     truncation = turn_request.input_truncation
     if truncation is None:
         return
@@ -265,22 +256,6 @@ async def _record_input_truncation(
         original_length=truncation.original_length,
         max_length=truncation.max_length,
     )
-    await get_input_limit_event_recorder().record_truncated(
-        current_user.user_id, truncation
-    )
-
-
-async def _count_replay(session: AsyncSession, turn_id: uuid.UUID) -> None:
-    """Count a replayed client_action_id on the turn's metrics row. A replay
-    never creates a row, and a failure here never blocks the replay."""
-    if not settings.is_alpha_mode:
-        return
-    try:
-        await TurnMetricsRepo(session).increment_replay_count(turn_id)
-        await session.commit()
-    except SQLAlchemyError:
-        await session.rollback()
-        logger.warning(EVENT_TURN_REPLAY_COUNT_FAILED, turn_id=str(turn_id))
 
 
 def _with_emit_time(
@@ -1389,7 +1364,7 @@ async def _authored_scene_image(
     turn_request: TurnRequest, image_url: str
 ) -> tuple[SceneImageResult, ServerSentEvent]:
     """An image the scenario authored for this moment: no generation and no
-    quota, so it is shown in alpha mode too."""
+    quota."""
     await spectator_manager.publish(
         turn_request.playthrough_id, "scene_image", image_url
     )
@@ -1411,7 +1386,7 @@ async def _maybe_generate_scene_image(
     spectators, and return both the result (for state_writer) and the SSE
     event to yield -- (None, None) when action_mode isn't "see" or
     generation failed, (None, quota_notice) when the image quota is spent."""
-    if settings.is_alpha_mode or turn_request.action_mode != "see":
+    if turn_request.action_mode != "see":
         return None, None
     extra = await turn_quota.reserve_extra(QuotaFeature.SCENE_IMAGE)
     if not extra.is_allowed:
@@ -1440,7 +1415,7 @@ async def _maybe_generate_narration_audio(
     event to yield -- (None, None) when the flag wasn't set or generation
     failed, so a turn with voice output off never incurs TTS cost, and
     (None, quota_notice) when the voice narration quota is spent."""
-    if settings.is_alpha_mode or not turn_request.voice_output_requested:
+    if not turn_request.voice_output_requested:
         return None, None
     extra = await turn_quota.reserve_extra(QuotaFeature.TTS_NARRATION)
     if not extra.is_allowed:

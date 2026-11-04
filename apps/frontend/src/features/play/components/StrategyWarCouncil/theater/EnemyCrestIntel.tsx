@@ -1,5 +1,5 @@
-import type { MissionTarget, OpponentView, ReconReport } from "../StrategyWarCouncil.types";
-import { IconShield } from "@tabler/icons-react";
+import type { ReactNode } from "react";
+import type { MissionTarget, OpponentView, ReconReport, StrengthInterval } from "../StrategyWarCouncil.types";
 
 export interface EnemyCrestIntelProps {
   scoutedTurnText: string;
@@ -84,100 +84,84 @@ function IntelBanner({ scoutedTurnText }: { scoutedTurnText: string }) {
         <span className="material-symbols-outlined text-[15px]">visibility</span>
         <span className="font-semibold">{scoutedTurnText}</span>
       </div>
-      <span className="text-[#c2c7cb]">•</span>
-      <div className="flex items-center gap-1.5 text-[#42474b] text-[11px]">
-        <span className="inline-block w-2 h-2 rounded-full bg-[#5E8A5A]" />
-        <span>Wing cards below are illustrative; only the total strength is real</span>
-      </div>
     </div>
   );
 }
 
-function LeftFlankCard({ min, max }: FlankCardProps) {
+function latestReport(reports: ReconReport[], pick: (report: ReconReport) => boolean): ReconReport | null {
+  const matching = reports.filter(pick);
+  return matching.length ? matching[matching.length - 1]! : null;
+}
+
+function IntelCard({ title, icon, children }: { title: string; icon: string; children: ReactNode }) {
   return (
-    <div className="enemy-wing-box relative p-2.5 rounded-xl bg-[#F7F0DC]/85 backdrop-blur-md shadow-xs flex flex-col justify-between border border-[#3A3128]/15 group">
-      <div className="flex items-center justify-between text-[11px] font-bold">
-        <span className="text-[#2e4856]">
-          Enemy Left Wing (Illustrative)
-        </span>
-        <span className="text-[#46606E] flex items-center gap-0.5 text-[10px]">
-          <span className="material-symbols-outlined text-[12px]">search</span> Outrider Report
-        </span>
+    <div className="relative p-2.5 rounded-xl bg-[#F7F0DC]/85 backdrop-blur-md shadow-xs flex flex-col gap-1 border border-[#3A3128]/15">
+      <div className="flex items-center gap-1 text-[11px] font-bold text-[#2e4856]">
+        <span className="material-symbols-outlined text-[14px]">{icon}</span>
+        <span>{title}</span>
       </div>
-      <div className="my-1">
-        <div className="text-[15px] font-extrabold font-serif text-[#221a12] leading-tight">
-          ~{min.toLocaleString()}–{max.toLocaleString()} horse & skirmishers estimated
-        </div>
-        <div className="flex items-center gap-1 text-[11px] text-[#46606E] font-semibold mt-0.5">
-          <IconShield size={12} aria-hidden="true" />
-          Spearmen & Pavisiers • Banner of Lord Morcar
-        </div>
-      </div>
-      <div className="text-[10px] italic text-[#555] bg-[#fff8f4]/60 p-1 rounded border border-[#3A3128]/5">
-        &ldquo;Ranks marshalled 8 deep behind willow copse.&rdquo;
-      </div>
+      {children}
     </div>
   );
 }
 
-function CenterCommanderCard() {
+function StrengthCard({ min, max }: FlankCardProps) {
   return (
-    <div className="relative p-2.5 rounded-xl bg-[#f5e5d8]/95 backdrop-blur-md shadow-sm flex flex-col justify-between border-2 border-[#A8483E] text-center">
-      <div>
-        <div className="flex items-center justify-center gap-1 text-[#A8483E] text-[11px] font-bold uppercase tracking-wider mb-0.5">
-          <span className="material-symbols-outlined text-[14px]">shield</span>
-          <span>Enemy Center (Illustrative)</span>
-        </div>
-        <div className="text-[17px] font-extrabold font-serif text-[#A8483E] leading-tight">
-          ~1,300 – 1,500 Armored Foot
-        </div>
-        <div className="text-[11px] text-[#221a12] font-semibold mt-0.5">
-          Shock Lances in Front Rank • Poised for Immediate Charge
-        </div>
+    <IntelCard title="Enemy strength" icon="shield">
+      <div className="text-[15px] font-extrabold font-serif text-[#221a12] leading-tight">
+        {min.toLocaleString()}–{max.toLocaleString()} troops
       </div>
-      <div className="text-[10px] italic text-[#6B5E4F] bg-[#fff8f4]/70 p-1 rounded mt-1 border border-[#A8483E]/10">
-        &ldquo;Ironclad vanguard locked shoulder-to-shoulder on the crest slope.&rdquo;
-      </div>
-    </div>
+      <p className="text-[11px] text-[#72787c]">The widest range your scouts can give with what they have seen.</p>
+    </IntelCard>
   );
 }
 
-function RightFlankCard() {
+function CompositionCard({ composition }: { composition: Record<string, number> | null }) {
   return (
-    <div className="enemy-wing-box relative p-2.5 rounded-xl bg-[#DCE7EA]/60 backdrop-blur-md shadow-xs flex flex-col justify-between border border-dashed border-[#A0B2B6] group">
-      <div className="flex items-center justify-between text-[11px] font-bold">
-        <span className="text-[#42474b]">Enemy Right Wing (Illustrative)</span>
-        <span className="text-[#72787C] flex items-center gap-0.5 text-[10px]">
-          <span className="material-symbols-outlined text-[12px]">cloud</span> Veiled Mist
-        </span>
-      </div>
-      <div className="my-1">
-        <div className="text-[15px] font-bold font-serif text-[#72787c] leading-tight">
-          ~800 – 1,600
-        </div>
-        <div className="text-[11px] text-[#72787c] font-medium mt-0.5">
-          Mounted banners glimpsed through tree line
-        </div>
-      </div>
-      <div className="text-[10px] italic text-[#666] bg-[#fff8f4]/50 p-1 rounded border border-[#3A3128]/5">
-        &ldquo;Dust clouds suggest horse forming behind eastern rise.&rdquo;
-      </div>
-    </div>
+    <IntelCard title="Troop mix" icon="groups">
+      {composition ? (
+        <ul className="text-[12px] text-[#221a12]">
+          {Object.entries(composition).map(([troop, count]) => (
+            <li key={troop}>
+              {count.toLocaleString()} {troop.replace("_", "/")}
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="text-[11px] italic text-[#72787c]">Unknown. Scout their composition.</p>
+      )}
+    </IntelCard>
+  );
+}
+
+function ReservesCard({ reserves, hint }: { reserves: StrengthInterval | null; hint: string | null }) {
+  return (
+    <IntelCard title="Reserves and posture" icon="flag">
+      <p className="text-[12px] text-[#221a12]">
+        {reserves
+          ? `Reserves ${reserves.minimum.toLocaleString()}–${reserves.maximum.toLocaleString()}`
+          : "Reserves unknown. Scout their reserves."}
+      </p>
+      <p className="text-[12px] text-[#221a12]">
+        {hint ? `Posture: ${hint}` : "Posture unknown. Scout their preparation."}
+      </p>
+    </IntelCard>
   );
 }
 
 export function EnemyCrestIntel({ scoutedTurnText, opponent, canScout, isSending = false, onOrderScout }: EnemyCrestIntelProps) {
-  const min = opponent.strength.minimum;
-  const max = opponent.strength.maximum;
+  const composition = latestReport(opponent.reports, (report) => Boolean(report.composition))?.composition ?? null;
+  const reserves = latestReport(opponent.reports, (report) => Boolean(report.reserves))?.reserves ?? null;
+  const hint = latestReport(opponent.reports, (report) => Boolean(report.preparation_hint))?.preparation_hint ?? null;
 
   return (
     <div className="relative z-10 p-4 pt-3 flex flex-col items-center">
       <IntelBanner scoutedTurnText={scoutedTurnText} />
       <ScoutPanel reports={opponent.reports} canScout={canScout} isSending={isSending} onOrderScout={onOrderScout} />
       <div className="w-full max-w-[680px] grid grid-cols-1 md:grid-cols-3 gap-2.5 items-stretch">
-        <LeftFlankCard min={min} max={max} />
-        <CenterCommanderCard />
-        <RightFlankCard />
+        <StrengthCard min={opponent.strength.minimum} max={opponent.strength.maximum} />
+        <CompositionCard composition={composition} />
+        <ReservesCard reserves={reserves} hint={hint} />
       </div>
     </div>
   );

@@ -8,6 +8,11 @@ from app.models.assistant import (
     AssistantMasterContext,
     AssistantScopedContext,
     AssistantStoryCard,
+    AssistantStrategyContext,
+    AssistantStrategyFaction,
+    AssistantStrategyRegion,
+    AssistantStrategyRelation,
+    AssistantStrategyTiming,
 )
 from app.services.assistant_service import (
     build_system_instruction,
@@ -143,3 +148,48 @@ def test_old_contexts_are_still_ignored_in_scoped_mode_and_vice_versa() -> None:
     )
 
     assert "Old Draft" not in build_system_instruction(request)
+
+
+def _strategy_context() -> AssistantStrategyContext:
+    return AssistantStrategyContext(
+        title="Two Crowns",
+        timing=AssistantStrategyTiming(start_year=1000, start_month=3, end_year=1004),
+        factions=[
+            AssistantStrategyFaction(
+                faction_id="south", name="South", leader_id="south_ruler"
+            ),
+            AssistantStrategyFaction(
+                faction_id="north", name="North", leader_id="north_ruler"
+            ),
+        ],
+        regions=[AssistantStrategyRegion(region_id="r1", name="Ironvale")],
+        relations=[
+            AssistantStrategyRelation(
+                faction_a="north", faction_b="south", status="war"
+            )
+        ],
+    )
+
+
+def test_strategy_instruction_carries_persona_guide_and_sorted_context() -> None:
+    instruction = build_system_instruction(
+        AssistantChatRequest(
+            messages=[], mode="strategy", strategy_context=_strategy_context()
+        )
+    )
+
+    assert "grand-strategy scenario designer" in instruction
+    assert "action:relation" in instruction
+    assert "CURRENT STRATEGY SCENARIO DATA:" in instruction
+    assert "Ironvale" in instruction
+    assert instruction.index("- north:") < instruction.index("- south:")
+    assert "CURRENT SCENARIO DRAFT IN STUDIO:" not in instruction
+
+
+def test_strategy_instruction_without_context_is_persona_and_guide_only() -> None:
+    instruction = build_system_instruction(
+        AssistantChatRequest(messages=[], mode="strategy")
+    )
+
+    assert "ACTION BLOCKS:" in instruction
+    assert "CURRENT STRATEGY SCENARIO DATA:" not in instruction

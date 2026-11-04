@@ -458,3 +458,79 @@ async def test_assistant_chat_rejects_unknown_mode(
     )
 
     assert response.status_code == 422
+
+
+async def test_assistant_chat_strategy_mode_flags_unknown_faction_ids(
+    async_client: AsyncClient, monkeypatch
+) -> None:
+    captured: dict[str, str] = {}
+    reply = (
+        "Try this:\n```action:relation\n"
+        '{"faction_a": "north", "faction_b": "ghost", "status": "war"}\n```\n'
+    )
+
+    async def fake_stream_chat(
+        system_instruction: str,
+        contents: list[types.Content],
+        timeout_seconds: int,
+        max_output_tokens: int = 1500,
+        usage_sink: object | None = None,
+    ) -> AsyncIterator[str]:
+        captured["instruction"] = system_instruction
+        yield reply
+
+    monkeypatch.setattr(openai_compatible_client, "stream_chat", fake_stream_chat)
+
+    payload = {
+        "messages": [{"role": "user", "content": "Start a war."}],
+        "mode": "strategy",
+        "strategy_context": {
+            "title": "Two Crowns",
+            "factions": [{"faction_id": "north", "name": "North"}],
+        },
+    }
+    response = await async_client.post(
+        "/v1/studio/assistant", json=payload, headers=_make_auth_headers()
+    )
+
+    assert response.status_code == 200
+    assert "CURRENT STRATEGY SCENARIO DATA:" in captured["instruction"]
+    assert "block_validation" in response.text
+    assert "ghost" in response.text
+
+
+async def test_assistant_chat_strategy_mode_valid_block_has_no_validation(
+    async_client: AsyncClient, monkeypatch
+) -> None:
+    reply = (
+        "```action:relation\n"
+        '{"faction_a": "north", "faction_b": "south", "status": "peace"}\n```\n'
+    )
+
+    async def fake_stream_chat(
+        system_instruction: str,
+        contents: list[types.Content],
+        timeout_seconds: int,
+        max_output_tokens: int = 1500,
+        usage_sink: object | None = None,
+    ) -> AsyncIterator[str]:
+        yield reply
+
+    monkeypatch.setattr(openai_compatible_client, "stream_chat", fake_stream_chat)
+
+    payload = {
+        "messages": [{"role": "user", "content": "Make peace."}],
+        "mode": "strategy",
+        "strategy_context": {
+            "factions": [
+                {"faction_id": "north", "name": "North"},
+                {"faction_id": "south", "name": "South"},
+            ]
+        },
+    }
+    response = await async_client.post(
+        "/v1/studio/assistant", json=payload, headers=_make_auth_headers()
+    )
+
+    assert response.status_code == 200
+    assert "block_validation" not in response.text

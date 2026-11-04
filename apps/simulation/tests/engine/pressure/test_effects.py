@@ -129,3 +129,44 @@ def test_acceptance_range_unchanged_when_ruleset_zero() -> None:
     assert acceptance_range(exhausted, SCENARIO, PLAYER, WRATHFUL_RIVAL) == (
         acceptance_range(comfortable, SCENARIO, PLAYER, WRATHFUL_RIVAL)
     )
+
+
+def _tuned(**overrides):
+    scenario = SCENARIO.model_copy(deep=True)
+    scenario.tuning.pressure = scenario.tuning.pressure.model_copy(update=overrides)
+    return scenario
+
+
+def _comfortable_at_war(turns_ago: int):
+    world = make_world()
+    add_war(world)
+    _comfort(world, PLAYER)
+    world.wars[0].started_turn = world.clock.turn - turns_ago
+    return world
+
+
+def test_acceptance_shift_grows_with_war_exhaustion() -> None:
+    world = _comfortable_at_war(0)
+    scenario = _tuned(war_length_turns_per_shift_point=1000)
+    fresh = acceptance_shift(world, scenario, PLAYER)
+    world.factions[PLAYER].war_exhaustion = 40
+
+    assert acceptance_shift(world, scenario, PLAYER) - fresh == 40 // (
+        scenario.tuning.pressure.exhaustion_shift_divisor
+    )
+
+
+def test_acceptance_shift_grows_with_war_length() -> None:
+    scenario = _tuned(war_length_turns_per_shift_point=2)
+    short = acceptance_shift(_comfortable_at_war(0), scenario, PLAYER)
+    long = acceptance_shift(_comfortable_at_war(10), scenario, PLAYER)
+
+    assert long - short == 5
+
+
+def test_acceptance_shift_is_bounded_by_the_tuned_cap() -> None:
+    world = _comfortable_at_war(100)
+    world.factions[PLAYER].war_exhaustion = 100
+    scenario = _tuned(acceptance_shift_cap=12)
+
+    assert acceptance_shift(world, scenario, PLAYER) == 12

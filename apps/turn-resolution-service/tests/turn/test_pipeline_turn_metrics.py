@@ -5,7 +5,6 @@ import uuid
 
 import pytest
 import structlog
-from app.config import settings
 from app.db.models.turn_log import TurnLog
 from app.db.models.turn_metrics import TurnMetrics
 from app.integrations import memory_client
@@ -38,11 +37,6 @@ HURT_CONDITION = {
     "condition_expression": {"field": "player.health", "op": "<", "value": 200},
     "narrator_instruction": "The player is hurt.",
 }
-
-
-def _enter_alpha_mode(monkeypatch, playthrough) -> None:
-    monkeypatch.setattr(settings, "is_alpha_mode", True)
-    monkeypatch.setattr(settings, "alpha_scenario_id", playthrough.scenario_id)
 
 
 async def _run(
@@ -86,21 +80,10 @@ def narrator(monkeypatch):
     )
 
 
-async def test_no_row_is_written_outside_alpha_mode(
-    db_session: AsyncSession, narrator
-) -> None:
-    playthrough, participant = await _seed(db_session)
-
-    await _run(db_session, playthrough, participant)
-
-    assert await _metrics_rows(db_session, playthrough) == []
-
-
-async def test_each_alpha_turn_gets_exactly_one_row_with_timings(
+async def test_each_turn_gets_exactly_one_row_with_timings(
     db_session: AsyncSession, narrator, monkeypatch
 ) -> None:
     playthrough, participant = await _seed(db_session)
-    _enter_alpha_mode(monkeypatch, playthrough)
 
     await _run(db_session, playthrough, participant)
     await _run(db_session, playthrough, participant)
@@ -121,7 +104,6 @@ async def test_stat_snapshot_matches_the_post_write_numeric_state(
     db_session: AsyncSession, narrator, monkeypatch
 ) -> None:
     playthrough, participant = await _seed(db_session)
-    _enter_alpha_mode(monkeypatch, playthrough)
 
     await _run(db_session, playthrough, participant)
 
@@ -135,7 +117,6 @@ async def test_fired_condition_ids_are_recorded(
     playthrough, participant = await _seed(
         db_session, scenario_conditions=[HURT_CONDITION]
     )
-    _enter_alpha_mode(monkeypatch, playthrough)
 
     await _run(db_session, playthrough, participant)
 
@@ -150,7 +131,6 @@ async def test_memory_degraded_reasons_and_retrieval_facts_are_recorded(
         memory_client, "retrieve", _retrieve_with(["embedding_unavailable"])
     )
     playthrough, participant = await _seed(db_session)
-    _enter_alpha_mode(monkeypatch, playthrough)
 
     await _run(db_session, playthrough, participant)
 
@@ -169,7 +149,6 @@ async def test_a_schema_breaking_mutation_is_counted_as_dropped(
         _fake_model([_call("set_field", path="player.health", value=5000)]),
     )
     playthrough, participant = await _seed(db_session)
-    _enter_alpha_mode(monkeypatch, playthrough)
 
     await _run(db_session, playthrough, participant)
 
@@ -178,11 +157,10 @@ async def test_a_schema_breaking_mutation_is_counted_as_dropped(
     assert row.dropped_mutation_paths == ["player.health"]
 
 
-async def test_a_replayed_action_counts_a_replay_and_adds_no_row(
+async def test_a_replayed_action_adds_no_row(
     db_session: AsyncSession, narrator, monkeypatch
 ) -> None:
     playthrough, participant = await _seed(db_session)
-    _enter_alpha_mode(monkeypatch, playthrough)
     action_id = uuid.uuid4()
 
     await _run(db_session, playthrough, participant, action_id)
@@ -190,7 +168,7 @@ async def test_a_replayed_action_counts_a_replay_and_adds_no_row(
     await _run(db_session, playthrough, participant, action_id)
 
     (row,) = await _metrics_rows(db_session, playthrough)
-    assert row.replay_count == 2
+    assert row.replay_count == 0
     assert await _turn_log_count(db_session, playthrough) == 1
 
 
@@ -202,7 +180,6 @@ async def test_a_collector_failure_still_commits_the_turn_and_logs_it(
 
     monkeypatch.setattr(TurnMetricsCollector, "build_record", explode)
     playthrough, participant = await _seed(db_session)
-    _enter_alpha_mode(monkeypatch, playthrough)
 
     with structlog.testing.capture_logs() as logs:
         events = await _run(db_session, playthrough, participant)
@@ -227,7 +204,6 @@ async def test_a_database_failure_in_the_metrics_insert_does_not_fail_the_turn(
 
     monkeypatch.setattr(TurnMetricsRepo, "create", failing_insert)
     playthrough, participant = await _seed(db_session)
-    _enter_alpha_mode(monkeypatch, playthrough)
 
     events = await _run(db_session, playthrough, participant)
 
@@ -242,7 +218,6 @@ async def _check_outcome_after(
     playthrough, participant = await _seed_rule_checks(db_session)
     if configure is not None:
         configure(playthrough)
-    _enter_alpha_mode(monkeypatch, playthrough)
     check_id = await _open_check_id(db_session, playthrough, participant, monkeypatch)
     monkeypatch.setattr(
         ai_orchestrator.narration_router, "stream_with_tools", _narrator("It rings.")

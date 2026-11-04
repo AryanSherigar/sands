@@ -1,34 +1,33 @@
+import { isAxiosError } from "axios";
 import { apiClient } from "@/shared/lib/api-client";
-import { MAP_GENERATION_TIMEOUT_MS } from "../constants/upload";
-import type { GeneratedMapArt, GeneratedRegionImage } from "../types/mapGeneration.types";
+import type { MapGenerationJob } from "../types/mapGeneration.types";
 
-const generationPath = (scenarioId: string, step: "generate-regions" | "generate-art"): string =>
-  `/v1/scenarios/${scenarioId}/strategy-map/${step}`;
+const HTTP_NOT_FOUND = 404;
 
-export const generateMapRegions = async (
+const mapGenerationPath = (scenarioId: string): string =>
+  `/v1/scenarios/${scenarioId}/strategy-map`;
+
+export const startMapGeneration = async (
   scenarioId: string,
   description: string,
-): Promise<GeneratedRegionImage> => {
-  const response = await apiClient.post<GeneratedRegionImage>(
-    generationPath(scenarioId, "generate-regions"),
+): Promise<MapGenerationJob> => {
+  const response = await apiClient.post<MapGenerationJob>(
+    `${mapGenerationPath(scenarioId)}/generate`,
     { description },
-    { timeout: MAP_GENERATION_TIMEOUT_MS },
   );
   return response.data;
 };
 
-export const generateMapArt = async (
+export const getLatestMapGenerationJob = async (
   scenarioId: string,
-  regionImage: Blob,
-  description: string,
-): Promise<GeneratedMapArt> => {
-  const formData = new FormData();
-  formData.append("file", regionImage, "generated-regions.png");
-  formData.append("description", description);
-  const response = await apiClient.post<GeneratedMapArt>(
-    generationPath(scenarioId, "generate-art"),
-    formData,
-    { timeout: MAP_GENERATION_TIMEOUT_MS, headers: { "Content-Type": undefined } },
-  );
-  return response.data;
+): Promise<MapGenerationJob | null> => {
+  try {
+    const response = await apiClient.get<MapGenerationJob>(
+      `${mapGenerationPath(scenarioId)}/jobs/latest`,
+    );
+    return response.data;
+  } catch (error) {
+    if (isAxiosError(error) && error.response?.status === HTTP_NOT_FOUND) return null;
+    throw error;
+  }
 };

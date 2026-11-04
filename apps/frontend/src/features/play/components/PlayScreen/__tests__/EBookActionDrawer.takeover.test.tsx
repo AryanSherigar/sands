@@ -5,10 +5,6 @@ import { useVoiceInput } from "../../../hooks/useVoiceInput";
 import { usePlayStore } from "../../../stores/play.store";
 import { EBookActionDrawer } from "../EBook/EBookActionDrawer";
 
-vi.mock("@/shared/hooks/useIsAlphaMode", () => ({
-  useIsAlphaMode: () => false,
-}));
-
 vi.mock("../../../hooks/useVoiceInput");
 
 const LINE = "Get me out of here, Orr";

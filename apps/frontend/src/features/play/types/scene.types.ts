@@ -82,7 +82,11 @@ export interface MilitaryAccessTerm {
   duration_turns: number;
 }
 
-export type PromiseKind = "never_attack_faction" | "never_ally_with" | "spare_prisoners";
+export type PromiseKind =
+  | "never_attack_faction"
+  | "never_ally_with"
+  | "spare_prisoners"
+  | "never_occupy_region";
 
 export interface SwornPromiseTerm {
   kind: "sworn_promise";
@@ -118,12 +122,15 @@ export type ConditionTemplate =
   | "war_exhaustion_above"
   | "region_count_below"
   | "region_count_above"
-  | "turn_after";
+  | "turn_after"
+  | "owns_region"
+  | "loses_region";
 
 export interface ConditionClause {
   template: ConditionTemplate;
   faction_id: string;
   value: number;
+  region_id?: string | null;
 }
 
 export type BaseTreatyTerm =
@@ -220,12 +227,15 @@ export interface SceneParticipant {
 
 export type TreatyVerdict = "accept" | "haggle" | "refuse";
 
+export type ClauseWeightBand = "light" | "moderate" | "heavy";
+
 export interface SceneExchange {
   sequence: number;
   player_text: string;
   leader_text: string;
   proposal?: TermsCard | null;
   verdict?: TreatyVerdict | null;
+  clause_bands?: ClauseWeightBand[];
 }
 
 export type SceneInitiator = "player" | "ai";

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { IconSearch, IconX } from "@tabler/icons-react";
 import { SearchField } from "./SearchField";
+import { ThemeToggle } from "./ThemeToggle";
 import { Wordmark } from "./Wordmark";
 
 export const MobileTopBar: React.FC = () => {
@@ -27,14 +28,17 @@ export const MobileTopBar: React.FC = () => {
       ) : (
         <>
           <Wordmark />
-          <button
-            type="button"
-            aria-label="Search stories"
-            onClick={() => setIsSearchOpen(true)}
-            className="ml-auto flex h-10 w-10 items-center justify-center text-content-muted focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-accent"
-          >
-            <IconSearch size={20} />
-          </button>
+          <div className="ml-auto flex items-center gap-2">
+            <ThemeToggle />
+            <button
+              type="button"
+              aria-label="Search stories"
+              onClick={() => setIsSearchOpen(true)}
+              className="flex h-10 w-10 items-center justify-center text-content-muted focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-accent"
+            >
+              <IconSearch size={20} />
+            </button>
+          </div>
         </>
       )}
     </header>

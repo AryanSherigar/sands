@@ -4,7 +4,6 @@ import copy
 import uuid
 
 import structlog
-from app.config import settings
 from app.db.models.end_condition import EndCondition
 from app.db.models.entity import Entity
 from app.db.models.fact import Fact
@@ -66,7 +65,7 @@ from app.repositories.scenario_repo import (
 from app.repositories.sheet_rule_repo import SheetRuleRepo
 from app.services.display_hints import validate_display_hints
 from app.services.rule_sheet_state import validate_reserved_roots
-from app.services.scenario_access import ScenarioAccessChecker, is_private
+from app.services.scenario_access import ScenarioAccessChecker
 from app.services.scenario_documents import apply_rendered_documents
 from app.services.scenario_edit_guard import ensure_not_publishing, ensure_not_stale
 from app.services.schema_field_validation import validate_schema_fields
@@ -129,18 +128,6 @@ def _to_review_response(
     )
 
 
-def _alpha_scenario_filter() -> uuid.UUID | None:
-    return settings.alpha_scenario_id if settings.is_alpha_mode else None
-
-
-def _is_hidden_by_alpha_mode(scenario: Scenario) -> bool:
-    """In alpha mode only the alpha scenario and private scenarios are reachable;
-    a private one is then still gated by its own allowlist."""
-    if not settings.is_alpha_mode or is_private(scenario):
-        return False
-    return scenario.scenario_id != settings.alpha_scenario_id
-
-
 def _next_cursor(offset: int, limit: int, total_count: int) -> str | None:
     next_offset = offset + limit
     return str(next_offset) if next_offset < total_count else None
@@ -168,6 +155,10 @@ def _apply_mode_switch(scenario: Scenario, update_dict: dict[str, object]) -> No
         return
     if scenario.mode == MODE_STRATEGY:
         raise ScenarioModeLockedError()
+    if new_mode == MODE_STRATEGY:
+        raise ScenarioModeLockedError(
+            "A scenario cannot be switched to strategy mode after creation"
+        )
     is_tier_requested = "complexity_tier" in update_dict
     is_on_default_tier = scenario.complexity_tier == DEFAULT_TIER_BY_MODE[scenario.mode]
     if not is_tier_requested and is_on_default_tier:
@@ -265,8 +256,6 @@ class ScenarioService:
         """Fetch scenario by ID; never-published scenarios are creator-only."""
         scenario = await self.scenario_repo.get_by_id(scenario_id)
         if not scenario or scenario.status == "archived":
-            raise ScenarioNotFoundError()
-        if _is_hidden_by_alpha_mode(scenario):
             raise ScenarioNotFoundError()
         await self.access.ensure_can_open(scenario, current_user_id)
 
@@ -533,7 +522,7 @@ class ScenarioService:
             creator_id=current_user_id if mine else creator_id,
             published_only=not mine,
             include_archived=played,
-            include_mature=include_mature or mine or settings.is_alpha_mode,
+            include_mature=include_mature or mine,
             genre_tags=genre_tags,
             complexity_tier=complexity_tier,
             player_count_support=player_count_support,
@@ -543,7 +532,6 @@ class ScenarioService:
             saved_by_user_id=current_user_id if saved else None,
             played_by_user_id=current_user_id if played else None,
             sort_by=sort_by,
-            only_scenario_id=_alpha_scenario_filter(),
             viewer_id=current_user_id,
             include_private_for_viewer=mine or saved or played,
         )
@@ -573,7 +561,6 @@ class ScenarioService:
             query=query,
             include_mature=True,
             sort_by=STUDIO_LIST_SORT,
-            only_scenario_id=_alpha_scenario_filter(),
             viewer_id=user_id,
             include_private_for_viewer=True,
         )
@@ -655,6 +642,8 @@ class ScenarioService:
         entity_id_map = await self._copy_cards_and_links(
             source.scenario_id, new_scenario.scenario_id
         )
+        _remap_portrait_opening(new_scenario, entity_id_map)
+        await self.scenario_repo.update(new_scenario)
         await self._duplicate_master_resources(
             source.scenario_id, new_scenario.scenario_id, entity_id_map
         )
@@ -932,6 +921,53 @@ def _build_scenario_copy(source: Scenario, user_id: uuid.UUID) -> Scenario:
     )
 
 
+def _remap_portrait_opening(
+    scenario: Scenario, entity_id_map: dict[uuid.UUID, uuid.UUID]
+) -> None:
+    mapping = {str(source): str(target) for source, target in entity_id_map.items()}
+    rules = scenario.rules or {}
+    ids = rules.get("portrait_opening_ids")
+    if isinstance(ids, list):
+        scenario.rules = {
+            **rules,
+            "portrait_opening_ids": [
+                mapping[item]
+                for item in ids
+                if isinstance(item, str) and item in mapping
+            ],
+        }
+    rules = scenario.rules or {}
+    schedule = rules.get("portrait_schedule")
+    if isinstance(schedule, list):
+        scenario.rules = {
+            **rules,
+            "portrait_schedule": [
+                {
+                    **cue,
+                    "character_ids": [
+                        mapping[item]
+                        for item in cue["character_ids"]
+                        if isinstance(item, str) and item in mapping
+                    ],
+                }
+                for cue in schedule
+                if isinstance(cue, dict) and isinstance(cue.get("character_ids"), list)
+            ],
+        }
+    schema = scenario.state_schema or {}
+    field = schema.get("scene_character_ids")
+    if isinstance(field, dict) and isinstance(field.get("initial"), list):
+        initial = [
+            mapping[item]
+            for item in field["initial"]
+            if isinstance(item, str) and item in mapping
+        ]
+        scenario.state_schema = {
+            **schema,
+            "scene_character_ids": {**field, "initial": initial},
+        }
+
+
 def _build_entity_copy(entity: Entity, new_scenario_id: uuid.UUID) -> Entity:
     """Build a copied Entity row with a new ID under new_scenario_id."""
     return Entity(
@@ -946,6 +982,7 @@ def _build_entity_copy(entity: Entity, new_scenario_id: uuid.UUID) -> Entity:
         attributes_schema=entity.attributes_schema,
         narrator_instruction=entity.narrator_instruction,
         is_player=entity.is_player,
+        avatar_url=entity.avatar_url,
     )
 
 

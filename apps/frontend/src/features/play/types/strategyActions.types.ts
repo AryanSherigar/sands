@@ -1,4 +1,4 @@
-import type { DemandReply, PayLevel } from "./simulation.types";
+import type { DemandReply, PayLevel, SetArmyPolicyOrder, TroopType } from "./simulation.types";
 
 export type StrategyInspectorAction =
   | { type: "levy"; regionId: string }
@@ -7,6 +7,8 @@ export type StrategyInspectorAction =
   | { type: "besiege"; armyId: string }
   | { type: "halt"; armyId: string }
   | { type: "disband"; armyId: string }
+  | { type: "set_army_policy"; armyId: string; policy: Pick<SetArmyPolicyOrder, "withdrawal_policy" | "reserve_policy"> }
+  | { type: "split"; armyId: string; troops: Partial<Record<TroopType, number>> }
   | { type: "map_scout"; regionId: string }
   | { type: "fabricate_claim"; targetFactionId: string; regionId: string }
   | { type: "set_pay"; armyId: string; payLevel: PayLevel }

@@ -5,6 +5,7 @@ export interface StrategyArmyGroupBarProps {
   isTargeting: boolean;
   onMove: () => void;
   onHalt: () => void;
+  onMerge: () => void;
   onClear: () => void;
 }
 
@@ -16,6 +17,7 @@ export const StrategyArmyGroupBar: React.FC<StrategyArmyGroupBarProps> = ({
   isTargeting,
   onMove,
   onHalt,
+  onMerge,
   onClear,
 }) => {
   if (count === 0) return null;
@@ -35,6 +37,9 @@ export const StrategyArmyGroupBar: React.FC<StrategyArmyGroupBarProps> = ({
       </button>
       <button type="button" className={BUTTON_CLASS} onClick={onHalt}>
         Halt group
+      </button>
+      <button type="button" className={BUTTON_CLASS} onClick={onMerge} disabled={count < 2}>
+        Merge group
       </button>
       <button type="button" className={BUTTON_CLASS} onClick={onClear}>
         Clear

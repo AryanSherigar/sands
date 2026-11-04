@@ -5,7 +5,6 @@ import { resolveNarrationFont } from "@/shared/constants/narration-fonts";
 import { useVoiceOutputPreference } from "@/shared/hooks/useVoiceOutputPreference";
 import { ChapterSummaryStrip } from "./ChapterSummaryStrip";
 import { HighlightedParagraph } from "./HighlightedParagraph";
-import { NarrationFlag } from "../NarrationFlag/NarrationFlag";
 import type { EBookTurnEntryProps } from "./ebook.types";
 
 function getTurnHeaderLabel(isFantasy: boolean, isLatest: boolean, turnIndex: number): string {
@@ -108,7 +107,6 @@ export const EBookTurnEntry = memo(function EBookTurnEntry({
       )}
 
       {turn.chapter_delta && <ChapterSummaryStrip delta={turn.chapter_delta} />}
-      <NarrationFlag turnId={turn.id} />
     </section>
   );
 });

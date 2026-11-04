@@ -3,6 +3,8 @@ from app.engine.economy.arithmetic import PERCENT, ceil_division, percent_of
 from app.engine.economy.income import owned_regions
 from app.engine.economy.state import EconomyRun
 from app.engine.outrage.status import is_mobilized
+from app.engine.proclamations.constants import MODIFIER_MANPOWER_REGEN
+from app.engine.proclamations.modifiers import active_modifier
 from app.models.world_events import StateChange
 from app.models.world_internal import uprising_for_region
 from app.models.world_region import RegionState
@@ -55,6 +57,16 @@ def _mobilized_gain(
     return min(boosted, manpower_room(region, run.tuning))
 
 
+def _edict_gain(
+    run: EconomyRun, faction_id: FactionId, region: RegionState, gain: int
+) -> int:
+    percent = active_modifier(run.world, faction_id, MODIFIER_MANPOWER_REGEN)
+    if not percent:
+        return gain
+    adjusted = max(0, gain * (PERCENT + percent) // PERCENT)
+    return min(adjusted, manpower_room(region, run.tuning))
+
+
 def refill_manpower(run: EconomyRun, faction_id: FactionId) -> None:
     gains: dict[RegionId, int] = {}
     changes: list[StateChange] = []
@@ -63,6 +75,7 @@ def refill_manpower(run: EconomyRun, faction_id: FactionId) -> None:
         uprising = uprising_for_region(run.world.uprisings, region.id)
         if uprising is not None:
             gain = gain * (PERCENT - uprising.manpower_penalty_percent) // PERCENT
+        gain = _edict_gain(run, faction_id, region, gain)
         gain = _mobilized_gain(run, faction_id, region, gain)
         if gain == 0:
             continue

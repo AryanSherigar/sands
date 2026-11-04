@@ -42,6 +42,20 @@ from strategy_contracts.art import (
     ArtView,
 )
 from strategy_contracts.base import StrictModel
+from strategy_contracts.epilogue import (
+    EpilogueClaim,
+    EpilogueClaimInput,
+    EpilogueCompleteInput,
+    EpilogueFailInput,
+    EpilogueView,
+)
+from strategy_contracts.events import (
+    EventNarrativeClaim,
+    EventNarrativeClaimInput,
+    EventNarrativeCompleteInput,
+    EventNarrativeFailInput,
+    EventNarrativeView,
+)
 from strategy_contracts.scene_exchange import (
     InternalScenePackage,
     LetterBodySubmission,
@@ -160,6 +174,19 @@ async def store_letter_body(
     return _parse(SceneExchangeResult, response)
 
 
+async def store_opening_text(
+    scene_id: uuid.UUID, user_id: uuid.UUID, text: str
+) -> SceneExchangeResult:
+    """Store a judgment scene's opening tableau once, so a reopened scene shows the same words."""
+    response = await _send(
+        "POST",
+        f"{SCENES_PATH}/{scene_id}/opening",
+        user_id,
+        LetterBodySubmission(text=text),
+    )
+    return _parse(SceneExchangeResult, response)
+
+
 async def report_scene_failure(
     scene_id: uuid.UUID, user_id: uuid.UUID
 ) -> SceneFailureResult:
@@ -239,6 +266,39 @@ class SimulationSummaryClient(_ForwardedIdentityClient):
         return SummaryView.model_validate(payload)
 
 
+class SimulationEpilogueClient(_ForwardedIdentityClient):
+    error_code = "epilogue_unavailable"
+    error_message = "Epilogue service request failed"
+
+    @staticmethod
+    def _path(identity: UUID, action: str | None = None) -> str:
+        if action is None:
+            return f"/v1/playthroughs/{identity}/epilogue"
+        return f"/internal/v1/playthroughs/{identity}/epilogue/{action}"
+
+    async def get(self, identity: UUID) -> EpilogueView:
+        payload = await self._request("GET", self._path(identity))
+        return EpilogueView.model_validate(payload)
+
+    async def claim(self, identity: UUID, claim_id: UUID) -> EpilogueClaim:
+        payload = await self._request(
+            "POST",
+            self._path(identity, "claim"),
+            EpilogueClaimInput(claim_id=claim_id),
+        )
+        return EpilogueClaim.model_validate(payload)
+
+    async def complete(
+        self, identity: UUID, request: EpilogueCompleteInput
+    ) -> EpilogueView:
+        payload = await self._request("POST", self._path(identity, "complete"), request)
+        return EpilogueView.model_validate(payload)
+
+    async def fail(self, identity: UUID, request: EpilogueFailInput) -> EpilogueView:
+        payload = await self._request("POST", self._path(identity, "fail"), request)
+        return EpilogueView.model_validate(payload)
+
+
 class SimulationArtClient(_ForwardedIdentityClient):
     @staticmethod
     def _path(identity: UUID, kind: ArtKind, item_id: str, action: str) -> str:
@@ -313,3 +373,58 @@ class SimulationDispatchClient(_ForwardedIdentityClient):
             "POST", self._path(identity, rumor_id, "fail"), request
         )
         return DispatchView.model_validate(payload)
+
+
+class SimulationEventNarrativeClient(_ForwardedIdentityClient):
+    error_code = "event_narrative_unavailable"
+    error_message = "Event narrative service request failed"
+
+    def __init__(
+        self,
+        authorization: str | None = None,
+        dev_user_id: str | None = None,
+    ) -> None:
+        super().__init__(authorization, dev_user_id)
+
+    async def get(self, identity: UUID, event_id: str) -> EventNarrativeView:
+        safe_event = quote(event_id, safe="")
+        payload = await self._request(
+            "GET", f"/v1/playthroughs/{identity}/events/{safe_event}/narrative"
+        )
+        return EventNarrativeView.model_validate(payload)
+
+    async def claim(
+        self, identity: UUID, event_id: str, claim_id: UUID
+    ) -> EventNarrativeClaim | None:
+        safe_event = quote(event_id, safe="")
+        try:
+            payload = await self._request(
+                "POST",
+                f"/internal/v1/playthroughs/{identity}/events/{safe_event}/claim",
+                EventNarrativeClaimInput(claim_id=claim_id),
+            )
+        except BaseAppException as exc:
+            if exc.status_code == 409:
+                return None
+            raise
+        return EventNarrativeClaim.model_validate(payload)
+
+    async def complete(
+        self, identity: UUID, event_id: str, request: EventNarrativeCompleteInput
+    ) -> None:
+        safe_event = quote(event_id, safe="")
+        await self._request(
+            "POST",
+            f"/internal/v1/playthroughs/{identity}/events/{safe_event}/complete",
+            request,
+        )
+
+    async def fail(
+        self, identity: UUID, event_id: str, request: EventNarrativeFailInput
+    ) -> None:
+        safe_event = quote(event_id, safe="")
+        await self._request(
+            "POST",
+            f"/internal/v1/playthroughs/{identity}/events/{safe_event}/fail",
+            request,
+        )

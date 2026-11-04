@@ -91,6 +91,14 @@ async def add_uprising(connection: AsyncConnection, identity: UUID) -> None:
     await _save_document(connection, identity, document)
 
 
+async def remove_uprisings(connection: AsyncConnection, identity: UUID) -> None:
+    row = await world_state_repo.get_world_state(connection, identity)
+    assert row is not None
+    document = dict(row.document)
+    document["uprisings"] = []
+    await _save_document(connection, identity, document)
+
+
 async def add_summary(connection: AsyncConnection, identity: UUID) -> UUID:
     summary_id = uuid4()
     briefing = SummaryBriefing(

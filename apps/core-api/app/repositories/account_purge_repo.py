@@ -5,8 +5,6 @@ from datetime import datetime
 
 from app.db.models.memory_outbox import MemoryOutbox
 from app.db.models.memory_relay_claim import MemoryRelayClaim
-from app.db.models.music_generation_job import MusicGenerationJob
-from app.db.models.music_generation_log import MusicGenerationLog
 from app.db.models.participant import Participant
 from app.db.models.playthrough import Playthrough
 from app.db.models.scenario import Scenario
@@ -114,10 +112,6 @@ class AccountPurgeRepo:
             .where(_is_retained_scenario_clause())
             .values(creator_id=placeholder_id)
         )
-
-    async def delete_music_generation_records(self, user_id: uuid.UUID) -> None:
-        for model in (MusicGenerationJob, MusicGenerationLog):
-            await self.session.execute(delete(model).where(model.creator_id == user_id))
 
     async def delete_owned_scenarios(self, user_id: uuid.UUID) -> None:
         await self.session.execute(

@@ -11,6 +11,9 @@ logger = structlog.get_logger()
 EVENT_CORE_API_SYNC_ERROR = "core_api_turn_sync_error"
 HEADER_INTERNAL_SERVICE_TOKEN = "X-Internal-Service-Token"
 TURN_SYNC_PATH_TEMPLATE = "/internal/v1/playthroughs/{playthrough_id}/turn"
+OUTCOME_TEXT_PATH_TEMPLATE = "/internal/v1/playthroughs/{playthrough_id}/outcome-text"
+OUTCOME_TEXT_MAX_CHARS = 4000
+EVENT_CORE_API_OUTCOME_TEXT_ERROR = "core_api_outcome_text_error"
 
 _client: httpx.AsyncClient | None = None
 
@@ -74,5 +77,28 @@ async def sync_turn_count(
             EVENT_CORE_API_SYNC_ERROR,
             playthrough_id=str(playthrough_id),
             turn_count=turn_count,
+            error_type=type(exc).__name__,
+        )
+
+
+async def sync_outcome_text(playthrough_id: UUID, text: str) -> None:
+    """Best-effort hand-off of the ending epilogue. Logs failures without raising."""
+    settings = get_settings()
+    url = OUTCOME_TEXT_PATH_TEMPLATE.format(playthrough_id=playthrough_id)
+    payload = {"ended_outcome_text": text[:OUTCOME_TEXT_MAX_CHARS]}
+    try:
+        response = await _get_client().patch(
+            url, json=payload, timeout=settings.core_api_timeout_seconds
+        )
+        if not response.is_success:
+            logger.warning(
+                EVENT_CORE_API_OUTCOME_TEXT_ERROR,
+                playthrough_id=str(playthrough_id),
+                status_code=response.status_code,
+            )
+    except httpx.HTTPError as exc:
+        logger.warning(
+            EVENT_CORE_API_OUTCOME_TEXT_ERROR,
+            playthrough_id=str(playthrough_id),
             error_type=type(exc).__name__,
         )

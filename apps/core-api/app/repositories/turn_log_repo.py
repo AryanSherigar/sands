@@ -3,8 +3,9 @@
 import uuid
 
 from app.db.models.turn_log import TurnLog
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.sql.elements import ColumnElement
 
 
 class TurnLogRepo:
@@ -28,7 +29,9 @@ class TurnLogRepo:
         from_turn: int | None = None,
     ) -> tuple[list[TurnLog], int]:
         """Fetch a page of turn history, oldest first, optionally from a turn number."""
-        stmt = select(TurnLog).where(TurnLog.playthrough_id == playthrough_id)
+        stmt = select(TurnLog).where(
+            TurnLog.playthrough_id == playthrough_id, ~_is_combat_event()
+        )
         if from_turn is not None:
             stmt = stmt.where(TurnLog.turn_number >= from_turn)
 
@@ -47,9 +50,33 @@ class TurnLogRepo:
             return {}
         stmt = (
             select(TurnLog.playthrough_id, TurnLog.narration_text)
-            .where(TurnLog.playthrough_id.in_(playthrough_ids))
+            .where(TurnLog.playthrough_id.in_(playthrough_ids), ~_is_combat_event())
             .distinct(TurnLog.playthrough_id)
             .order_by(TurnLog.playthrough_id, TurnLog.turn_number.desc())
         )
         result = await self.session.execute(stmt)
         return {row[0]: row[1] for row in result.all()}
+
+    async def count_combat_events(
+        self, playthrough_id: uuid.UUID, through_turn: int
+    ) -> int:
+        """Count combat receipts up to the playthrough version being returned."""
+        stmt = (
+            select(func.count())
+            .select_from(TurnLog)
+            .where(
+                TurnLog.playthrough_id == playthrough_id,
+                TurnLog.turn_number <= through_turn,
+                _is_combat_event(),
+            )
+        )
+        return (await self.session.execute(stmt)).scalar_one()
+
+
+def _is_combat_event() -> ColumnElement[bool]:
+    return or_(
+        *(
+            TurnLog.tool_calls.contains([{"tool_name": name}])
+            for name in ("_combat_start", "_combat_action", "_combat_outcome")
+        )
+    )

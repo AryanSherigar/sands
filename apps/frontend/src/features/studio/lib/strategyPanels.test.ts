@@ -13,6 +13,8 @@ describe("panelForIssue", () => {
     ["dangling_reference", "starting.claims[0].region_id", "claims_grudges"],
     ["dangling_reference", "starting.grudges[0].holder_id", "claims_grudges"],
     ["invalid_vassalage", "starting.relations[2]", "relations"],
+    ["invalid_ending", "endings[0]", "endings"],
+    ["invalid_toggle", "toggles.is_loans_enabled", "rules"],
     ["faction_has_no_region", "factions[0]", null],
   ])("maps %s at %s to %s", (code, path, expected) => {
     expect(panelForIssue(issue(code, path))).toBe(expected);
@@ -24,9 +26,11 @@ describe("summarizePanel", () => {
 
   it("summarizes each panel in one line", () => {
     expect(summarizePanel("timeline", fields)).toBe("1000-03 to 1004");
+    expect(summarizePanel("endings", fields)).toBe("Default victory rules");
     expect(summarizePanel("region_economy", fields)).toBe("1 region with an economy");
     expect(summarizePanel("armies", fields)).toBe("1 army");
     expect(summarizePanel("relations", fields)).toBe("All at peace");
     expect(summarizePanel("claims_grudges", fields)).toBe("Using defaults");
+    expect(summarizePanel("rules", fields)).toBe("6 orders/turn");
   });
 });

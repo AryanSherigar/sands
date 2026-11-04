@@ -13,11 +13,11 @@ export const HeroContent: React.FC<HeroContentProps> = ({ scenario }) => {
           mode={scenario.mode}
           contentTag={scenario.content_tag}
         />
-        <h1 className="mb-2 max-w-[18ch] font-display text-hero tracking-[-0.02em] text-content">
+        <h1 className="mb-2 max-w-[18ch] font-display text-hero tracking-[-0.02em] text-white">
           {scenario.title}
         </h1>
         {scenario.logline && (
-          <p className="mb-2 max-w-[62ch] font-sans text-base leading-relaxed text-content-muted md:text-[1.0625rem]">
+          <p className="mb-2 max-w-[62ch] font-sans text-base leading-relaxed text-white/80 md:text-[1.0625rem]">
             {scenario.logline}
           </p>
         )}

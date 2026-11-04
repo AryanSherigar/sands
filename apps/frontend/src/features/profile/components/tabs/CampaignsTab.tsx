@@ -1,8 +1,6 @@
 import React, { useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { PostRunSurvey } from "@/shared/components/alpha-survey/PostRunSurvey/PostRunSurvey";
 import { ButtonLink } from "@/shared/components/ui/ButtonLink";
-import { useIsAlphaMode } from "@/shared/hooks/useIsAlphaMode";
 import { useAbandonPlaythrough } from "../../hooks/useAbandonPlaythrough";
 import { useUserPlaythroughs } from "../../hooks/useUserPlaythroughs";
 import { CampaignCard } from "../cards/CampaignCard";
@@ -31,15 +29,9 @@ export const CampaignsTab: React.FC = () => {
     filter === "all" ? undefined : filter,
   );
   const abandonMutation = useAbandonPlaythrough();
-  const isAlphaMode = useIsAlphaMode();
-  const [surveyPlaythroughId, setSurveyPlaythroughId] = useState<string | null>(null);
 
   const handleAbandon = (playthroughId: string): void => {
-    abandonMutation.mutate(playthroughId, {
-      onSuccess: () => {
-        if (isAlphaMode) setSurveyPlaythroughId(playthroughId);
-      },
-    });
+    abandonMutation.mutate(playthroughId);
   };
 
   if (isLoading) return <TabSkeleton />;
@@ -78,13 +70,6 @@ export const CampaignsTab: React.FC = () => {
             />
           ))}
         </div>
-      )}
-      {surveyPlaythroughId && (
-        <PostRunSurvey
-          playthroughId={surveyPlaythroughId}
-          isOpen
-          onClose={() => setSurveyPlaythroughId(null)}
-        />
       )}
     </div>
   );

@@ -8,7 +8,7 @@ export const HeroArt: React.FC<HeroArtProps> = ({ coverImageUrl }) => {
   const handleLoad = (): void => setIsLoaded(true);
 
   return (
-    <div className="absolute inset-0 overflow-hidden bg-surface-sunken">
+    <div className="absolute inset-0 overflow-hidden bg-neutral-900">
       <img
         src={coverImageUrl}
         alt=""
@@ -18,12 +18,11 @@ export const HeroArt: React.FC<HeroArtProps> = ({ coverImageUrl }) => {
         onLoad={handleLoad}
         className={cn(
           "h-full w-full object-cover opacity-0 transition-opacity duration-base",
-          isLoaded && "opacity-80",
+          isLoaded && "opacity-100",
         )}
       />
-      {/* Multi-layer Tonal Scrim for Cinematic Contrast */}
-      <div className="absolute inset-0 bg-linear-to-t from-surface/30 via-surface/15 to-transparent" />
-      <div className="absolute inset-0 bg-linear-to-r from-surface/40 via-surface/20 to-transparent w-full md:w-3/4" />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+      <div className="absolute inset-0 w-full bg-gradient-to-r from-black/70 via-black/35 to-transparent md:w-3/4" />
     </div>
   );
 };

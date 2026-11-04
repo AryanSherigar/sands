@@ -2,13 +2,17 @@ from app.engine.economy import events
 from app.engine.economy.arithmetic import PERCENT, clamp
 from app.engine.economy.income import owned_regions
 from app.engine.economy.state import EconomyRun
+from app.engine.proclamations.constants import MODIFIER_UNREST_PER_TURN
+from app.engine.proclamations.modifiers import active_modifier
 from app.models.world_events import StateChange
 from strategy_contracts.ids import FactionId, RegionId
 
 
 def drift_unrest(run: EconomyRun, faction_id: FactionId) -> None:
     faction = run.world.factions[faction_id]
-    drift = run.tuning.tax_unrest_drift[faction.tax_rate]
+    drift = run.tuning.tax_unrest_drift[faction.tax_rate] + active_modifier(
+        run.world, faction_id, MODIFIER_UNREST_PER_TURN
+    )
     moved: dict[RegionId, int] = {}
     changes: list[StateChange] = []
     for region in owned_regions(run.world, faction_id):

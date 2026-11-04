@@ -8,12 +8,7 @@ import {
 } from "@/shared/types/minigame.types";
 import { queryClient } from "@/shared/lib/query-client";
 import { getPlaythrough } from "@/shared/api/playthroughs.api";
-import {
-  ALPHA_PAUSED_MESSAGE,
-  AlphaPausedError,
-} from "@/shared/lib/alpha-paused-error";
 import { RateLimitError } from "@/shared/lib/rate-limit-error";
-import { selectCanRetryTurn } from "../play.selectors";
 
 let capturedHandlers: SSEHandlers | null = null;
 let capturedBody: unknown = null;
@@ -660,26 +655,6 @@ describe("play.store — rate limits and quota notices", () => {
     expect(state.degraded_message).toBe(
       "You've reached today's turn limit. It resets at 00:00 UTC.",
     );
-  });
-
-  it("shows the calm closed message and hides retry when turns are paused", () => {
-    usePlayStore.getState().submitTurn("I open the door.");
-
-    capturedHandlers!.onError?.(new AlphaPausedError());
-
-    const state = usePlayStore.getState();
-    expect(state.is_narrating).toBe(false);
-    expect(state.degraded_message).toBe(ALPHA_PAUSED_MESSAGE);
-    expect(state.is_turn_paused).toBe(true);
-    expect(selectCanRetryTurn(state)).toBe(false);
-  });
-
-  it("clears the paused state when the next turn is submitted", () => {
-    usePlayStore.setState({ is_turn_paused: true });
-
-    usePlayStore.getState().submitTurn("I try again.");
-
-    expect(usePlayStore.getState().is_turn_paused).toBe(false);
   });
 
   it("keeps the generic message for an ordinary connection failure", () => {

@@ -149,3 +149,26 @@ async def test_store_letter_body_posts_the_text_with_the_service_token() -> None
     assert request.headers["x-acting-user-id"] == str(USER_ID)
     assert json.loads(request.content) == {"text": "Dear Valdren"}
     assert result.exchanges_remaining == 1
+
+
+@respx.mock
+async def test_store_opening_text_posts_to_the_opening_route() -> None:
+    route = respx.post(f"http://simulation.test/internal/v1/scenes/{SCENE_ID}/opening")
+    route.respond(
+        200,
+        json={
+            "status": "accepted",
+            "scene_status": "pending",
+            "exchanges_remaining": 5,
+        },
+    )
+
+    result = await simulation_client.store_opening_text(
+        SCENE_ID, USER_ID, "The hall is silent."
+    )
+
+    request = route.calls.last.request
+    assert request.headers["x-internal-service-token"] == TOKEN
+    assert request.headers["x-acting-user-id"] == str(USER_ID)
+    assert json.loads(request.content) == {"text": "The hall is silent."}
+    assert result.exchanges_remaining == 5

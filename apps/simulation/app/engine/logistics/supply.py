@@ -124,7 +124,26 @@ def _reachable_regions(
         pending.extend(
             sorted(index.neighbors.get(current, frozenset()) - visited, reverse=True)
         )
-    return visited
+    return _extend_into_foreign_land(
+        visited, index, scenario.tuning.logistics.foreign_supply_reach
+    )
+
+
+def _extend_into_foreign_land(
+    supplied: set[str], index: MapIndex, reach: int
+) -> set[str]:
+    if not supplied:
+        return supplied
+    extended = set(supplied)
+    frontier = set(supplied)
+    for _ in range(reach):
+        frontier = {
+            neighbor
+            for region_id in frontier
+            for neighbor in index.neighbors.get(region_id, frozenset())
+        } - extended
+        extended |= frontier
+    return extended
 
 
 def _contested_regions(world: WorldState, faction_id: str) -> set[str]:

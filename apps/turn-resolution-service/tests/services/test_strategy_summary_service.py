@@ -9,7 +9,7 @@ from strategy_contracts.summary import (
 )
 
 
-def _claim():
+def _claim(chronicler_id: str = "lucan"):
     summary = uuid4()
     return SummaryClaim(
         summary=SummaryView(
@@ -22,6 +22,7 @@ def _claim():
             summary_id=summary,
             playthrough_id=uuid4(),
             observer_faction_id="player",
+            chronicler_id=chronicler_id,
             requested_turn=0,
             trigger="major_event",
             facts=[
@@ -64,6 +65,73 @@ async def test_summary_stream_saves_before_done_and_never_mutates_game(monkeypat
         "narration",
         "done",
     ]
+
+
+async def test_summary_stream_with_chronicler_persona_applies_system_prompt(
+    monkeypatch,
+):
+    import json
+
+    from app.integrations import narration_router
+    from app.services.strategy_summary_service import stream_summary
+
+    recorded_prompts = []
+
+    class Client:
+        async def complete(self, identity, summary_id, request):
+            pass
+
+        async def fail(self, identity, summary_id, request):
+            pass
+
+    async def narrator(system_prompt, prompt, *args, **kwargs):
+        recorded_prompts.append((system_prompt, prompt))
+        yield "By the King's right..."
+
+    monkeypatch.setattr(narration_router, "stream_narration", narrator)
+    events = [
+        event async for event in stream_summary(_claim("morvath"), Client(), None)
+    ]
+
+    assert len(recorded_prompts) == 1
+    system_prompt, _ = recorded_prompts[0]
+    assert "Morvath of Highcourt" in system_prompt
+    assert "Crown Loyalist" in system_prompt
+
+    started_data = json.loads(events[0]["data"])
+    assert started_data["chronicler_id"] == "morvath"
+    assert started_data["chronicler_name"] == "Morvath of Highcourt"
+
+
+async def test_summary_stream_uses_brother_lucan_for_a_default_briefing(monkeypatch):
+    import json
+
+    from app.integrations import narration_router
+    from app.services.strategy_summary_service import stream_summary
+
+    recorded_prompts = []
+
+    class Client:
+        async def complete(self, identity, summary_id, request):
+            pass
+
+        async def fail(self, identity, summary_id, request):
+            pass
+
+    async def narrator(system_prompt, prompt, *args, **kwargs):
+        recorded_prompts.append((system_prompt, prompt))
+        yield "A solemn record..."
+
+    monkeypatch.setattr(narration_router, "stream_narration", narrator)
+    events = [event async for event in stream_summary(_claim(), Client(), None)]
+
+    assert len(recorded_prompts) == 1
+    system_prompt, _ = recorded_prompts[0]
+    assert "Brother Lucan" in system_prompt
+
+    started_data = json.loads(events[0]["data"])
+    assert started_data["chronicler_id"] == "lucan"
+    assert started_data["chronicler_name"] == "Brother Lucan"
 
 
 async def test_failed_completion_emits_error_and_no_done(monkeypatch):
@@ -156,3 +224,10 @@ async def test_cancel_after_streamed_output_keeps_quota_charged(monkeypatch):
 async def test_cancel_before_any_output_refunds_quota(monkeypatch):
     reservation = await _cancel_after(monkeypatch, [])
     assert reservation.refund_count == 1
+
+
+def test_chronicle_rules_forbid_narrating_the_limits_of_the_record() -> None:
+    from app.services.chronicler_personas import BASE_CHRONICLE_RULES
+
+    assert "never comment on the limits of your records" in BASE_CHRONICLE_RULES
+    assert "Do not invent causes" in BASE_CHRONICLE_RULES

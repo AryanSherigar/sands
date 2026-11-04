@@ -4,10 +4,6 @@ import { EBookActionDrawer } from "../EBook/EBookActionDrawer";
 import { useVoiceInput } from "../../../hooks/useVoiceInput";
 import { TURN_ACTION_MAX_CHARS } from "../../../constants/turnInput.constants";
 
-vi.mock("@/shared/hooks/useIsAlphaMode", () => ({
-  useIsAlphaMode: () => false,
-}));
-
 vi.mock("../../../hooks/useVoiceInput");
 const mockUseVoiceInput = vi.mocked(useVoiceInput);
 

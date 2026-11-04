@@ -22,3 +22,6 @@ export const SEASON_BY_MONTH: readonly string[] = [
 
 export const LEVY_INFANTRY_PRESET = 500;
 export const PREVIEW_ORDERS_DISABLED_MESSAGE = "Orders are disabled in preview mode.";
+
+// NOTE: a fresh Muse image takes about 15 s, longer than the 8 s global request timeout.
+export const STRATEGY_ART_REQUEST_TIMEOUT_MS = 60_000;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { composeClauseSentence, type ClauseDraft } from "../clauseSentence";
+import { composeCardSentence, composeClauseSentence, type ClauseDraft } from "../clauseSentence";
 
 const BASE: ClauseDraft = {
   mode: "trigger",
@@ -30,5 +30,37 @@ describe("composeClauseSentence", () => {
     expect(composeClauseSentence({ ...BASE, template: "turn_after", value: 12, expiresInTurns: 99 })).toContain("turn 12 has passed");
     expect(composeClauseSentence({ ...BASE, template: "turn_after", value: 12, expiresInTurns: 99 })).toContain("after 40 turns");
     expect(composeClauseSentence({ ...BASE, expiresInTurns: 0 })).toContain("after 1 turn.");
+  });
+});
+
+describe("composeCardSentence and region clauses", () => {
+  it("writes an unconditional clause without a condition or a lapse", () => {
+    expect(composeClauseSentence({ ...BASE, mode: "none", kind: "pact", amount: 8 })).toBe(
+      "We will keep a non-aggression pact for 8 turns.",
+    );
+  });
+
+  it("names the region in a region clause and a region condition", () => {
+    const sentence = composeClauseSentence({
+      ...BASE,
+      kind: "region_promise",
+      template: "loses_region",
+      subject: "yours",
+      regionId: "dunmere",
+      regionName: "Dunmere",
+    });
+
+    expect(sentence).toBe(
+      "Once your realm no longer holds Dunmere, I swear never to occupy Dunmere. Let this agreement lapse after 10 turns.",
+    );
+  });
+
+  it("joins several clauses into one proposal for the ruler to weigh together", () => {
+    const sentence = composeCardSentence([
+      { ...BASE, mode: "none", kind: "trade_deal" },
+      { ...BASE, mode: "none", kind: "cede_region", regionName: "Elmstead" },
+    ]);
+
+    expect(sentence).toBe("We will keep a trade deal. I will hand Elmstead over to you.");
   });
 });

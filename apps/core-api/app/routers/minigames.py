@@ -16,10 +16,6 @@ from app.models.minigame import (
 from app.repositories.entity_repo import EntityRepo
 from app.repositories.minigame_repo import MinigameRepo
 from app.repositories.scenario_repo import ScenarioRepo
-from app.routers.alpha_guards import (
-    forbid_writes_in_alpha_mode,
-    restrict_to_alpha_scenario,
-)
 from app.services.minigame_service import MinigameService
 from fastapi import APIRouter, Depends, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -27,10 +23,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 router = APIRouter(
     prefix="/v1/scenarios/{scenario_id}/minigames",
     tags=["Minigames"],
-    dependencies=[
-        Depends(forbid_writes_in_alpha_mode),
-        Depends(restrict_to_alpha_scenario),
-    ],
 )
 
 

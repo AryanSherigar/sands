@@ -4,9 +4,7 @@ import uuid
 from datetime import UTC, datetime
 
 import structlog
-from app.config import settings
 from app.db.models.user import User
-from app.exceptions.alpha_exceptions import AlphaConsentRequiredError
 from app.exceptions.user_exceptions import UserNotFoundError
 from app.models.user import (
     OnboardingCompleteRequest,
@@ -19,10 +17,6 @@ from app.models.user import (
 )
 from app.repositories.playthrough_repo import PlaythroughRepo
 from app.repositories.user_repo import UserRepo
-from app.services.alpha_consent import (
-    is_alpha_consent_current,
-    log_alpha_consent_recorded,
-)
 
 logger = structlog.get_logger()
 
@@ -60,7 +54,6 @@ class UserService:
             show_mature=user.show_mature,
             preferred_genres=user.preferred_genres,
             onboarding_completed_at=user.onboarding_completed_at,
-            alpha_consent_is_current=is_alpha_consent_current(user),
             stats=stats,
         )
 
@@ -69,19 +62,6 @@ class UserService:
         user = await self.user_repo.get_by_id(user_id)
         if not user:
             raise UserNotFoundError()
-        return await self._build_profile_response(user)
-
-    async def record_alpha_consent(
-        self, user_id: uuid.UUID, version: str
-    ) -> UserProfileResponse:
-        """Record acceptance of the current alpha consent text for a returning user."""
-        user = await self.user_repo.get_by_id(user_id)
-        if not user:
-            raise UserNotFoundError()
-        if version != settings.alpha_consent_version:
-            raise AlphaConsentRequiredError("Consent version is out of date")
-        await self.user_repo.record_alpha_consent(user, version)
-        log_alpha_consent_recorded(user_id, version)
         return await self._build_profile_response(user)
 
     async def request_account_deletion(self, user_id: uuid.UUID) -> None:

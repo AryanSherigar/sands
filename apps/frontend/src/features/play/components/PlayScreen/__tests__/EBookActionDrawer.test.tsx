@@ -4,10 +4,6 @@ import { EBookActionDrawer } from "../EBook/EBookActionDrawer";
 import { useVoiceInput } from "../../../hooks/useVoiceInput";
 import { usePlayStore } from "../../../stores/play.store";
 
-vi.mock("@/shared/hooks/useIsAlphaMode", () => ({
-  useIsAlphaMode: () => false,
-}));
-
 vi.mock("../../../hooks/useVoiceInput");
 const mockUseVoiceInput = vi.mocked(useVoiceInput);
 

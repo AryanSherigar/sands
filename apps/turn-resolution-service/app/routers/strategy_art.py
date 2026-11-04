@@ -4,7 +4,6 @@ from uuid import UUID
 from app.integrations.simulation_client import SimulationArtClient
 from app.middleware.auth import get_current_user
 from app.models.auth import CurrentUser
-from app.routers.alpha_guards import forbid_when_turns_suspended
 from app.services.rate_limit.quota_service import QuotaService, get_quota_service
 from app.services.strategy_art_service import generate_art
 from fastapi import APIRouter, Depends, Header
@@ -19,7 +18,6 @@ from strategy_contracts.art import (
 router = APIRouter(
     prefix="/v1/strategy/playthroughs",
     tags=["strategy-art"],
-    dependencies=[Depends(forbid_when_turns_suspended)],
 )
 
 

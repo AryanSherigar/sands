@@ -22,10 +22,6 @@ from app.models.map import (
 from app.repositories.entity_repo import EntityRepo
 from app.repositories.map_repo import MapRepo
 from app.repositories.scenario_repo import ScenarioRepo
-from app.routers.alpha_guards import (
-    forbid_writes_in_alpha_mode,
-    restrict_to_alpha_scenario,
-)
 from app.services.map_service import MapService
 from fastapi import APIRouter, Depends, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -33,10 +29,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 router = APIRouter(
     prefix="/v1/scenarios/{scenario_id}",
     tags=["Maps"],
-    dependencies=[
-        Depends(forbid_writes_in_alpha_mode),
-        Depends(restrict_to_alpha_scenario),
-    ],
 )
 
 

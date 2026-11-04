@@ -1,4 +1,5 @@
 import React from "react";
+import { REVOLT_FALLBACK_OUTCOME, REVOLT_OPTION_OUTCOMES } from "../../../../constants/revolt.constants";
 import type { NegotiationRatificationOverlayProps } from "./NegotiationRatificationOverlay.types";
 
 export const NegotiationRatificationOverlay: React.FC<NegotiationRatificationOverlayProps> = ({
@@ -7,6 +8,32 @@ export const NegotiationRatificationOverlay: React.FC<NegotiationRatificationOve
   onClose,
 }) => {
   const isAgreed = outcome?.kind === "terms_card" && outcome.result === "agreed";
+  if (outcome?.kind === "choice") {
+    return (
+      <div
+        className="absolute inset-0 z-40 bg-on-surface/50 backdrop-blur-sm flex items-center justify-center p-6 animate-fade-in"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Talks Outcome"
+      >
+        <div className="bg-parchment-panel p-8 rounded-2xl shadow-2xl max-w-lg w-full text-center border-2 border-secondary/50">
+          <h2 className="font-serif text-3xl font-semibold text-on-surface mb-3">
+            The People Are Answered
+          </h2>
+          <p className="font-serif text-lg italic text-on-surface-variant leading-relaxed mb-8">
+            {REVOLT_OPTION_OUTCOMES[outcome.option_id] ?? REVOLT_FALLBACK_OUTCOME}
+          </p>
+          <button
+            type="button"
+            onClick={onClose}
+            className="w-full py-3 px-6 bg-secondary-container hover:bg-secondary-fixed text-on-secondary-container font-sans text-sm font-bold uppercase tracking-wider rounded-xl shadow-lg cursor-pointer border border-secondary/40"
+          >
+            Return to Campaign Map
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div

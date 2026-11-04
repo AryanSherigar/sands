@@ -1,11 +1,11 @@
 import React from "react";
 import { getPrimaryNavLinks } from "@/shared/constants/navigation";
-import { useIsAlphaMode } from "@/shared/hooks/useIsAlphaMode";
 import { cn } from "@/shared/lib/cn";
 import { useLocation } from "react-router-dom";
 import { AccountSlot } from "./AccountSlot";
 import { NavLinkItem } from "./NavLinkItem";
 import { SearchField } from "./SearchField";
+import { ThemeToggle } from "./ThemeToggle";
 import { Wordmark } from "./Wordmark";
 import { isNavLinkActive } from "./isNavLinkActive";
 import type { TopBarProps } from "./TopBar.types";
@@ -15,7 +15,6 @@ export const TopBar: React.FC<TopBarProps> = ({
   isCondensed,
 }) => {
   const { pathname } = useLocation();
-  const isAlphaMode = useIsAlphaMode();
 
   return (
     <header
@@ -30,7 +29,7 @@ export const TopBar: React.FC<TopBarProps> = ({
       <div className="mx-auto flex h-full max-w-[1440px] items-center gap-8 px-6">
         <Wordmark />
         <nav aria-label="Primary" className="flex h-full items-center gap-6">
-          {getPrimaryNavLinks(isAlphaMode).map((link) => (
+          {getPrimaryNavLinks().map((link) => (
             <NavLinkItem
               key={link.to}
               to={link.to}
@@ -40,7 +39,10 @@ export const TopBar: React.FC<TopBarProps> = ({
           ))}
         </nav>
         <SearchField className="ml-auto w-full min-w-[320px] max-w-[480px]" />
-        <AccountSlot />
+        <div className="flex items-center gap-3">
+          <ThemeToggle />
+          <AccountSlot />
+        </div>
       </div>
     </header>
   );

@@ -128,3 +128,22 @@ describe("conquest report lines", () => {
     expect(item?.category).toBe("military");
   });
 });
+
+
+describe("sworn promise report lines", () => {
+  const oathKinds: Array<[string, string]> = [
+    ["sworn_promise_made", "Oath Sworn"],
+    ["sworn_promise_broken", "Oath Broken"],
+  ];
+
+  it.each(oathKinds)("shows %s as a diplomacy item titled %s", (kind, title) => {
+    const report = mergeTurnReport(
+      estimated,
+      response({ lines: [{ text_key: kind, kind, subject_ids: [] }] }),
+      DEFAULT_PREVIEW_WORLD,
+      REGION_NAMES,
+    );
+    const item = report.items.find((candidate) => candidate.title === title);
+    expect(item?.category).toBe("diplomacy");
+  });
+});

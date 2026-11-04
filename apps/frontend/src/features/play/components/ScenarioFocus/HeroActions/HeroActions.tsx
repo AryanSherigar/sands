@@ -7,7 +7,6 @@ import {
 } from "@tabler/icons-react";
 import { Button } from "@/shared/components/ui/Button";
 import { ButtonLink } from "@/shared/components/ui/ButtonLink";
-import { useIsAlphaMode } from "@/shared/hooks/useIsAlphaMode";
 import { PlayAction } from "./PlayAction";
 import type { HeroActionsProps } from "./HeroActions.types";
 
@@ -22,8 +21,6 @@ export const HeroActions: React.FC<HeroActionsProps> = ({
   onShare,
   onPlaytest,
 }) => {
-  const isAlphaMode = useIsAlphaMode();
-
   return (
     <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
       <PlayAction
@@ -54,19 +51,17 @@ export const HeroActions: React.FC<HeroActionsProps> = ({
           )}
           <span>{isBookmarked ? "Saved" : "Save"}</span>
         </Button>
-        {!isAlphaMode && (
-          <Button
-            type="button"
-            variant="ghost"
-            size="lg"
-            onClick={onShare}
-            className="flex-1 sm:flex-none"
-          >
-            <IconShare2 size={18} stroke={1.5} aria-hidden="true" />
-            <span>Share</span>
-          </Button>
-        )}
-        {isOwner && !isAlphaMode && (
+        <Button
+          type="button"
+          variant="ghost"
+          size="lg"
+          onClick={onShare}
+          className="flex-1 sm:flex-none"
+        >
+          <IconShare2 size={18} stroke={1.5} aria-hidden="true" />
+          <span>Share</span>
+        </Button>
+        {isOwner && (
           <ButtonLink
             to={`/studio/${scenarioId}`}
             variant="ghost"

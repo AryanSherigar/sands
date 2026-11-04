@@ -9,7 +9,6 @@ import {
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { STUDIO_PATH } from "@/shared/constants/navigation";
 import { useCreateStory } from "@/shared/hooks/useCreateStory";
-import { useIsAlphaMode } from "@/shared/hooks/useIsAlphaMode";
 import { useIsKeyboardOpen } from "@/shared/hooks/useIsKeyboardOpen";
 import { useRequireAuth } from "@/shared/hooks/useRequireAuth";
 import { MobileTabItem } from "./MobileTabItem";
@@ -44,14 +43,10 @@ export const MobileTabBar: React.FC = () => {
   const isKeyboardOpen = useIsKeyboardOpen();
   const requireSignIn = useRequireAuth("mobile-tab");
   const createStory = useCreateStory();
-  const isAlphaMode = useIsAlphaMode();
 
   if (isKeyboardOpen) return null;
 
-  const visibleTabs = isAlphaMode
-    ? TABS.filter((tab) => tab.to !== STUDIO_PATH)
-    : TABS;
-  const tabs = visibleTabs.map((tab) =>
+  const tabs = TABS.map((tab) =>
     !user && tab.to === STUDIO_PATH ? { ...tab, onSelect: createStory } : tab,
   );
   const profileTab: TabDefinition = user

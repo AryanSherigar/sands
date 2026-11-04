@@ -4,6 +4,7 @@ from app.engine.negotiation_decision import (
     REASON_NOT_ALLOWED,
 )
 from app.engine.treaty.interpretation import (
+    REASON_CANNOT_PAY,
     REASON_INVALID_TERMS,
     interpret_card_decision,
 )
@@ -184,3 +185,25 @@ def test_tribute_the_payer_cannot_cover_is_invalid() -> None:
     result = _decide(terms=[tribute, _pact(12)])
 
     assert result.proposal is None
+
+
+def test_a_card_the_ruler_would_sign_but_the_payer_cannot_afford_haggles() -> None:
+    world, _ = _setup()
+    treasury = world.factions[PLAYER].treasury
+    payment = PayGoldTerm(payer_id=PLAYER, payee_id=RIVAL, amount=treasury - 5)
+    tribute = TributeTerm(
+        payer_id=PLAYER, payee_id=RIVAL, gold_per_turn=20, duration_turns=12
+    )
+
+    result = _decide(terms=[_pact(12), payment, tribute])
+
+    assert result.proposal is None
+    assert result.verdict is Verdict.HAGGLE
+    assert result.reason == REASON_CANNOT_PAY
+
+
+def test_the_narrator_is_told_what_the_player_can_pay() -> None:
+    world, package = _setup()
+    facts = {fact.label: fact.value for fact in package.situation.facts}
+
+    assert facts["The player's treasury"] == f"{world.factions[PLAYER].treasury} gold"

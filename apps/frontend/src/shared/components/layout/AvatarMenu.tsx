@@ -7,25 +7,22 @@ import {
   IconSettings,
   IconUser,
 } from "@tabler/icons-react";
-import { useIsAlphaMode } from "@/shared/hooks/useIsAlphaMode";
 import { getInitial } from "./getInitial";
 import type { AvatarMenuProps } from "./AvatarMenu.types";
 
 const MENU_ITEMS = [
-  { to: "/profile", label: "View profile", Icon: IconUser, isCreatorOnly: false },
+  { to: "/profile", label: "View profile", Icon: IconUser },
   {
     to: "/profile?tab=creations",
     label: "My scenarios",
     Icon: IconPencil,
-    isCreatorOnly: true,
   },
   {
     to: "/studio/stats",
     label: "Creator stats",
     Icon: IconChartBar,
-    isCreatorOnly: true,
   },
-  { to: "/settings", label: "Settings", Icon: IconSettings, isCreatorOnly: false },
+  { to: "/settings", label: "Settings", Icon: IconSettings },
 ];
 
 const ARROW_STEPS: Record<string, number> = { ArrowDown: 1, ArrowUp: -1 };
@@ -35,10 +32,6 @@ const ITEM_CLASSES =
 
 export const AvatarMenu: React.FC<AvatarMenuProps> = ({ user, onSignOut }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const isAlphaMode = useIsAlphaMode();
-  const menuItems = MENU_ITEMS.filter(
-    (item) => !(isAlphaMode && item.isCreatorOnly),
-  );
   const rootRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -104,7 +97,7 @@ export const AvatarMenu: React.FC<AvatarMenuProps> = ({ user, onSignOut }) => {
           <p className="truncate px-4 py-2 font-medium text-content">
             {user.display_name}
           </p>
-          {menuItems.map(({ to, label, Icon }) => (
+          {MENU_ITEMS.map(({ to, label, Icon }) => (
             <Link
               key={to}
               to={to}

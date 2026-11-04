@@ -36,7 +36,6 @@ from strategy_contracts.ids import (
     Percent,
     RegionId,
     SignedPercent,
-    TraitId,
     WholeNumber,
 )
 from strategy_contracts.peace import PeaceTier
@@ -44,7 +43,6 @@ from strategy_contracts.pressure import PressureBand, RumorTopic
 from strategy_contracts.revolt import CovenantKind
 from strategy_contracts.scenario import EndingKind
 from strategy_contracts.scene import SceneType
-from strategy_contracts.succession import HealthBand
 from strategy_contracts.summary import SummaryAvailability
 from strategy_contracts.terms import PromiseKind
 from strategy_contracts.vassal import DemandKind
@@ -254,6 +252,7 @@ class OwnPressureView(WorldModel):
     strain_band: PressureBand
     will_factors: dict[str, int] = Field(default_factory=dict)
     strain_factors: dict[str, int] = Field(default_factory=dict)
+    stability_factors: dict[str, int] = Field(default_factory=dict)
 
 
 class RumorView(WorldModel):
@@ -376,32 +375,6 @@ class MobilizationView(WorldModel):
     turns_left: WholeNumber
 
 
-class HeirView(WorldModel):
-    id: LeaderId
-    name: str
-    age: WholeNumber
-    trait_ids: list[TraitId] = Field(default_factory=list)
-    is_minor: bool = False
-
-
-class SuccessionCrisisView(WorldModel):
-    is_active: bool = False
-    regent_name: str | None = None
-    ends_turn: WholeNumber | None = None
-
-
-class RulerHealthView(WorldModel):
-    age: WholeNumber
-    health_band: HealthBand
-    death_chance_per_mille: WholeNumber
-
-
-class SuccessionView(WorldModel):
-    ruler_health: RulerHealthView | None = None
-    heir: HeirView | None = None
-    crisis: SuccessionCrisisView | None = None
-
-
 class WorldView(WorldModel):
     summary_availability: SummaryAvailability = Field(
         default_factory=SummaryAvailability
@@ -441,4 +414,3 @@ class WorldView(WorldModel):
     pending_demands: list[PendingDemandView] = Field(default_factory=list)
     pending_scene: SceneRef | None = None
     ending: EndingView | None = None
-    succession: SuccessionView | None = None

@@ -53,8 +53,8 @@ export const StudioTopBar: React.FC = () => {
 
   return (
     <header className="z-40 shrink-0 border-b border-border-subtle bg-surface-sunken">
-      <div className="flex items-center justify-between gap-4 px-4 py-2">
-        <div className="flex min-w-0 items-center gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-2">
+        <div className="flex min-w-0 basis-full items-center gap-3 sm:basis-auto sm:flex-1">
           <Link
             to={STUDIO_LIST_PATH}
             className="inline-flex shrink-0 items-center gap-1 text-meta text-content-muted transition-colors hover:text-content"
@@ -79,7 +79,7 @@ export const StudioTopBar: React.FC = () => {
             </span>
           )}
         </div>
-        <div className="flex shrink-0 items-center gap-4">
+        <div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-2">
           <span className="text-meta">
             <SaveStatusIndicator
               isSaving={isSaving}

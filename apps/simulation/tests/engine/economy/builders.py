@@ -39,6 +39,8 @@ TEST_TUNING_FIELDS: dict[str, object] = {
         TroopType.CAVALRY: 60,
         TroopType.ARCHERS_SIEGE: 75,
     },
+    "manpower_refill_per_thousand": 20,
+    "manpower_cap_percent": 20,
 }
 TEST_TUNING = EconomyTuning(**TEST_TUNING_FIELDS)
 

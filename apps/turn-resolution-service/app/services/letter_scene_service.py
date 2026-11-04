@@ -10,7 +10,6 @@ from collections.abc import AsyncIterator
 import structlog
 from app.config import settings
 from app.exceptions.base import BaseAppException
-from app.exceptions.turn_exceptions import LlmUnavailableError
 from app.integrations import simulation_client
 from app.models.scene import SceneMessageKind
 from app.services import letter_prompt, scene_prompt, scene_service
@@ -49,28 +48,13 @@ def _done_event(prepared: PreparedExchange, remaining: int) -> ServerSentEvent:
 async def _degrade(
     prepared: PreparedExchange, error: BaseAppException, is_countable: bool
 ) -> ServerSentEvent:
-    logger.warning(
-        scene_service.EVENT_SCENE_STREAM_DEGRADED, error_type=type(error).__name__
+    return await scene_service.degraded_event(
+        prepared,
+        error,
+        LETTER_DEGRADED_MESSAGE,
+        LETTER_DEGRADED_ENDED_MESSAGE,
+        is_countable,
     )
-    has_ended = (
-        is_countable
-        and isinstance(error, NARRATION_FAILURES)
-        and await scene_service.report_failure(prepared)
-    )
-    message = LETTER_DEGRADED_ENDED_MESSAGE if has_ended else LETTER_DEGRADED_MESSAGE
-    return ServerSentEvent(event="degraded", data=message)
-
-
-async def _stream_text(
-    system: str, contents: list, usage: SceneUsage, sink: list[str]
-) -> AsyncIterator[ServerSentEvent]:
-    async for chunk in scene_service.collect_chunks(
-        system, contents, settings.scene_reply_max_output_tokens, usage
-    ):
-        sink.append(chunk)
-        yield ServerSentEvent(event="narration", data=chunk)
-    if not "".join(sink).strip():
-        raise LlmUnavailableError()
 
 
 async def _open(
@@ -88,7 +72,9 @@ async def _open(
     contents = letter_prompt.build_letter_open_contents(package)
     letter: list[str] = []
     try:
-        async for event in _stream_text(system, contents, usage, letter):
+        async for event in scene_service.stream_narration(
+            system, contents, usage, letter
+        ):
             yield event
         await simulation_client.store_letter_body(
             prepared.scene_id, prepared.user_id, "".join(letter).strip()
@@ -108,7 +94,7 @@ async def _scribe(
         package, prepared.transcript, prepared.player_text, prepared.current_draft
     )
     try:
-        async for event in _stream_text(system, contents, usage, []):
+        async for event in scene_service.stream_narration(system, contents, usage, []):
             yield event
     except BaseAppException as error:
         yield await _degrade(prepared, error, is_countable=False)
@@ -146,7 +132,9 @@ async def _seal(
     )
     acknowledgement: list[str] = []
     try:
-        async for event in _stream_text(system, contents, usage, acknowledgement):
+        async for event in scene_service.stream_narration(
+            system, contents, usage, acknowledgement
+        ):
             yield event
         leader_text = "".join(acknowledgement).strip()
         decision = await _decide(prepared, system, leader_text, usage)
@@ -158,6 +146,7 @@ async def _seal(
                 player_text=prepared.player_text,
                 leader_text=leader_text,
                 decision=decision,
+                tone_grade=decision.tone_grade,
             ),
         )
     except BaseAppException as error:
@@ -167,7 +156,7 @@ async def _seal(
         logger.warning(scene_service.EVENT_SCENE_STREAM_DEGRADED, reason=result.reason)
         yield ServerSentEvent(event="degraded", data=LETTER_DEGRADED_MESSAGE)
         return
-    for event in scene_service.result_events(prepared, result):
+    for event in scene_service.result_events(prepared, result, decision.tone_grade):
         yield event
 
 

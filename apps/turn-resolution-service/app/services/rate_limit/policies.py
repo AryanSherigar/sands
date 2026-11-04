@@ -38,6 +38,9 @@ class QuotaFeature(str, Enum):
     TURN = "turn"
     SCENE_IMAGE = "scene_image"
     STRATEGY_ART = "strategy_art"
+    STRATEGY_DISPATCH = "strategy_dispatch"
+    STRATEGY_PROCLAMATION = "strategy_proclamation"
+    STRATEGY_EVENT = "strategy_event"
     TTS_NARRATION = "tts_narration"
     SPEECH_TO_TEXT = "speech_to_text"
     ASSISTANT = "assistant"
@@ -107,6 +110,18 @@ def quota_policy(feature: QuotaFeature) -> QuotaPolicy:
         QuotaFeature.STRATEGY_ART: (
             settings.quota_strategy_art_per_user,
             settings.quota_strategy_art_global,
+        ),
+        QuotaFeature.STRATEGY_DISPATCH: (
+            settings.quota_strategy_dispatch_per_user,
+            settings.quota_strategy_dispatch_global,
+        ),
+        QuotaFeature.STRATEGY_PROCLAMATION: (
+            settings.quota_strategy_proclamation_per_user,
+            settings.quota_strategy_proclamation_global,
+        ),
+        QuotaFeature.STRATEGY_EVENT: (
+            settings.quota_strategy_event_per_user,
+            settings.quota_strategy_event_global,
         ),
         QuotaFeature.TTS_NARRATION: (
             settings.quota_tts_narration_per_user,

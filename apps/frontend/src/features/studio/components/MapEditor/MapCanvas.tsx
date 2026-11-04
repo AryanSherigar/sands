@@ -7,6 +7,7 @@ import { useMapPins } from "../../hooks/useMapPins";
 import { useMaps } from "../../hooks/useMaps";
 import { MapPin } from "@/shared/types/map.types";
 import { MapCanvasProps } from "./MapEditor.types";
+import { IconStarFilled } from "@tabler/icons-react";
 
 interface PendingPin {
   x: number;
@@ -200,7 +201,14 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({ scenarioId, mapId }) => {
                     : "text-content-faint hover:text-content-muted"
                 }
               >
-                {pin.is_start_location ? "★ Starting location" : "Set as start"}
+                {pin.is_start_location ? (
+                  <span className="inline-flex items-center gap-1">
+                    <IconStarFilled size={12} aria-hidden="true" />
+                    Starting location
+                  </span>
+                ) : (
+                  "Set as start"
+                )}
               </button>
               <button
                 onClick={() => deletePin(pin.pin_id)}

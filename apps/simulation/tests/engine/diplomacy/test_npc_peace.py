@@ -112,3 +112,36 @@ def test_sue_peace_flows_through_the_diplomacy_phase() -> None:
 
     kinds = {event.cause.summary_key for event in result.events}
     assert kinds & {"peace_sued", "peace_refused"}
+
+
+def _collapsed_loser_world():
+    world = make_world()
+    war = _npc_war(world)
+    set_score(war, attacker=DECIDED_TRAIL, defender=DECIDED_LEAD)
+    world.peace_ruleset = 1
+    loser = world.factions[CAUTIOUS_RIVAL]
+    loser.stability, loser.war_exhaustion = 0, 100
+    return world, war
+
+
+def test_collapsed_loser_cedes_a_non_capital_region_to_end_the_war() -> None:
+    from app.engine.diplomacy.collapse_settlement import collapse_cession
+
+    world, war = _collapsed_loser_world()
+    scenario = _scenario()
+
+    cession = collapse_cession(world, scenario, war, CAUTIOUS_RIVAL, WRATHFUL_RIVAL)
+
+    assert cession is not None
+    assert cession.from_faction_id == CAUTIOUS_RIVAL
+    capitals = {f.capital_region_id for f in scenario.factions}
+    assert cession.region_id not in capitals
+
+
+def test_a_losing_house_that_has_not_collapsed_cannot_sue_successfully() -> None:
+    from app.engine.diplomacy.collapse_settlement import is_collapsed
+
+    world, _ = _collapsed_loser_world()
+    world.factions[CAUTIOUS_RIVAL].stability = 50
+
+    assert not is_collapsed(world, _scenario(), CAUTIOUS_RIVAL)

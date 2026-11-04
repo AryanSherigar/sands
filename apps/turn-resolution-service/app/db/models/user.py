@@ -3,7 +3,7 @@
 import uuid
 
 from app.db.base import Base, CreatedAtMixin
-from sqlalchemy import String, Text, text
+from sqlalchemy import String, text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -34,4 +34,3 @@ class User(Base, CreatedAtMixin):
     bio: Mapped[str | None] = mapped_column(String(500), nullable=True)
     avatar_url: Mapped[str | None] = mapped_column(String(1024), nullable=True)
     banner_url: Mapped[str | None] = mapped_column(String(1024), nullable=True)
-    alpha_consent_version: Mapped[str | None] = mapped_column(Text, nullable=True)

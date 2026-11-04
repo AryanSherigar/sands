@@ -3,7 +3,6 @@
 import uuid
 from datetime import datetime
 from enum import Enum
-from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -50,40 +49,6 @@ class ScenarioMusicListResponse(BaseModel):
     source='default' with no persisted row."""
 
     items: list[ScenarioMusicResponse] = Field(default_factory=list)
-
-
-class MusicGenerationRequest(BaseModel):
-    """Creator's request to generate a track for one mood slot via Lyria."""
-
-    mood: MoodSlot
-    prompt: str = Field(..., min_length=1, max_length=500)
-
-
-class MusicGenerationJobResponse(BaseModel):
-    """Status/result of a submitted Lyria generation job."""
-
-    model_config = ConfigDict(from_attributes=True)
-
-    job_id: uuid.UUID
-    scenario_id: uuid.UUID
-    mood: MoodSlot
-    status: Literal["pending", "running", "succeeded", "failed"]
-    preview_url: str | None = None
-    key: str | None = None
-    bpm: int | None = None
-    duration_seconds: float | None = None
-    error_message: str | None = None
-    created_at: datetime
-    updated_at: datetime
-
-
-class QuotaStatusResponse(BaseModel):
-    """Current generation-quota usage for a scenario and its creator."""
-
-    scenario_generations_used: int
-    scenario_generations_limit: int
-    creator_generations_used_today: int
-    creator_generations_limit_per_day: int
 
 
 class DefaultMusicTracksResponse(BaseModel):

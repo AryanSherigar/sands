@@ -105,6 +105,10 @@ class DiplomacyTuning(StrictModel):
     demand_leverage_divisor: int = Field(default=5, ge=1)
     demand_limit_max_percent: int = Field(default=60, ge=0, le=100)
     talks_refusal_warmth: int = -20
+    npc_treaty_warmth: int = 0
+    npc_alliance_warmth: int = 10
+    npc_treaty_turns: int = Field(default=12, ge=1)
+    npc_alliance_turns: int = Field(default=20, ge=1)
 
     @model_validator(mode="after")
     def validate_ordered_bounds(self) -> "DiplomacyTuning":

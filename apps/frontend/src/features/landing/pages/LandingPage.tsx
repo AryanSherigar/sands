@@ -11,7 +11,9 @@ import { LandingEmptyState } from "../components/LandingEmptyState";
 import { RowSkeleton } from "../components/RowSkeleton";
 import { StudioShowcaseBand } from "../components/StudioShowcaseBand";
 import { useLandingRow } from "../hooks/useLandingRow";
+import { useLandingStrategyHero } from "../hooks/useLandingStrategyHero";
 import { pickFeaturedScenario } from "../utils/pickFeaturedScenario";
+import { pickStrategyHero } from "../utils/pickStrategyHero";
 import { resolveCuratedWorlds } from "../utils/resolveCuratedWorlds";
 
 const SKELETON_ROW_KEYS = Array.from(
@@ -20,7 +22,10 @@ const SKELETON_ROW_KEYS = Array.from(
 );
 
 export const LandingPage: React.FC = () => {
-  const { data, isPending } = useLandingRow(TOP_RATED_ROW);
+  const { data, isPending: isRowPending } = useLandingRow(TOP_RATED_ROW);
+  const { data: strategyData, isPending: isStrategyPending } =
+    useLandingStrategyHero();
+  const isPending = isRowPending || isStrategyPending;
 
   if (isPending) {
     return (
@@ -37,7 +42,9 @@ export const LandingPage: React.FC = () => {
 
   if (data && data.items.length === 0) return <LandingEmptyState />;
 
-  const featured = data ? pickFeaturedScenario(data.items) : null;
+  const featured =
+    pickStrategyHero(strategyData?.items) ??
+    (data ? pickFeaturedScenario(data.items) : null);
   const curatedWorlds = resolveCuratedWorlds(data?.items, featured?.scenario_id);
 
   return (

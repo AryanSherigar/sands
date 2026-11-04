@@ -1,3 +1,4 @@
+from app.engine.internal.war_drain import war_stability_factors
 from app.engine.outrage.status import outrage_of
 from app.engine.pressure.bands import to_band
 from app.engine.pressure.strain import compute_strain
@@ -27,6 +28,7 @@ def project_own_pressure(
         strain_band=to_band(strain.value, tuning),
         will_factors=will.factors,
         strain_factors=strain.factors,
+        stability_factors=war_stability_factors(world, scenario, faction_id),
     )
 
 

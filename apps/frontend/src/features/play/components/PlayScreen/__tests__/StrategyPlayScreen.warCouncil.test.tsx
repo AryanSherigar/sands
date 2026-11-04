@@ -1,8 +1,9 @@
 import { render, screen, fireEvent } from "@testing-library/react";
-import { http, HttpResponse } from "msw";
-import { server } from "@/test/msw/server";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { describe, expect, it, vi } from "vitest";
+import { http, HttpResponse } from "msw";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { server } from "@/test/msw/server";
+import { useBattleSpeechStore } from "../../../stores/battleSpeech.store";
 import { StrategyPlayScreen } from "../StrategyPlayScreen";
 import { DEFAULT_PREVIEW_WORLD } from "../../StrategyPlayScreen/defaultPreviewWorld";
 
@@ -63,7 +64,7 @@ vi.mock("../../../hooks/useSimulationWorld", () => ({
 
 vi.mock("../../../hooks/useBattleControl", () => ({
   useBattleControl: () => ({
-    choose: vi.fn(),
+    choose: (_command: unknown, options?: { onSuccess?: () => void }) => options?.onSuccess?.(),
     isPending: false,
     errorInfo: null,
   }),
@@ -102,20 +103,37 @@ const FIELD_BATTLE = {
   legal_commands: ["set_plan", "withdraw"],
 };
 
+const SPEECH_URL = "*/simulation/v1/playthroughs/pt-123/battles/battle-1/speech";
+const PENDING_SPEECH = {
+  status: "pending",
+  officer_report: "Captain Hale: My lord, the men are steady enough, no more than that.",
+  mood: { morale: "steady", exhaustion: "fresh", pay: "paid" },
+  next_talk: 1,
+  reactions: [],
+  outcome: null,
+};
+
+function renderPlayScreen() {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  });
+  render(
+    <QueryClientProvider client={queryClient}>
+      <StrategyPlayScreen />
+    </QueryClientProvider>,
+  );
+}
+
 describe("StrategyPlayScreen War Council Integration", () => {
+  beforeEach(() => useBattleSpeechStore.getState().reset());
+
   it("opens War Council screen when taking command of a battle and returns to map", async () => {
     server.use(
+      http.get(SPEECH_URL, () => HttpResponse.json({ detail: "none" }, { status: 404 })),
       http.get(BATTLE_URL, () => HttpResponse.json(FIELD_BATTLE)),
       http.get(`${BATTLE_URL}/reports`, () => HttpResponse.json({ items: [] })),
     );
-    const queryClient = new QueryClient({
-      defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
-    });
-    render(
-      <QueryClientProvider client={queryClient}>
-        <StrategyPlayScreen />
-      </QueryClientProvider>,
-    );
+    renderPlayScreen();
 
     expect(screen.getByText("Your armies await orders")).toBeInTheDocument();
     const takeCmdBtn = screen.getByText("Take command");
@@ -127,6 +145,16 @@ describe("StrategyPlayScreen War Council Integration", () => {
     const returnBtn = screen.getByText("Map of Ashford Ridge");
     fireEvent.click(returnBtn);
 
+    expect(screen.queryByText("Commit to Battle")).not.toBeInTheDocument();
+  });
+
+  it("puts the speech before the War Council when the battle has a pending speech", async () => {
+    server.use(http.get(SPEECH_URL, () => HttpResponse.json(PENDING_SPEECH)));
+    renderPlayScreen();
+
+    fireEvent.click(screen.getByText("Take command"));
+
+    expect(await screen.findByText(PENDING_SPEECH.officer_report)).toBeInTheDocument();
     expect(screen.queryByText("Commit to Battle")).not.toBeInTheDocument();
   });
 });

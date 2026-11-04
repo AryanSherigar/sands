@@ -1,4 +1,3 @@
-import { recordUiUsed } from "@/shared/lib/alpha-session-stats";
 import { useEffect, useState } from "react";
 import { RulesClipboard } from "@/shared/components/rules-clipboard/RulesClipboard";
 import { prefersReducedMotion } from "@/shared/lib/prefersReducedMotion";
@@ -37,7 +36,6 @@ export function RulesClipboardContainer() {
 
   const isMotionReduced = reduceSensoryEffects || prefersReducedMotion();
   const handleToggleDrawer = (): void => {
-    if (!isDrawerOpen) recordUiUsed("rule_sheet");
     setIsDrawerOpen((isOpen) => !isOpen);
     setRulesPanelHidden(false);
   };

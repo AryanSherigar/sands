@@ -23,6 +23,8 @@ export interface ContingentView {
   plan: StandingPlan;
   supply: SupplyType;
   status: string;
+  active?: Record<string, number>;
+  reserve?: Record<string, number>;
 }
 
 export interface StrengthInterval {
@@ -58,6 +60,28 @@ export interface OpponentView {
   reports: ReconReport[];
 }
 
+export interface LossEstimate {
+  low: number;
+  expected: number;
+  high: number;
+}
+
+export type OutlookBasis = "scouted_composition" | "assumed_even_mix";
+
+export interface OutlookFactor {
+  id: string;
+  percent: number;
+}
+
+export interface BattleOutlook {
+  own_losses: LossEstimate;
+  enemy_losses: LossEstimate;
+  own_share_percent: number;
+  confidence: ReconConfidence;
+  basis: OutlookBasis;
+  factors: OutlookFactor[];
+}
+
 export interface BattleView {
   id: string;
   region_id: string;
@@ -75,6 +99,7 @@ export interface BattleView {
   own_contingent?: ContingentView;
   opponents: OpponentView[];
   legal_commands: string[];
+  outlook?: BattleOutlook | null;
 }
 
 export interface ExchangeReport {
@@ -100,14 +125,12 @@ export interface TacticalFactor {
 
 export interface TacticalOddsEstimate {
   balancePercent: number;
-  isRange: boolean;
-  minPercent: number;
-  maxPercent: number;
   tierText: string;
+  confidence: ReconConfidence;
+  basis: OutlookBasis;
   factors: TacticalFactor[];
-  playerLossEstimated: number;
-  enemyLossEstimated: number;
-  warScoreEstimated: number;
+  playerLoss: LossEstimate;
+  enemyLoss: LossEstimate;
 }
 
 export type TroopClassification = "infantry" | "cavalry" | "archers_siege";
@@ -153,3 +176,4 @@ export interface NobleCaptive {
   factionId: string;
   ransomValueGold: number;
 }
+

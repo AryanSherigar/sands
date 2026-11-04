@@ -3,9 +3,13 @@ from uuid import UUID
 from app.models.art_delivery import ArtDelivery
 from psycopg import AsyncConnection
 from psycopg.rows import class_row
+from psycopg.types.json import Jsonb
+from strategy_contracts.art import ArtBriefing
 
 ENSURE = """INSERT INTO art_deliveries(playthrough_id, kind, item_id) VALUES (%s,%s,%s)
 ON CONFLICT DO NOTHING"""
+SAVE_BRIEFING = """UPDATE art_deliveries SET briefing=%s
+WHERE playthrough_id=%s AND kind=%s AND item_id=%s AND briefing IS NULL"""
 SELECT = (
     "SELECT * FROM art_deliveries WHERE playthrough_id=%s AND kind=%s AND item_id=%s"
 )
@@ -25,6 +29,19 @@ async def ensure_row(
     connection: AsyncConnection, identity: UUID, kind: str, item_id: str
 ) -> None:
     await connection.execute(ENSURE, (identity, kind, item_id))
+
+
+async def save_briefing(
+    connection: AsyncConnection,
+    identity: UUID,
+    kind: str,
+    item_id: str,
+    briefing: ArtBriefing,
+) -> None:
+    await connection.execute(
+        SAVE_BRIEFING,
+        (Jsonb(briefing.model_dump(mode="json")), identity, kind, item_id),
+    )
 
 
 async def get(

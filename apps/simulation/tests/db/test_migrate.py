@@ -167,6 +167,8 @@ async def test_real_migrations_create_exactly_the_expected_tables(
         "0014_epilogue_deliveries",
         "0015_battle_speech_replay_kinds",
         "0016_scene_exchange_clause_bands",
+        "0017_proclamation_decision_replay_kind",
+        "0018_art_deliveries_briefing",
     ]
     tables = await _fetch_column(scratch_database_url, SELECT_PUBLIC_TABLES)
     assert set(tables) == EXPECTED_TABLES
@@ -242,6 +244,8 @@ async def test_migration_preserves_existing_playthrough(
         "0014_epilogue_deliveries",
         "0015_battle_speech_replay_kinds",
         "0016_scene_exchange_clause_bands",
+        "0017_proclamation_decision_replay_kind",
+        "0018_art_deliveries_briefing",
     ]
     assert await _fetch_column(
         scratch_database_url, "SELECT scenario_schema_version FROM sim_playthrough"
@@ -275,6 +279,8 @@ async def test_acceptance_migration_backfills_and_advances_sequence(
             "0014_epilogue_deliveries",
             "0015_battle_speech_replay_kinds",
             "0016_scene_exchange_clause_bands",
+            "0017_proclamation_decision_replay_kind",
+            "0018_art_deliveries_briefing",
         ]
         assert await apply_migrations(scratch_database_url) == []
         cursor = await connection.execute(

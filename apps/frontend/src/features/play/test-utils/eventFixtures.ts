@@ -191,7 +191,6 @@ export function makeEndingState(
     kind: "victory",
     turn: 10,
     grade: "triumph",
-    inputs: { score: 100 },
     ...overrides,
   };
 }

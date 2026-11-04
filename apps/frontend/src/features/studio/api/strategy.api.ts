@@ -35,17 +35,9 @@ export interface DraftRulerBackstoryPayload {
 export const draftRulerBackstory = async (
   payload: DraftRulerBackstoryPayload,
 ): Promise<string> => {
-  try {
-    const response = await apiClient.post<{ backstory: string }>(
-      "/v1/strategy/ruler-backstory",
-      payload,
-    );
-    return response.data.backstory;
-  } catch {
-    const fallbackResponse = await apiClient.post<{ backstory: string }>(
-      "/api/v1/strategy/ruler-backstory",
-      payload,
-    );
-    return fallbackResponse.data.backstory;
-  }
+  const response = await apiClient.post<{ backstory: string }>(
+    "/v1/strategy/ruler-backstory",
+    payload,
+  );
+  return response.data.backstory;
 };

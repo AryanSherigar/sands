@@ -19,27 +19,41 @@ export const useStrategyFields = (scenario: ScenarioResponse) => {
   const latestFields = useRef(fields);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isDirty = useRef(false);
-
-  const save = useCallback(async (): Promise<void> => {
-    if (timer.current) clearTimeout(timer.current);
-    timer.current = null;
-    if (!isDirty.current) return;
-    isDirty.current = false;
-    setSaveState("saving");
+  const inFlight = useRef<Promise<boolean>>(Promise.resolve(true));
+  const writeDocument = useCallback(async (): Promise<void> => {
     // NOTE: the map is saved by its own endpoint, so overlay edits on the cached server document.
     const cached = queryClient.getQueryData<ScenarioResponse>([SCENARIO_QUERY_KEY, scenarioId]);
     const baseDocument = cached?.strategy_document ?? scenario.strategy_document ?? {};
-    try {
-      const saved = await updateScenario(scenarioId, {
-        strategy_document: applyStrategyFields(baseDocument, latestFields.current),
-      });
-      queryClient.setQueryData([SCENARIO_QUERY_KEY, scenarioId], saved);
-      setSaveState(isDirty.current ? "saving" : "saved");
-    } catch {
-      isDirty.current = true;
-      setSaveState("failed");
-    }
+    const saved = await updateScenario(scenarioId, {
+      strategy_document: applyStrategyFields(baseDocument, latestFields.current),
+    });
+    queryClient.setQueryData([SCENARIO_QUERY_KEY, scenarioId], saved);
   }, [queryClient, scenario.strategy_document, scenarioId]);
+
+  const saveUntilClean = useCallback(async (): Promise<boolean> => {
+    while (isDirty.current) {
+      if (timer.current) clearTimeout(timer.current);
+      timer.current = null;
+      isDirty.current = false;
+      setSaveState("saving");
+      try {
+        await writeDocument();
+      } catch {
+        isDirty.current = true;
+        setSaveState("failed");
+        return false;
+      }
+    }
+    setSaveState("saved");
+    return true;
+  }, [writeDocument]);
+
+  const save = useCallback((): Promise<boolean> => {
+    // NOTE: saves are chained so a slow earlier response can never overwrite a newer document.
+    const next = inFlight.current.then(() => saveUntilClean());
+    inFlight.current = next;
+    return next;
+  }, [saveUntilClean]);
 
   const edit = useCallback(
     (change: (current: StrategyFields) => StrategyFields): void => {

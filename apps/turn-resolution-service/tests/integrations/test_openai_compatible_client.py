@@ -508,3 +508,59 @@ async def test_generate_with_tools_authentication_error_raises_llm_unavailable(
 
     with pytest.raises(LlmUnavailableError):
         await openai_compatible_client.generate_with_tools("sys", [], 5, tools=None)
+
+
+async def test_stream_open_retries_one_transient_server_error(monkeypatch) -> None:
+    monkeypatch.setattr(
+        openai_compatible_client.settings,
+        "openai_compatible_open_retry_delay_seconds",
+        0.0,
+    )
+    fake_client = MagicMock()
+    fake_client.chat.completions.create = AsyncMock(
+        side_effect=[
+            _status_error(openai.InternalServerError, 504),
+            _fake_stream([_make_stream_chunk("hi")]),
+        ]
+    )
+    monkeypatch.setattr(openai_compatible_client, "_client", fake_client)
+
+    pieces = [
+        piece async for piece in openai_compatible_client.stream_chat("sys", [], 5)
+    ]
+
+    assert pieces == ["hi"]
+    assert fake_client.chat.completions.create.await_count == 2
+
+
+async def test_stream_open_gives_up_after_the_configured_retries(monkeypatch) -> None:
+    monkeypatch.setattr(
+        openai_compatible_client.settings,
+        "openai_compatible_open_retry_delay_seconds",
+        0.0,
+    )
+    fake_client = MagicMock()
+    fake_client.chat.completions.create = AsyncMock(
+        side_effect=_status_error(openai.InternalServerError, 504)
+    )
+    monkeypatch.setattr(openai_compatible_client, "_client", fake_client)
+
+    with pytest.raises(LlmUnavailableError):
+        async for _ in openai_compatible_client.stream_chat("sys", [], 5):
+            pass
+
+    assert fake_client.chat.completions.create.await_count == 2
+
+
+async def test_stream_open_does_not_retry_a_timeout(monkeypatch) -> None:
+    fake_client = MagicMock()
+    fake_client.chat.completions.create = AsyncMock(
+        side_effect=openai.APITimeoutError(request=MagicMock())
+    )
+    monkeypatch.setattr(openai_compatible_client, "_client", fake_client)
+
+    with pytest.raises(LlmUnavailableError):
+        async for _ in openai_compatible_client.stream_chat("sys", [], 5):
+            pass
+
+    assert fake_client.chat.completions.create.await_count == 1

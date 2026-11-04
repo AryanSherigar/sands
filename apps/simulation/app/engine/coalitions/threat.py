@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 
+from app.models.world_internal import is_rebel_faction
 from app.models.world_state import WorldState
 from strategy_contracts.coalition import CoalitionTuning
 from strategy_contracts.ids import FactionId
@@ -14,6 +15,7 @@ class ThreatReading:
     treaty_breaking: int
     atrocity: int
     balance: int
+    hoard: int
 
 
 def conquest_threat(
@@ -69,6 +71,25 @@ def balance_threat(
     return excess * tuning.balance_weight_percent // FULL_SHARE_PERCENT
 
 
+def hoard_threat(
+    world: WorldState, tuning: CoalitionTuning, faction_id: FactionId
+) -> int:
+    treasuries = {
+        other.id: max(0, other.treasury)
+        for other in world.factions.values()
+        if not other.is_destroyed and not is_rebel_faction(other.id)
+    }
+    share = (
+        FULL_SHARE_PERCENT
+        * treasuries.get(faction_id, 0)
+        // max(1, sum(treasuries.values()))
+    )
+    excess = max(0, share - tuning.hoard_fair_share_percent)
+    covetousness = excess * tuning.hoard_weight_percent // FULL_SHARE_PERCENT
+    idle_gold = max(0, treasuries.get(faction_id, 0) - tuning.hoard_free_gold)
+    return min(covetousness, idle_gold // tuning.hoard_gold_per_point)
+
+
 def compute_threat(
     world: WorldState, scenario: StrategyScenario, faction_id: FactionId
 ) -> ThreatReading:
@@ -77,5 +98,6 @@ def compute_threat(
     treaty = treaty_breaking_threat(world, tuning, faction_id)
     atrocity = world.coalition.atrocities.get(faction_id, 0) * tuning.atrocity_threat
     balance = balance_threat(world, tuning, faction_id)
-    value = min(FULL_SHARE_PERCENT, conquest + treaty + atrocity + balance)
-    return ThreatReading(value, conquest, treaty, atrocity, balance)
+    hoard = hoard_threat(world, tuning, faction_id)
+    value = min(FULL_SHARE_PERCENT, conquest + treaty + atrocity + balance + hoard)
+    return ThreatReading(value, conquest, treaty, atrocity, balance, hoard)

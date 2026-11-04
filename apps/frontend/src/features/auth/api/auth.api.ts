@@ -2,21 +2,11 @@ import axios from "axios";
 import { apiClient } from "@/shared/lib/api-client";
 import { TokenResponse } from "../types/auth.types";
 
-export interface AlphaTokenFields {
-  inviteCode?: string;
-  consentVersion?: string;
-}
-
 export const exchangeFirebaseToken = async (
   firebaseIdToken: string,
-  alpha?: AlphaTokenFields,
 ): Promise<TokenResponse> => {
   const response = await apiClient.post<TokenResponse>("/v1/auth/token", {
     firebase_id_token: firebaseIdToken,
-    ...(alpha?.inviteCode && { invite_code: alpha.inviteCode }),
-    ...(alpha?.consentVersion && {
-      alpha_consent_version: alpha.consentVersion,
-    }),
   });
   return response.data;
 };

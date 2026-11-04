@@ -5,19 +5,8 @@ import jwt
 import structlog
 from app.config import settings
 from app.db.models.user import User
-from app.exceptions.alpha_exceptions import (
-    AccountSuspendedError,
-    AlphaConsentRequiredError,
-    AlphaInviteRequiredError,
-    AlphaSignupClosedError,
-)
 from app.exceptions.auth_exceptions import InvalidTokenError
 from app.repositories.user_repo import UserRepo
-from app.services.alpha_consent import log_alpha_consent_recorded
-from app.services.alpha_invite_service import (
-    EVENT_ALPHA_SIGNUP_REFUSED,
-    AlphaInviteService,
-)
 from app.services.rate_limit.quota_service import QuotaService
 from firebase_admin import auth as firebase_auth
 from firebase_admin import exceptions as firebase_exceptions
@@ -29,10 +18,6 @@ EVENT_AUTH_DEV_BYPASS_USED = "auth_dev_bypass_used"
 EVENT_AUTH_TOKEN_VERIFICATION_FAILED = "auth_token_verification_failed"
 EVENT_AUTH_TOKEN_REFRESH_DENIED = "auth_token_refresh_denied"
 EVENT_AUTH_TOKEN_REFRESH_GRACE_REPLAY = "auth_token_refresh_grace_replay"
-EVENT_AUTH_SUSPENDED_USER_REFUSED = "auth_suspended_user_refused"
-REASON_SIGNUP_CLOSED = "signup_closed"
-REASON_CONSENT_MISSING = "consent_missing"
-REASON_INVITE_MISSING = "invite_required"
 
 
 class AuthService:
@@ -40,18 +25,14 @@ class AuthService:
         self,
         user_repo: UserRepo,
         quota_service: QuotaService | None = None,
-        alpha_invite_service: AlphaInviteService | None = None,
     ) -> None:
         self.user_repo = user_repo
         self.quota_service = quota_service
-        self.alpha_invite_service = alpha_invite_service
 
     async def verify_firebase_token_and_upsert_user(
         self,
         firebase_token: str,
         client_ip: str | None = None,
-        invite_code: str | None = None,
-        alpha_consent_version: str | None = None,
     ) -> User:
         is_dev_or_testing = settings.environment in ("development", "testing")
         if is_dev_or_testing and (
@@ -62,8 +43,6 @@ class AuthService:
                 "dev-firebase-id-123",
                 "Dev User",
                 None,
-                invite_code,
-                alpha_consent_version,
             )
 
         try:
@@ -83,9 +62,7 @@ class AuthService:
             name = decoded_token.get("name") or (
                 email.split("@")[0] if email else "User"
             )
-            return await self._upsert_user(
-                uid, name, client_ip, invite_code, alpha_consent_version
-            )
+            return await self._upsert_user(uid, name, client_ip)
         except (
             firebase_exceptions.FirebaseError,
             google_auth_exceptions.GoogleAuthError,
@@ -99,74 +76,16 @@ class AuthService:
         auth_provider_id: str,
         display_name: str,
         client_ip: str | None = None,
-        invite_code: str | None = None,
-        alpha_consent_version: str | None = None,
     ) -> User:
         user = await self.user_repo.get_by_auth_provider_id(auth_provider_id)
         if user:
-            self._assert_not_suspended(user)
             return user
-        if not settings.is_alpha_mode:
-            await self._reserve_account_slot(client_ip)
-            return await self.user_repo.create(auth_provider_id, display_name)
-        return await self._create_alpha_user(
-            auth_provider_id,
-            display_name,
-            client_ip,
-            invite_code,
-            alpha_consent_version,
-        )
-
-    async def _create_alpha_user(
-        self,
-        auth_provider_id: str,
-        display_name: str,
-        client_ip: str | None,
-        invite_code: str | None,
-        alpha_consent_version: str | None,
-    ) -> User:
-        self._assert_signup_open()
-        self._assert_consent_current(alpha_consent_version)
-        invite_code = self._require_invite_code(invite_code)
         await self._reserve_account_slot(client_ip)
-        invite_id = await self.alpha_invite_service.redeem(invite_code)
-        user = await self.user_repo.create(
-            auth_provider_id,
-            display_name,
-            alpha_consent_version=alpha_consent_version,
-        )
-        await self.alpha_invite_service.record_redemption(invite_id, user.user_id)
-        log_alpha_consent_recorded(user.user_id, alpha_consent_version)
-        return user
+        return await self.user_repo.create(auth_provider_id, display_name)
 
     async def _reserve_account_slot(self, client_ip: str | None) -> None:
         if self.quota_service is not None and client_ip is not None:
             await self.quota_service.reserve_account_creation(client_ip)
-
-    @staticmethod
-    def _assert_not_suspended(user: User) -> None:
-        if user.alpha_suspended_at is not None:
-            logger.warning(EVENT_AUTH_SUSPENDED_USER_REFUSED)
-            raise AccountSuspendedError()
-
-    @staticmethod
-    def _assert_signup_open() -> None:
-        if not settings.is_alpha_signup_enabled:
-            logger.warning(EVENT_ALPHA_SIGNUP_REFUSED, reason=REASON_SIGNUP_CLOSED)
-            raise AlphaSignupClosedError()
-
-    @staticmethod
-    def _assert_consent_current(alpha_consent_version: str | None) -> None:
-        if alpha_consent_version != settings.alpha_consent_version:
-            logger.warning(EVENT_ALPHA_SIGNUP_REFUSED, reason=REASON_CONSENT_MISSING)
-            raise AlphaConsentRequiredError()
-
-    @staticmethod
-    def _require_invite_code(invite_code: str | None) -> str:
-        if not invite_code:
-            logger.warning(EVENT_ALPHA_SIGNUP_REFUSED, reason=REASON_INVITE_MISSING)
-            raise AlphaInviteRequiredError()
-        return invite_code
 
     async def restore_if_deletion_pending(self, user: User) -> bool:
         """Cancel a pending account deletion on sign-in; True when restored."""
@@ -197,7 +116,6 @@ class AuthService:
         user = await self.user_repo.get_by_id(user_id)
         if not user or user.token_version != token_version:
             return None
-        self._assert_not_suspended(user)
         return user
 
     def generate_access_token(self, user: User) -> str:
@@ -282,8 +200,6 @@ class AuthService:
             raise InvalidTokenError("Invalid token type")
 
         user = await self.user_repo.get_by_id(uuid.UUID(payload.get("sub")))
-        if user:
-            self._assert_not_suspended(user)
         if not user or user.token_version != payload.get("token_version"):
             logger.warning(
                 EVENT_AUTH_TOKEN_REFRESH_DENIED, reason="revoked_or_user_not_found"

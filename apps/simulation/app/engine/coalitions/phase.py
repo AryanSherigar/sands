@@ -1,6 +1,6 @@
-from app.engine.coalitions.membership import would_join
+from app.engine.coalitions.membership import borders, would_join
 from app.engine.coalitions.registry import coalition_against
-from app.engine.coalitions.threat import compute_threat
+from app.engine.coalitions.threat import compute_threat, hoard_threat
 from app.engine.diplomacy.counters import next_counter
 from app.engine.diplomacy.events import diplomacy_event
 from app.engine.diplomacy.grounds import grant_ground
@@ -199,6 +199,33 @@ def _review(
     return [end_coalition(world, coalition, reason)]
 
 
+def _grant_hoard_pretexts(
+    world: WorldState,
+    scenario: StrategyScenario,
+    index: MapIndex,
+    target_id: FactionId,
+) -> None:
+    if hoard_threat(world, scenario.tuning.coalition, target_id) < (
+        scenario.tuning.coalition.hoard_pretext_threat
+    ):
+        return
+    for holder_id, holder in sorted(world.factions.items()):
+        is_candidate = (
+            holder_id != target_id
+            and not holder.is_player
+            and not holder.is_destroyed
+            and holder.leader_id is not None
+        )
+        if is_candidate and borders(world, index, holder_id, target_id):
+            grant_ground(
+                world,
+                scenario,
+                kind=GroundKind.BROKEN_PROMISE,
+                holder_faction_id=holder_id,
+                target_faction_id=target_id,
+            )
+
+
 def tick_coalitions(
     world: WorldState, scenario: StrategyScenario
 ) -> list[EventLogEntry]:
@@ -215,4 +242,5 @@ def tick_coalitions(
     for target_id, threat in threats.items():
         if not world.factions[target_id].is_destroyed:
             events += _recruit(world, scenario, index, target_id, threat)
+            _grant_hoard_pretexts(world, scenario, index, target_id)
     return events

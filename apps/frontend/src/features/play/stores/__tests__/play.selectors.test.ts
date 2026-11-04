@@ -3,7 +3,6 @@ import { selectCanRetryTurn } from "../play.selectors";
 
 const IDLE_AFTER_ERROR = {
   is_narrating: false,
-  is_turn_paused: false,
   last_client_action_id: "action-1",
   last_check_report: null,
 };
@@ -32,12 +31,6 @@ describe("selectCanRetryTurn", () => {
   it("hides retry while the narrator is speaking", () => {
     expect(
       selectCanRetryTurn({ ...IDLE_AFTER_ERROR, is_narrating: true }),
-    ).toBe(false);
-  });
-
-  it("hides retry while the owner has paused turns", () => {
-    expect(
-      selectCanRetryTurn({ ...IDLE_AFTER_ERROR, is_turn_paused: true }),
     ).toBe(false);
   });
 });

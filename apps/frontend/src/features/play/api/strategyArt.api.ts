@@ -1,8 +1,9 @@
 import { apiClient } from "@/shared/lib/api-client";
 import { generateClientActionId } from "@/shared/lib/request-id";
+import { STRATEGY_ART_REQUEST_TIMEOUT_MS } from "../constants/strategy.constants";
 import type { StrategyArtKind, StrategyArtView } from "../types/strategyArt.types";
 
-const TRS_REQUEST_CONFIG = { baseURL: "" };
+const TRS_REQUEST_CONFIG = { baseURL: "", timeout: STRATEGY_ART_REQUEST_TIMEOUT_MS };
 
 export const getStrategyArtPath = (playthroughId: string): string =>
   `/trs/v1/strategy/playthroughs/${playthroughId}/art`;

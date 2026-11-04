@@ -1,3 +1,4 @@
+from app.engine.diplomacy.collapse_settlement import collapse_cession, is_collapsed
 from app.engine.diplomacy.events import diplomacy_event
 from app.engine.peace.acceptance import does_counterpart_accept
 from app.engine.peace.bare_peace import build_bare_peace_card
@@ -26,13 +27,20 @@ def other_belligerent(war: WarState, faction_id: FactionId) -> FactionId:
 def _peace_card(
     world: WorldState, scenario: StrategyScenario, war: WarState, proposer_id: FactionId
 ) -> TermsCard:
-    return build_bare_peace_card(
+    counterpart_id = other_belligerent(war, proposer_id)
+    card = build_bare_peace_card(
         war,
         proposer_id,
-        other_belligerent(war, proposer_id),
+        counterpart_id,
         [],
         is_white_peace=is_white_peace_eligible(world, scenario, war),
     )
+    if not is_collapsed(world, scenario, proposer_id):
+        return card
+    cession = collapse_cession(world, scenario, war, proposer_id, counterpart_id)
+    if cession is None:
+        return card
+    return card.model_copy(update={"terms": [*card.terms, cession]})
 
 
 def apply_sue_peace(
@@ -51,9 +59,10 @@ def apply_sue_peace(
         war, card.counterpart_id
     )
     is_stalemate = is_white_peace_eligible(world, scenario, war)
-    is_agreed = (is_stalemate or is_leading) and does_counterpart_accept(
-        world, scenario, card, war
-    )
+    is_surrender = is_collapsed(world, scenario, order.faction_id)
+    is_agreed = (
+        is_stalemate or is_leading or is_surrender
+    ) and does_counterpart_accept(world, scenario, card, war)
     if not is_agreed:
         return [diplomacy_event(PEACE_REFUSED, subjects)]
     return [

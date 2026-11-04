@@ -12,7 +12,6 @@ import {
 import { TurnSummaryEventPayload } from "../types/turnSummary.types";
 import { mapTurnSummaryEvent } from "../utils/chapterDelta";
 import { createPostSSEConnection, SSEHandlers } from "@/shared/lib/sse-client";
-import { isAlphaPausedError } from "@/shared/lib/alpha-paused-error";
 import { isRateLimitError } from "@/shared/lib/rate-limit-error";
 import type { QuotaNoticePayload } from "@/shared/types/rateLimit.types";
 import {
@@ -61,11 +60,6 @@ import { hasNewlyRevealedRule } from "../utils/ruleSheetChanges";
 import type { RuleSheetItem } from "@/shared/types/rule-sheet.types";
 import { isSensoryCueId } from "@/shared/constants/sensory-cues";
 import { logEvent } from "@/shared/lib/logger";
-import {
-  emitTurnRetry,
-  nextTurnNumber,
-  startTurnStreamTelemetry,
-} from "../lib/turnStreamTelemetry";
 
 const TRS_BASE_URL = import.meta.env.VITE_TRS_URL || "http://localhost:8001";
 
@@ -178,7 +172,6 @@ interface PlayStoreState {
   is_chronicle_modal_open: boolean;
   is_rules_panel_hidden: boolean;
   is_narrating: boolean;
-  is_turn_paused: boolean;
   streaming_text: string;
   last_submitted_action: string;
   // The client_action_id of the last narrative submission, kept only until it
@@ -348,7 +341,6 @@ export const usePlayStore = create<PlayStoreState>((set, get) => ({
   is_chronicle_modal_open: false,
   is_rules_panel_hidden: false,
   is_narrating: false,
-  is_turn_paused: false,
   streaming_text: "",
   last_submitted_action: "",
   last_client_action_id: null,
@@ -896,22 +888,13 @@ export const usePlayStore = create<PlayStoreState>((set, get) => ({
   },
 
   retryLastTurn: () => {
-    const { last_check_report, last_client_action_id, playthrough } = get();
-    const turnNumber = nextTurnNumber(playthrough);
-    const playthroughId = playthrough?.playthrough_id;
+    const { last_check_report, last_client_action_id } = get();
     if (last_check_report) {
-      emitTurnRetry(
-        "check_report_resend",
-        turnNumber,
-        last_client_action_id ?? generateClientActionId(),
-        playthroughId,
-      );
       get()._resendCheckReport(last_check_report.report, last_check_report.label);
       return;
     }
     const { last_submitted_action, submitTurn, last_fantasy_action } = get();
     if (last_submitted_action && last_client_action_id) {
-      emitTurnRetry("after_error", turnNumber, last_client_action_id, playthroughId);
       if (last_fantasy_action) get()._startTurnStream(last_fantasy_action, last_submitted_action);
       else submitTurn(last_submitted_action, last_client_action_id);
     }
@@ -930,19 +913,13 @@ export const usePlayStore = create<PlayStoreState>((set, get) => ({
     if (cancel_stream_fn) cancel_stream_fn();
 
     const generation = get().stream_generation + 1;
-    const telemetry = startTurnStreamTelemetry(
-      nextTurnNumber(get().playthrough),
-      get().playthrough?.playthrough_id,
-      get().last_client_action_id === body.client_action_id,
-    );
     set({
       is_narrating: true,
       streaming_text: "",
       last_submitted_action: actionTextForLog,
       last_client_action_id: body.client_action_id,
       last_fantasy_action: body.action_kind === "fantasy_action" ? body : null,
-      is_turn_paused: false,
-      degraded_message: null,
+          degraded_message: null,
       failed_turn_message: null,
       quota_notice_message: null,
       input_truncated_message: null,
@@ -997,7 +974,6 @@ export const usePlayStore = create<PlayStoreState>((set, get) => ({
             ambientSoundtrack.transitionTo(mood, trackUrl);
           }
         } else if (eventName === "narration") {
-          telemetry.markFirstToken();
           if (get().is_check_animation_pending) {
             set((s) => ({
               buffered_check_narration: s.buffered_check_narration + data,
@@ -1126,7 +1102,6 @@ export const usePlayStore = create<PlayStoreState>((set, get) => ({
           set({ memory_degraded_reasons: payload.reasons });
         } else if (eventName === "done") {
           reachedTerminalEvent = true;
-          telemetry.recordDone();
           if (!sawMemoryDegraded) set({ memory_degraded_reasons: [] });
           get()._commitStreamedTurn(actionTextForLog, parseDoneTurnId(data));
         } else if (eventName === "degraded") {
@@ -1136,10 +1111,8 @@ export const usePlayStore = create<PlayStoreState>((set, get) => ({
       },
       onError: (error: unknown) => {
         reachedTerminalEvent = true;
-        telemetry.recordStall();
-        if (isAlphaPausedError(error)) set({ is_turn_paused: true });
         failMinigameResult(
-          isRateLimitError(error) || isAlphaPausedError(error) || (body.action_kind === "fantasy_action" && error instanceof Error && error.name === "FantasyActionRefusedError")
+          isRateLimitError(error) || (body.action_kind === "fantasy_action" && error instanceof Error && error.name === "FantasyActionRefusedError")
             ? error.message
             : "Connection lost. Your turn may not have saved — you can try again.",
         );
@@ -1150,8 +1123,7 @@ export const usePlayStore = create<PlayStoreState>((set, get) => ({
         // already sent. Without this, the UI would hang on "thinking"
         // forever with no way for the player to recover.
         if (!reachedTerminalEvent) {
-          telemetry.recordStall();
-          failMinigameResult(
+            failMinigameResult(
             "The narrator stopped responding unexpectedly. Please try again.",
           );
         }

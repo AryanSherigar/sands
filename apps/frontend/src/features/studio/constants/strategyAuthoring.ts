@@ -27,6 +27,24 @@ export const MAX_OPINION = 100;
 export const DEFAULT_START_YEAR = 1000;
 export const DEFAULT_START_MONTH = 3;
 export const STUDIO_DEFAULT_END_YEAR = 1004;
+export const DEFAULT_STRATEGY_RULES = {
+  agents_enabled: false,
+  revolt_talks_enabled: false,
+  bribe_base_price: 40,
+  trade_value_per_turn: 4,
+  trade_income_percent: 10,
+  access_value_per_turn: 2,
+  conditional_trigger_percent: 60,
+  conditional_gate_percent: 100,
+  oath_offer_min_opinion: 20,
+  oath_offer_duration_turns: 12,
+  letters_enabled: false,
+  letter_cooldown_turns: 6,
+  judgments_enabled: false,
+  judgment_cooldown_turns: 6,
+  judgment_sentence_turns: 6,
+} as const;
+export const MAX_CONDITIONAL_PERCENT = 200;
 export const MONTHS_PER_YEAR = 12;
 export const MONTHS_PER_TURN = 2;
 export const TROOP_TYPE_OPTIONS: readonly { id: "infantry" | "cavalry" | "archers_siege"; name: string }[] = [
@@ -93,4 +111,59 @@ export const AMBITION_PRESETS: readonly AmbitionPreset[] = [
   { id: "expand", name: "Expand the realm", metric: "region_count", operator: "gte", value: 4 },
   { id: "stable", name: "A stable peace", metric: "stability", operator: "gte", value: 80 },
   { id: "rich", name: "A full treasury", metric: "treasury", operator: "gte", value: 500 },
+];
+
+export const DEFAULT_ORDERS_PER_TURN = 3;
+export const DEFAULT_EVENT_FREQUENCY_PERCENT = 50;
+export const DEFAULT_HEIR_AGE = 16;
+export const DEFAULT_HEIR_TRAIT_IDS: readonly string[] = ["cautious"];
+
+export const DEFAULT_STRATEGY_TOGGLES = {
+  is_loans_enabled: true,
+  is_events_enabled: true,
+  is_outrage_enabled: true,
+  is_overtures_enabled: true,
+  is_ai_peace_enabled: true,
+  is_ai_pressure_enabled: true,
+  is_ai_subsidy_enabled: true,
+  is_ai_vassal_enabled: true,
+  is_ai_alliance_enabled: true,
+} as const;
+
+export const DEFAULT_ENDING_TOGGLES = {
+  is_regime_fall_enabled: true,
+  is_hegemony_enabled: true,
+  is_negotiated_end_enabled: true,
+  is_end_date_enabled: true,
+  is_vassal_outcome_enabled: true,
+} as const;
+
+export const BUILTIN_STANCE_OPTIONS: readonly { id: string; label: string; description: string }[] = [
+  { id: "expand", label: "Expand", description: "Aggressive conquest of adjacent regions" },
+  { id: "turtle", label: "Turtle", description: "Fortify borders and avoid high-risk wars" },
+  { id: "court_ally", label: "Court an ally", description: "Seek pacts and mutual defense" },
+  { id: "revenge_on_player", label: "Revenge on player", description: "Focus military spite on player" },
+  { id: "rebuild", label: "Rebuild", description: "Prioritize economy and manpower recovery" },
+];
+
+export const BUILTIN_DISASTER_OPTIONS: readonly { id: string; label: string; description: string }[] = [
+  { id: "tax_grievance", label: "Peasant tax grievance", description: "Unrest from high taxation" },
+  { id: "noble_defiance", label: "Noble defiance", description: "Lords defying central authority" },
+  { id: "unpaid_mutiny", label: "Army mutiny", description: "Unpaid soldiers rebelling" },
+  { id: "realm_in_turmoil", label: "Realm in turmoil", description: "Widespread civil disturbance" },
+  { id: "bad_harvest", label: "Bad harvest & famine", description: "Seasonal food shortage and hunger" },
+  { id: "plague", label: "Plague & pestilence", description: "Disease outbreak lowering manpower" },
+];
+
+export const ENDING_METRIC_OPTIONS: readonly {
+  id: string;
+  label: string;
+  defaultOperator: string;
+  defaultValue: number;
+}[] = [
+  { id: "region_count", label: "Regions controlled", defaultOperator: "gte", defaultValue: 4 },
+  { id: "treasury", label: "Gold in treasury", defaultOperator: "gte", defaultValue: 500 },
+  { id: "stability", label: "Stability percentage", defaultOperator: "gte", defaultValue: 80 },
+  { id: "turn", label: "Turns survived", defaultOperator: "gte", defaultValue: 20 },
+  { id: "is_at_peace_with_all", label: "At peace with all realms", defaultOperator: "gte", defaultValue: 1 },
 ];

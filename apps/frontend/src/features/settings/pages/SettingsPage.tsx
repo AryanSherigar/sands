@@ -1,6 +1,7 @@
 import React from "react";
 import { SETTINGS_SECTIONS } from "../constants/settings.constants";
 import { AccountSection } from "../components/AccountSection/AccountSection";
+import { AppearanceSection } from "../components/AppearanceSection/AppearanceSection";
 import { DangerZoneSection } from "../components/DangerZoneSection/DangerZoneSection";
 import { ContentSection } from "../components/ContentSection/ContentSection";
 import { NotificationsSection } from "../components/NotificationsSection/NotificationsSection";
@@ -26,6 +27,9 @@ export const SettingsPage: React.FC = () => (
         <SettingsNav sections={SETTINGS_SECTIONS} />
       </div>
       <div className="space-y-12">
+        <SettingsSection id="appearance" title="Appearance">
+          <AppearanceSection />
+        </SettingsSection>
         <SettingsSection id="account" title="Account">
           <AccountSection />
         </SettingsSection>

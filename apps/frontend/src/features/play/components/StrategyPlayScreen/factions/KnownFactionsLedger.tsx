@@ -15,8 +15,16 @@ import {
 
 const WAR_RELATIONS = ["war", "at_war"];
 
-function findPact(pacts: PactView[], factionId: string): PactView | undefined {
-  return pacts.find((pact) => pact.faction_a === factionId || pact.faction_b === factionId);
+function findPact(
+  pacts: PactView[],
+  myFactionId: string,
+  rivalFactionId: string,
+): PactView | undefined {
+  return pacts.find(
+    (pact) =>
+      (pact.faction_a === myFactionId && pact.faction_b === rivalFactionId) ||
+      (pact.faction_b === myFactionId && pact.faction_a === rivalFactionId),
+  );
 }
 
 interface PendingObligationsProps {
@@ -166,7 +174,7 @@ export const KnownFactionsLedger: React.FC<KnownFactionsLedgerProps> = ({
         Known Factions
       </span>
       {effectiveRivals.map((rival) => {
-        const pact = findPact(diplomacy?.pacts ?? [], rival.faction_id);
+        const pact = findPact(diplomacy?.pacts ?? [], myFactionId, rival.faction_id);
         const isAtWar = WAR_RELATIONS.includes(rival.relation);
         return (
           <KnownFactionRow

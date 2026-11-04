@@ -1,7 +1,12 @@
+import { describeStrategyBlock } from "../../lib/strategyChatSummary";
 import React, { useEffect, useRef, useState } from "react";
-import { useAssistantChat } from "../../hooks/useAssistantChat";
+import {
+  AssistantChatMode,
+  useAssistantChat,
+} from "../../hooks/useAssistantChat";
 import { useScopedProposals } from "../../hooks/useScopedProposals";
 import type { ScopedTabBinding } from "../../types/scopedChat.types";
+import type { StrategyChatBinding } from "../../types/strategyChat.types";
 import { useMasterActionApplier } from "../../hooks/useMasterActionApplier";
 import {
   ActionBlock,
@@ -26,6 +31,7 @@ export interface AIChatSidebarProps {
   activeSection?: string;
   scenarioId?: string;
   scopedTab?: ScopedTabBinding;
+  strategy?: StrategyChatBinding;
 }
 
 const INITIAL_DESTRUCTIVE_STATE: DestructiveConfirmState = {
@@ -48,19 +54,27 @@ const parseJsonSafe = (content: string): Record<string, unknown> | null => {
   }
 };
 
+const pickChatMode = (
+  scopedTab: ScopedTabBinding | undefined,
+  strategy: StrategyChatBinding | undefined,
+): AssistantChatMode => {
+  if (scopedTab) return "scoped";
+  return strategy ? "strategy" : "master";
+};
+
 export const AIChatSidebar: React.FC<AIChatSidebarProps> = ({
   activeSection = "meta",
   scenarioId,
   scopedTab,
+  strategy,
 }) => {
   const [input, setInput] = useState("");
   const [destructiveState, setDestructiveState] =
     useState<DestructiveConfirmState>(INITIAL_DESTRUCTIVE_STATE);
   const [reviewState, setReviewState] = useState<ReviewState | null>(null);
-  const [appliedKeys, setAppliedKeys] = useState<Set<string>>(new Set());
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const mode = scopedTab ? "scoped" : "master";
+  const mode = pickChatMode(scopedTab, strategy);
   const {
     messages,
     isStreaming,
@@ -69,11 +83,14 @@ export const AIChatSidebar: React.FC<AIChatSidebarProps> = ({
     stopGeneration,
     reportApplyError,
     blockValidationByMessage,
+    appliedKeys,
+    markApplied,
   } = useAssistantChat(
     activeSection,
     mode,
     scenarioId ?? null,
     scopedTab?.context ?? null,
+    strategy?.context ?? null,
   );
   const scopedProposals = useScopedProposals(scopedTab, reportApplyError);
   const [isConfirmingClear, setIsConfirmingClear] = useState(false);
@@ -93,15 +110,29 @@ export const AIChatSidebar: React.FC<AIChatSidebarProps> = ({
     setIsConfirmingClear(false);
   };
 
-  const markApplied = (key: string) =>
-    setAppliedKeys((prev) => new Set(prev).add(key));
-
   const buildDestructiveDescription = (block: ActionBlock): string => {
     const label = ACTION_TARGET_LABELS[block.target] || block.target;
     return `This will permanently delete this ${label.toLowerCase()} from your scenario. This cannot be undone.`;
   };
 
+  const handleStrategyApply = async (
+    entries: { block: ActionBlock; key: string }[],
+  ) => {
+    if (!strategy) return;
+    const outcomes = await strategy.applier.applyBatch(
+      entries.map((entry) => entry.block),
+      reportApplyError,
+    );
+    entries.forEach((entry, index) => {
+      if (outcomes[index]) markApplied(entry.key);
+    });
+  };
+
   const handleMasterApplyBlock = async (block: ActionBlock, key: string) => {
+    if (strategy) {
+      await handleStrategyApply([{ block, key }]);
+      return;
+    }
     if (isDeleteActionBlock(block)) {
       setDestructiveState({
         isOpen: true,
@@ -129,6 +160,12 @@ export const AIChatSidebar: React.FC<AIChatSidebarProps> = ({
   const handleApplyAll = async (
     blocks: { block: ActionBlock; key: string }[],
   ) => {
+    if (strategy) {
+      await handleStrategyApply(
+        blocks.filter((entry) => !appliedKeys.has(entry.key)),
+      );
+      return;
+    }
     const applicable = blocks.filter(
       (b) =>
         !isDeleteActionBlock(b.block) &&
@@ -162,6 +199,7 @@ export const AIChatSidebar: React.FC<AIChatSidebarProps> = ({
     segments: MessageSegment[],
   ) => {
     let actionOrdinal = -1;
+    const earlierBlocks: ActionBlock[] = [];
     const rendered = segments.map((segment, idx) => {
       if (segment.type === "text") {
         return (
@@ -186,10 +224,13 @@ export const AIChatSidebar: React.FC<AIChatSidebarProps> = ({
           />
         );
       }
+      const summary = strategy ? describeStrategyBlock(segment.block, strategy.context, earlierBlocks) : null;
+      earlierBlocks.push(segment.block);
       return (
         <ActionCard
           key={idx}
           block={segment.block}
+          summary={summary}
           isApplied={appliedKeys.has(key)}
           validationErrors={getValidationErrors(messageId, ordinal)}
           onApply={(block) => handleApplyBlock(block, key)}
@@ -298,7 +339,7 @@ export const AIChatSidebar: React.FC<AIChatSidebarProps> = ({
       </div>
 
       {/* Dynamic Quick Prompt Chips */}
-      {!scopedTab && (
+      {!scopedTab && !strategy && (
         <QuickPromptChips
           activeSection={activeSection}
           onSelectPrompt={(p) => sendMessage(p)}
@@ -330,6 +371,7 @@ export const AIChatSidebar: React.FC<AIChatSidebarProps> = ({
               type="button"
               onClick={handleSend}
               disabled={!input.trim()}
+              aria-label="Send message"
               className="p-2 bg-content text-surface hover:bg-white rounded-md transition-colors border border-content disabled:opacity-40 disabled:cursor-not-allowed"
             >
               <svg
@@ -367,7 +409,7 @@ export const AIChatSidebar: React.FC<AIChatSidebarProps> = ({
       />
 
       {/* Expression-Tree Review Modal (conditions/invariants/end conditions) */}
-      {scenarioId && (
+      {scenarioId && !strategy && (
         <ExpressionReviewModal
           target={reviewState?.target ?? null}
           scenarioId={scenarioId}

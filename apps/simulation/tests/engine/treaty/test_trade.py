@@ -1,6 +1,10 @@
+from app.engine.commands.phases import CampaignEconomyPhase
 from app.engine.peace.truces import breach_agreements
+from app.engine.phases import PhaseContext
+from app.engine.rng import derive_rng
 from app.engine.treaty.effects import is_in_force
 from app.models.world_diplomacy import CommitmentState, CommitmentStatus
+from app.models.world_events import PhaseName
 from app.models.world_state import WorldState
 from strategy_contracts.terms import Term, TradeDealTerm, TributeTerm
 
@@ -114,3 +118,29 @@ def test_tribute_never_exceeds_the_payers_cash() -> None:
     assert result.world.factions[RIVAL].treasury >= 0
     paid = START_TREASURY + INCOME - result.world.factions[RIVAL].treasury
     assert 0 < paid < 5000
+
+
+def test_the_campaign_economy_phase_pays_trade_and_tribute_too() -> None:
+    world = _world(_trade())
+    world.commitments.append(
+        CommitmentState(
+            id="commitment_2",
+            term=_tribute(10),
+            start_turn=world.clock.turn,
+            end_turn=world.clock.turn + TERM_TURNS,
+        )
+    )
+    scenario = make_scenario()
+    context = PhaseContext(
+        scenario=scenario,
+        orders=(),
+        rng=derive_rng(world.rng.seed, world.clock.turn, PhaseName.ECONOMY.value),
+        resolved_outcomes={},
+        recorded_answers={},
+    )
+
+    result = CampaignEconomyPhase().run(world, context)
+
+    kinds = [event.kind for event in result.events]
+    assert "trade_income" in kinds
+    assert "tribute_paid" in kinds

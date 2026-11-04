@@ -23,18 +23,20 @@ describe("StrategyPresetPicker", () => {
     expect(onEdit.mock.calls.at(-1)![0](unarmed).relations[0].status).toBe("war");
   });
 
-  it("asks before overwriting existing armies and does nothing on cancel", () => {
-    vi.spyOn(window, "confirm").mockReturnValue(false);
+  it("asks in an in-app dialog before overwriting and does nothing on cancel", () => {
+    const confirmSpy = vi.spyOn(window, "confirm");
     const onEdit = renderPicker(armed);
     fireEvent.click(screen.getByRole("button", { name: "Peaceful start" }));
-    expect(window.confirm).toHaveBeenCalled();
+    expect(screen.getByText("This replaces your armies and relations. Continue?")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
     expect(onEdit).not.toHaveBeenCalled();
+    expect(confirmSpy).not.toHaveBeenCalled();
   });
 
   it("applies after the creator confirms", () => {
-    vi.spyOn(window, "confirm").mockReturnValue(true);
     const onEdit = renderPicker(armed);
     fireEvent.click(screen.getByRole("button", { name: "Peaceful start" }));
+    fireEvent.click(screen.getByRole("button", { name: "Replace" }));
     expect(onEdit).toHaveBeenCalledTimes(1);
   });
 });

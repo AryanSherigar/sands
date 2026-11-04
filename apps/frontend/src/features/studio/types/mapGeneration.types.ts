@@ -3,16 +3,21 @@ export interface MapPictureSize {
   height: number;
 }
 
-export interface GeneratedRegionImage {
-  region_image_url: string;
-  width: number;
-  height: number;
-}
+export type MapGenerationJobStatus = "pending" | "running" | "succeeded" | "failed";
 
-export interface GeneratedMapArt {
-  picture_url: string;
-  width: number;
-  height: number;
+export interface MapGenerationJob {
+  job_id: string;
+  scenario_id: string;
+  status: MapGenerationJobStatus;
+  description: string;
+  region_image_url: string | null;
+  picture_url: string | null;
+  width: number | null;
+  height: number | null;
+  has_art: boolean;
+  error_message: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface GeneratedMap {
@@ -20,5 +25,3 @@ export interface GeneratedMap {
   regionImage: File;
   hasArt: boolean;
 }
-
-export type GenerateMapStage = "idle" | "regions" | "art";

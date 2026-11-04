@@ -26,3 +26,16 @@ export const GENRE_COLORS: Record<string, string> = {
   Mystery: "#8E9BDB",
 };
 
+export const GENRE_COLORS_LIGHT: Record<string, string> = {
+  "High Fantasy": "#7A6431",
+  "Sci-Fi": "#2F6778",
+  "Adventure/Survival": "#4A6B38",
+  "Slice of Life": "#8A4A66",
+  "Noir / Detective": "#7E5332",
+  "Post-Apocalyptic/Dystopian": "#5F5E3F",
+  Cyberpunk: "#7A4280",
+  Horror: "#8E3239",
+  "Historical Fiction": "#6F5540",
+  Mystery: "#44509A",
+};
+

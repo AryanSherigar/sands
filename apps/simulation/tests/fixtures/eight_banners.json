@@ -1,0 +1,1922 @@
+{
+ "ambitions": [
+  {
+   "condition": {
+    "kind": "comparison",
+    "metric": "region_count",
+    "operator": "gte",
+    "subject_id": "house_ashford",
+    "value": 5
+   },
+   "id": "ambition_expand",
+   "name": "Expand the realm"
+  },
+  {
+   "condition": {
+    "kind": "comparison",
+    "metric": "stability",
+    "operator": "gte",
+    "subject_id": "house_carrow",
+    "value": 80
+   },
+   "id": "ambition_peace",
+   "name": "A stable peace"
+  },
+  {
+   "condition": {
+    "kind": "comparison",
+    "metric": "owns_region",
+    "operator": "eq",
+    "subject_id": "brennmoor",
+    "value": 1
+   },
+   "id": "ambition_revenge",
+   "name": "Reclaim Brennmoor"
+  },
+  {
+   "condition": {
+    "kind": "comparison",
+    "metric": "owns_region",
+    "operator": "eq",
+    "subject_id": "kings_ford",
+    "value": 1
+   },
+   "id": "ambition_secure_ford",
+   "name": "Secure King's Ford"
+  }
+ ],
+ "commanders": [
+  {
+   "faction_id": "house_carrow",
+   "id": "cmd_carrow",
+   "name": "Captain Carrow",
+   "trait_ids": [
+    "stubborn"
+   ]
+  },
+  {
+   "faction_id": "house_ashford",
+   "id": "cmd_ashford",
+   "name": "Captain Ashford",
+   "trait_ids": [
+    "stubborn"
+   ]
+  },
+  {
+   "faction_id": "house_dunwick",
+   "id": "cmd_dunwick",
+   "name": "Captain Dunwick",
+   "trait_ids": [
+    "stubborn"
+   ]
+  },
+  {
+   "faction_id": "house_valis",
+   "id": "cmd_valis",
+   "name": "Captain Valis",
+   "trait_ids": [
+    "stubborn"
+   ]
+  },
+  {
+   "faction_id": "house_morrow",
+   "id": "cmd_morrow",
+   "name": "Captain Morrow",
+   "trait_ids": [
+    "stubborn"
+   ]
+  },
+  {
+   "faction_id": "house_stannic",
+   "id": "cmd_stannic",
+   "name": "Captain Stannic",
+   "trait_ids": [
+    "stubborn"
+   ]
+  },
+  {
+   "faction_id": "house_harrow",
+   "id": "cmd_harrow",
+   "name": "Captain Harrow",
+   "trait_ids": [
+    "stubborn"
+   ]
+  },
+  {
+   "faction_id": "house_ellory",
+   "id": "cmd_ellory",
+   "name": "Captain Ellory",
+   "trait_ids": [
+    "stubborn"
+   ]
+  }
+ ],
+ "custom_traits": [],
+ "endings": [],
+ "events": [],
+ "factions": [
+  {
+   "capital_region_id": "carrow_vale",
+   "color": "#3b5ba5",
+   "id": "house_carrow",
+   "is_playable": true,
+   "leader_id": "valdren",
+   "manpower": 300,
+   "name": "House Carrow",
+   "stability": 58,
+   "treasury": 100
+  },
+  {
+   "capital_region_id": "ashford",
+   "color": "#a53b3b",
+   "id": "house_ashford",
+   "is_playable": false,
+   "leader_id": "mira",
+   "manpower": 300,
+   "name": "House Ashford",
+   "stability": 58,
+   "treasury": 90
+  },
+  {
+   "capital_region_id": "dunwick",
+   "color": "#3f6b3a",
+   "id": "house_dunwick",
+   "is_playable": false,
+   "leader_id": "harl",
+   "manpower": 300,
+   "name": "House Dunwick",
+   "stability": 58,
+   "treasury": 90
+  },
+  {
+   "capital_region_id": "valis_keep",
+   "color": "#7a3b8c",
+   "id": "house_valis",
+   "is_playable": true,
+   "leader_id": "vesna",
+   "manpower": 300,
+   "name": "House Valis",
+   "stability": 58,
+   "treasury": 90
+  },
+  {
+   "capital_region_id": "morrow_hall",
+   "color": "#b5651d",
+   "id": "house_morrow",
+   "is_playable": false,
+   "leader_id": "corwin",
+   "manpower": 300,
+   "name": "House Morrow",
+   "stability": 58,
+   "treasury": 90
+  },
+  {
+   "capital_region_id": "stannic_rock",
+   "color": "#2f6f8f",
+   "id": "house_stannic",
+   "is_playable": false,
+   "leader_id": "ilse",
+   "manpower": 300,
+   "name": "House Stannic",
+   "stability": 58,
+   "treasury": 90
+  },
+  {
+   "capital_region_id": "harrow_gate",
+   "color": "#6b6b2f",
+   "id": "house_harrow",
+   "is_playable": false,
+   "leader_id": "bram",
+   "manpower": 300,
+   "name": "House Harrow",
+   "stability": 58,
+   "treasury": 90
+  },
+  {
+   "capital_region_id": "ellory_seat",
+   "color": "#8f2f5f",
+   "id": "house_ellory",
+   "is_playable": false,
+   "leader_id": "sera",
+   "manpower": 300,
+   "name": "House Ellory",
+   "stability": 58,
+   "treasury": 90
+  }
+ ],
+ "faiths": [
+  {
+   "id": "old_faith",
+   "name": "The Old Faith"
+  }
+ ],
+ "governors": [],
+ "is_using_default_endings": true,
+ "leaders": [
+  {
+   "age": 47,
+   "ambition_ids": [
+    "ambition_peace"
+   ],
+   "faction_id": "house_carrow",
+   "history": "Rules Carrow from the high keep.",
+   "id": "valdren",
+   "name": "Valdren Carrow",
+   "trait_ids": [
+    "honorable",
+    "cautious"
+   ]
+  },
+  {
+   "age": 41,
+   "ambition_ids": [
+    "ambition_expand"
+   ],
+   "faction_id": "house_ashford",
+   "history": "Rules Ashford from the high keep.",
+   "id": "mira",
+   "name": "Mira of Ashford",
+   "trait_ids": [
+    "proud",
+    "cunning"
+   ]
+  },
+  {
+   "age": 52,
+   "ambition_ids": [
+    "ambition_revenge"
+   ],
+   "faction_id": "house_dunwick",
+   "history": "Rules Dunwick from the high keep.",
+   "id": "harl",
+   "name": "Harl of Dunwick",
+   "trait_ids": [
+    "treacherous",
+    "wrathful"
+   ]
+  },
+  {
+   "age": 44,
+   "ambition_ids": [
+    "ambition_expand"
+   ],
+   "faction_id": "house_valis",
+   "history": "Rules Valis from the high keep.",
+   "id": "vesna",
+   "name": "Vesna of Valis",
+   "trait_ids": [
+    "proud",
+    "cunning"
+   ]
+  },
+  {
+   "age": 61,
+   "ambition_ids": [
+    "ambition_peace"
+   ],
+   "faction_id": "house_morrow",
+   "history": "Rules Morrow from the high keep.",
+   "id": "corwin",
+   "name": "Corwin Morrow",
+   "trait_ids": [
+    "pragmatic",
+    "cautious"
+   ]
+  },
+  {
+   "age": 38,
+   "ambition_ids": [
+    "ambition_revenge"
+   ],
+   "faction_id": "house_stannic",
+   "history": "Rules Stannic from the high keep.",
+   "id": "ilse",
+   "name": "Ilse Stannic",
+   "trait_ids": [
+    "paranoid",
+    "wrathful"
+   ]
+  },
+  {
+   "age": 35,
+   "ambition_ids": [
+    "ambition_expand"
+   ],
+   "faction_id": "house_harrow",
+   "history": "Rules Harrow from the high keep.",
+   "id": "bram",
+   "name": "Bram Harrow",
+   "trait_ids": [
+    "wrathful",
+    "proud"
+   ]
+  },
+  {
+   "age": 49,
+   "ambition_ids": [
+    "ambition_expand"
+   ],
+   "faction_id": "house_ellory",
+   "history": "Rules Ellory from the high keep.",
+   "id": "sera",
+   "name": "Sera Ellory",
+   "trait_ids": [
+    "cunning",
+    "pragmatic"
+   ]
+  }
+ ],
+ "map": {
+  "height": 450,
+  "image_url": null,
+  "regions": [
+   {
+    "id": "aldgate",
+    "name": "Aldgate",
+    "label_point": {
+     "x": 50,
+     "y": 37
+    },
+    "neighbor_ids": [
+     "ashford",
+     "gull_point"
+    ],
+    "outline": "M0 0 L100 0 L100 75 L0 75 Z",
+    "source_color": null,
+    "source_ref": null,
+    "terrain": "hills"
+   },
+   {
+    "id": "ashford",
+    "name": "Ashford",
+    "label_point": {
+     "x": 150,
+     "y": 37
+    },
+    "neighbor_ids": [
+     "aldgate",
+     "brennmoor",
+     "carrow_vale"
+    ],
+    "outline": "M100 0 L200 0 L200 75 L100 75 Z",
+    "source_color": null,
+    "source_ref": null,
+    "terrain": "plain"
+   },
+   {
+    "id": "brennmoor",
+    "name": "Brennmoor",
+    "label_point": {
+     "x": 250,
+     "y": 37
+    },
+    "neighbor_ids": [
+     "ashford",
+     "kings_ford",
+     "stonehelm"
+    ],
+    "outline": "M200 0 L300 0 L300 75 L200 75 Z",
+    "source_color": null,
+    "source_ref": null,
+    "terrain": "marsh"
+   },
+   {
+    "id": "stonehelm",
+    "name": "Stonehelm",
+    "label_point": {
+     "x": 350,
+     "y": 37
+    },
+    "neighbor_ids": [
+     "brennmoor",
+     "valis_keep",
+     "wolfmere"
+    ],
+    "outline": "M300 0 L400 0 L400 75 L300 75 Z",
+    "source_color": null,
+    "source_ref": null,
+    "terrain": "mountain"
+   },
+   {
+    "id": "wolfmere",
+    "name": "Wolfmere",
+    "label_point": {
+     "x": 450,
+     "y": 37
+    },
+    "neighbor_ids": [
+     "ember_reach",
+     "highcliff",
+     "stonehelm"
+    ],
+    "outline": "M400 0 L500 0 L500 75 L400 75 Z",
+    "source_color": null,
+    "source_ref": null,
+    "terrain": "forest"
+   },
+   {
+    "id": "highcliff",
+    "name": "Highcliff",
+    "label_point": {
+     "x": 550,
+     "y": 37
+    },
+    "neighbor_ids": [
+     "saltmarsh",
+     "wolfmere"
+    ],
+    "outline": "M500 0 L600 0 L600 75 L500 75 Z",
+    "source_color": null,
+    "source_ref": null,
+    "terrain": "coast"
+   },
+   {
+    "id": "gull_point",
+    "name": "Gull Point",
+    "label_point": {
+     "x": 50,
+     "y": 112
+    },
+    "neighbor_ids": [
+     "aldgate",
+     "carrow_vale",
+     "elmstead"
+    ],
+    "outline": "M0 75 L100 75 L100 150 L0 150 Z",
+    "source_color": null,
+    "source_ref": null,
+    "terrain": "mountain"
+   },
+   {
+    "id": "carrow_vale",
+    "name": "Carrow Vale",
+    "label_point": {
+     "x": 150,
+     "y": 112
+    },
+    "neighbor_ids": [
+     "ashford",
+     "gull_point",
+     "high_meadow",
+     "kings_ford"
+    ],
+    "outline": "M100 75 L200 75 L200 150 L100 150 Z",
+    "source_color": null,
+    "source_ref": null,
+    "terrain": "forest"
+   },
+   {
+    "id": "kings_ford",
+    "name": "Kings Ford",
+    "label_point": {
+     "x": 250,
+     "y": 112
+    },
+    "neighbor_ids": [
+     "brennmoor",
+     "carrow_vale",
+     "fenwatch",
+     "valis_keep"
+    ],
+    "outline": "M200 75 L300 75 L300 150 L200 150 Z",
+    "source_color": null,
+    "source_ref": null,
+    "terrain": "coast"
+   },
+   {
+    "id": "valis_keep",
+    "name": "Valis Keep",
+    "label_point": {
+     "x": 350,
+     "y": 112
+    },
+    "neighbor_ids": [
+     "ember_reach",
+     "ironfell",
+     "kings_ford",
+     "stonehelm"
+    ],
+    "outline": "M300 75 L400 75 L400 150 L300 150 Z",
+    "source_color": null,
+    "source_ref": null,
+    "terrain": "plain"
+   },
+   {
+    "id": "ember_reach",
+    "name": "Ember Reach",
+    "label_point": {
+     "x": 450,
+     "y": 112
+    },
+    "neighbor_ids": [
+     "pale_hollow",
+     "saltmarsh",
+     "valis_keep",
+     "wolfmere"
+    ],
+    "outline": "M400 75 L500 75 L500 150 L400 150 Z",
+    "source_color": null,
+    "source_ref": null,
+    "terrain": "hills"
+   },
+   {
+    "id": "saltmarsh",
+    "name": "Saltmarsh",
+    "label_point": {
+     "x": 550,
+     "y": 112
+    },
+    "neighbor_ids": [
+     "ember_reach",
+     "highcliff",
+     "stannic_rock"
+    ],
+    "outline": "M500 75 L600 75 L600 150 L500 150 Z",
+    "source_color": null,
+    "source_ref": null,
+    "terrain": "hills"
+   },
+   {
+    "id": "elmstead",
+    "name": "Elmstead",
+    "label_point": {
+     "x": 50,
+     "y": 187
+    },
+    "neighbor_ids": [
+     "dunwick",
+     "gull_point",
+     "high_meadow"
+    ],
+    "outline": "M0 150 L100 150 L100 225 L0 225 Z",
+    "source_color": null,
+    "source_ref": null,
+    "terrain": "plain"
+   },
+   {
+    "id": "high_meadow",
+    "name": "High Meadow",
+    "label_point": {
+     "x": 150,
+     "y": 187
+    },
+    "neighbor_ids": [
+     "carrow_vale",
+     "elmstead",
+     "fenwatch",
+     "morrow_hall"
+    ],
+    "outline": "M100 150 L200 150 L200 225 L100 225 Z",
+    "source_color": null,
+    "source_ref": null,
+    "terrain": "hills"
+   },
+   {
+    "id": "fenwatch",
+    "name": "Fenwatch",
+    "label_point": {
+     "x": 250,
+     "y": 187
+    },
+    "neighbor_ids": [
+     "high_meadow",
+     "ironfell",
+     "kings_ford",
+     "redwater"
+    ],
+    "outline": "M200 150 L300 150 L300 225 L200 225 Z",
+    "source_color": null,
+    "source_ref": null,
+    "terrain": "hills"
+   },
+   {
+    "id": "ironfell",
+    "name": "Ironfell",
+    "label_point": {
+     "x": 350,
+     "y": 187
+    },
+    "neighbor_ids": [
+     "fenwatch",
+     "harrow_gate",
+     "pale_hollow",
+     "valis_keep"
+    ],
+    "outline": "M300 150 L400 150 L400 225 L300 225 Z",
+    "source_color": null,
+    "source_ref": null,
+    "terrain": "plain"
+   },
+   {
+    "id": "pale_hollow",
+    "name": "Pale Hollow",
+    "label_point": {
+     "x": 450,
+     "y": 187
+    },
+    "neighbor_ids": [
+     "ember_reach",
+     "ironfell",
+     "stannic_rock",
+     "thornwood"
+    ],
+    "outline": "M400 150 L500 150 L500 225 L400 225 Z",
+    "source_color": null,
+    "source_ref": null,
+    "terrain": "marsh"
+   },
+   {
+    "id": "stannic_rock",
+    "name": "Stannic Rock",
+    "label_point": {
+     "x": 550,
+     "y": 187
+    },
+    "neighbor_ids": [
+     "marrow_pass",
+     "pale_hollow",
+     "saltmarsh"
+    ],
+    "outline": "M500 150 L600 150 L600 225 L500 225 Z",
+    "source_color": null,
+    "source_ref": null,
+    "terrain": "mountain"
+   },
+   {
+    "id": "dunwick",
+    "name": "Dunwick",
+    "label_point": {
+     "x": 50,
+     "y": 262
+    },
+    "neighbor_ids": [
+     "ellory_seat",
+     "elmstead",
+     "morrow_hall"
+    ],
+    "outline": "M0 225 L100 225 L100 300 L0 300 Z",
+    "source_color": null,
+    "source_ref": null,
+    "terrain": "plain"
+   },
+   {
+    "id": "morrow_hall",
+    "name": "Morrow Hall",
+    "label_point": {
+     "x": 150,
+     "y": 262
+    },
+    "neighbor_ids": [
+     "dunwick",
+     "high_meadow",
+     "oakhaven",
+     "redwater"
+    ],
+    "outline": "M100 225 L200 225 L200 300 L100 300 Z",
+    "source_color": null,
+    "source_ref": null,
+    "terrain": "marsh"
+   },
+   {
+    "id": "redwater",
+    "name": "Redwater",
+    "label_point": {
+     "x": 250,
+     "y": 262
+    },
+    "neighbor_ids": [
+     "fenwatch",
+     "harrow_gate",
+     "mistfen",
+     "morrow_hall"
+    ],
+    "outline": "M200 225 L300 225 L300 300 L200 300 Z",
+    "source_color": null,
+    "source_ref": null,
+    "terrain": "mountain"
+   },
+   {
+    "id": "harrow_gate",
+    "name": "Harrow Gate",
+    "label_point": {
+     "x": 350,
+     "y": 262
+    },
+    "neighbor_ids": [
+     "cairn_down",
+     "ironfell",
+     "redwater",
+     "thornwood"
+    ],
+    "outline": "M300 225 L400 225 L400 300 L300 300 Z",
+    "source_color": null,
+    "source_ref": null,
+    "terrain": "forest"
+   },
+   {
+    "id": "thornwood",
+    "name": "Thornwood",
+    "label_point": {
+     "x": 450,
+     "y": 262
+    },
+    "neighbor_ids": [
+     "harrow_gate",
+     "marrow_pass",
+     "pale_hollow",
+     "sunder_bay"
+    ],
+    "outline": "M400 225 L500 225 L500 300 L400 300 Z",
+    "source_color": null,
+    "source_ref": null,
+    "terrain": "coast"
+   },
+   {
+    "id": "marrow_pass",
+    "name": "Marrow Pass",
+    "label_point": {
+     "x": 550,
+     "y": 262
+    },
+    "neighbor_ids": [
+     "greywatch",
+     "stannic_rock",
+     "thornwood"
+    ],
+    "outline": "M500 225 L600 225 L600 300 L500 300 Z",
+    "source_color": null,
+    "source_ref": null,
+    "terrain": "plain"
+   },
+   {
+    "id": "ellory_seat",
+    "name": "Ellory Seat",
+    "label_point": {
+     "x": 50,
+     "y": 337
+    },
+    "neighbor_ids": [
+     "dunwick",
+     "oakhaven",
+     "rook_hill"
+    ],
+    "outline": "M0 300 L100 300 L100 375 L0 375 Z",
+    "source_color": null,
+    "source_ref": null,
+    "terrain": "forest"
+   },
+   {
+    "id": "oakhaven",
+    "name": "Oakhaven",
+    "label_point": {
+     "x": 150,
+     "y": 337
+    },
+    "neighbor_ids": [
+     "dun_cairn",
+     "ellory_seat",
+     "mistfen",
+     "morrow_hall"
+    ],
+    "outline": "M100 300 L200 300 L200 375 L100 375 Z",
+    "source_color": null,
+    "source_ref": null,
+    "terrain": "coast"
+   },
+   {
+    "id": "mistfen",
+    "name": "Mistfen",
+    "label_point": {
+     "x": 250,
+     "y": 337
+    },
+    "neighbor_ids": [
+     "cairn_down",
+     "oakhaven",
+     "redwater",
+     "wyvern_tor"
+    ],
+    "outline": "M200 300 L300 300 L300 375 L200 375 Z",
+    "source_color": null,
+    "source_ref": null,
+    "terrain": "plain"
+   },
+   {
+    "id": "cairn_down",
+    "name": "Cairn Down",
+    "label_point": {
+     "x": 350,
+     "y": 337
+    },
+    "neighbor_ids": [
+     "harrow_gate",
+     "lowmoor",
+     "mistfen",
+     "sunder_bay"
+    ],
+    "outline": "M300 300 L400 300 L400 375 L300 375 Z",
+    "source_color": null,
+    "source_ref": null,
+    "terrain": "hills"
+   },
+   {
+    "id": "sunder_bay",
+    "name": "Sunder Bay",
+    "label_point": {
+     "x": 450,
+     "y": 337
+    },
+    "neighbor_ids": [
+     "cairn_down",
+     "greywatch",
+     "ravenspur",
+     "thornwood"
+    ],
+    "outline": "M400 300 L500 300 L500 375 L400 375 Z",
+    "source_color": null,
+    "source_ref": null,
+    "terrain": "hills"
+   },
+   {
+    "id": "greywatch",
+    "name": "Greywatch",
+    "label_point": {
+     "x": 550,
+     "y": 337
+    },
+    "neighbor_ids": [
+     "marrow_pass",
+     "sunder_bay",
+     "tidewall"
+    ],
+    "outline": "M500 300 L600 300 L600 375 L500 375 Z",
+    "source_color": null,
+    "source_ref": null,
+    "terrain": "plain"
+   },
+   {
+    "id": "rook_hill",
+    "name": "Rook Hill",
+    "label_point": {
+     "x": 50,
+     "y": 412
+    },
+    "neighbor_ids": [
+     "dun_cairn",
+     "ellory_seat"
+    ],
+    "outline": "M0 375 L100 375 L100 450 L0 450 Z",
+    "source_color": null,
+    "source_ref": null,
+    "terrain": "hills"
+   },
+   {
+    "id": "dun_cairn",
+    "name": "Dun Cairn",
+    "label_point": {
+     "x": 150,
+     "y": 412
+    },
+    "neighbor_ids": [
+     "oakhaven",
+     "rook_hill",
+     "wyvern_tor"
+    ],
+    "outline": "M100 375 L200 375 L200 450 L100 450 Z",
+    "source_color": null,
+    "source_ref": null,
+    "terrain": "hills"
+   },
+   {
+    "id": "wyvern_tor",
+    "name": "Wyvern Tor",
+    "label_point": {
+     "x": 250,
+     "y": 412
+    },
+    "neighbor_ids": [
+     "dun_cairn",
+     "lowmoor",
+     "mistfen"
+    ],
+    "outline": "M200 375 L300 375 L300 450 L200 450 Z",
+    "source_color": null,
+    "source_ref": null,
+    "terrain": "plain"
+   },
+   {
+    "id": "lowmoor",
+    "name": "Lowmoor",
+    "label_point": {
+     "x": 350,
+     "y": 412
+    },
+    "neighbor_ids": [
+     "cairn_down",
+     "ravenspur",
+     "wyvern_tor"
+    ],
+    "outline": "M300 375 L400 375 L400 450 L300 450 Z",
+    "source_color": null,
+    "source_ref": null,
+    "terrain": "marsh"
+   },
+   {
+    "id": "ravenspur",
+    "name": "Ravenspur",
+    "label_point": {
+     "x": 450,
+     "y": 412
+    },
+    "neighbor_ids": [
+     "lowmoor",
+     "sunder_bay",
+     "tidewall"
+    ],
+    "outline": "M400 375 L500 375 L500 450 L400 450 Z",
+    "source_color": null,
+    "source_ref": null,
+    "terrain": "mountain"
+   },
+   {
+    "id": "tidewall",
+    "name": "Tidewall",
+    "label_point": {
+     "x": 550,
+     "y": 412
+    },
+    "neighbor_ids": [
+     "greywatch",
+     "ravenspur"
+    ],
+    "outline": "M500 375 L600 375 L600 450 L500 450 Z",
+    "source_color": null,
+    "source_ref": null,
+    "terrain": "forest"
+   }
+  ],
+  "roads": [
+   {
+    "region_a": "aldgate",
+    "region_b": "ashford"
+   },
+   {
+    "region_a": "brennmoor",
+    "region_b": "stonehelm"
+   },
+   {
+    "region_a": "wolfmere",
+    "region_b": "highcliff"
+   },
+   {
+    "region_a": "carrow_vale",
+    "region_b": "kings_ford"
+   },
+   {
+    "region_a": "valis_keep",
+    "region_b": "ember_reach"
+   },
+   {
+    "region_a": "elmstead",
+    "region_b": "high_meadow"
+   },
+   {
+    "region_a": "fenwatch",
+    "region_b": "ironfell"
+   },
+   {
+    "region_a": "pale_hollow",
+    "region_b": "stannic_rock"
+   },
+   {
+    "region_a": "morrow_hall",
+    "region_b": "redwater"
+   },
+   {
+    "region_a": "harrow_gate",
+    "region_b": "thornwood"
+   },
+   {
+    "region_a": "ellory_seat",
+    "region_b": "oakhaven"
+   },
+   {
+    "region_a": "mistfen",
+    "region_b": "cairn_down"
+   },
+   {
+    "region_a": "sunder_bay",
+    "region_b": "greywatch"
+   },
+   {
+    "region_a": "dun_cairn",
+    "region_b": "wyvern_tor"
+   },
+   {
+    "region_a": "lowmoor",
+    "region_b": "ravenspur"
+   },
+   {
+    "region_a": "gull_point",
+    "region_b": "elmstead"
+   },
+   {
+    "region_a": "dunwick",
+    "region_b": "ellory_seat"
+   },
+   {
+    "region_a": "ashford",
+    "region_b": "carrow_vale"
+   },
+   {
+    "region_a": "high_meadow",
+    "region_b": "morrow_hall"
+   },
+   {
+    "region_a": "oakhaven",
+    "region_b": "dun_cairn"
+   },
+   {
+    "region_a": "kings_ford",
+    "region_b": "fenwatch"
+   },
+   {
+    "region_a": "redwater",
+    "region_b": "mistfen"
+   },
+   {
+    "region_a": "stonehelm",
+    "region_b": "valis_keep"
+   },
+   {
+    "region_a": "ironfell",
+    "region_b": "harrow_gate"
+   },
+   {
+    "region_a": "cairn_down",
+    "region_b": "lowmoor"
+   },
+   {
+    "region_a": "ember_reach",
+    "region_b": "pale_hollow"
+   },
+   {
+    "region_a": "thornwood",
+    "region_b": "sunder_bay"
+   },
+   {
+    "region_a": "highcliff",
+    "region_b": "saltmarsh"
+   },
+   {
+    "region_a": "stannic_rock",
+    "region_b": "marrow_pass"
+   },
+   {
+    "region_a": "greywatch",
+    "region_b": "tidewall"
+   }
+  ],
+  "schema_version": 1,
+  "source": "manual",
+  "width": 600
+ },
+ "schema_version": 1,
+ "starting": {
+  "armies": [
+   {
+    "commander_id": "cmd_carrow",
+    "id": "army_carrow_1",
+    "location_id": "carrow_vale",
+    "morale": 70,
+    "owner_id": "house_carrow",
+    "troops": {
+     "cavalry": 40,
+     "infantry": 220
+    }
+   },
+   {
+    "commander_id": "cmd_ashford",
+    "id": "army_ashford_1",
+    "location_id": "ashford",
+    "morale": 70,
+    "owner_id": "house_ashford",
+    "troops": {
+     "cavalry": 40,
+     "infantry": 300
+    }
+   },
+   {
+    "commander_id": null,
+    "id": "army_ashford_2",
+    "location_id": "aldgate",
+    "morale": 65,
+    "owner_id": "house_ashford",
+    "troops": {
+     "archers_siege": 40,
+     "infantry": 150
+    }
+   },
+   {
+    "commander_id": "cmd_dunwick",
+    "id": "army_dunwick_1",
+    "location_id": "dunwick",
+    "morale": 70,
+    "owner_id": "house_dunwick",
+    "troops": {
+     "cavalry": 40,
+     "infantry": 300
+    }
+   },
+   {
+    "commander_id": null,
+    "id": "army_dunwick_2",
+    "location_id": "gull_point",
+    "morale": 65,
+    "owner_id": "house_dunwick",
+    "troops": {
+     "archers_siege": 40,
+     "infantry": 150
+    }
+   },
+   {
+    "commander_id": "cmd_valis",
+    "id": "army_valis_1",
+    "location_id": "valis_keep",
+    "morale": 70,
+    "owner_id": "house_valis",
+    "troops": {
+     "cavalry": 40,
+     "infantry": 300
+    }
+   },
+   {
+    "commander_id": null,
+    "id": "army_valis_2",
+    "location_id": "wolfmere",
+    "morale": 65,
+    "owner_id": "house_valis",
+    "troops": {
+     "archers_siege": 40,
+     "infantry": 150
+    }
+   },
+   {
+    "commander_id": "cmd_morrow",
+    "id": "army_morrow_1",
+    "location_id": "morrow_hall",
+    "morale": 70,
+    "owner_id": "house_morrow",
+    "troops": {
+     "cavalry": 40,
+     "infantry": 300
+    }
+   },
+   {
+    "commander_id": null,
+    "id": "army_morrow_2",
+    "location_id": "high_meadow",
+    "morale": 65,
+    "owner_id": "house_morrow",
+    "troops": {
+     "archers_siege": 40,
+     "infantry": 150
+    }
+   },
+   {
+    "commander_id": "cmd_stannic",
+    "id": "army_stannic_1",
+    "location_id": "stannic_rock",
+    "morale": 70,
+    "owner_id": "house_stannic",
+    "troops": {
+     "cavalry": 40,
+     "infantry": 300
+    }
+   },
+   {
+    "commander_id": null,
+    "id": "army_stannic_2",
+    "location_id": "saltmarsh",
+    "morale": 65,
+    "owner_id": "house_stannic",
+    "troops": {
+     "archers_siege": 40,
+     "infantry": 150
+    }
+   },
+   {
+    "commander_id": "cmd_harrow",
+    "id": "army_harrow_1",
+    "location_id": "harrow_gate",
+    "morale": 70,
+    "owner_id": "house_harrow",
+    "troops": {
+     "cavalry": 40,
+     "infantry": 300
+    }
+   },
+   {
+    "commander_id": null,
+    "id": "army_harrow_2",
+    "location_id": "thornwood",
+    "morale": 65,
+    "owner_id": "house_harrow",
+    "troops": {
+     "archers_siege": 40,
+     "infantry": 150
+    }
+   },
+   {
+    "commander_id": "cmd_ellory",
+    "id": "army_ellory_1",
+    "location_id": "ellory_seat",
+    "morale": 70,
+    "owner_id": "house_ellory",
+    "troops": {
+     "cavalry": 40,
+     "infantry": 300
+    }
+   },
+   {
+    "commander_id": null,
+    "id": "army_ellory_2",
+    "location_id": "oakhaven",
+    "morale": 65,
+    "owner_id": "house_ellory",
+    "troops": {
+     "archers_siege": 40,
+     "infantry": 150
+    }
+   }
+  ],
+  "claims": [
+   {
+    "faction_id": "house_dunwick",
+    "region_id": "highcliff"
+   },
+   {
+    "faction_id": "house_ashford",
+    "region_id": "fenwatch"
+   },
+   {
+    "faction_id": "house_harrow",
+    "region_id": "greywatch"
+   },
+   {
+    "faction_id": "house_stannic",
+    "region_id": "wyvern_tor"
+   },
+   {
+    "faction_id": "house_ellory",
+    "region_id": "lowmoor"
+   },
+   {
+    "faction_id": "house_valis",
+    "region_id": "ravenspur"
+   }
+  ],
+  "grudges": [
+   {
+    "holder_id": "ilse",
+    "opinion": -35,
+    "reason": "Morrow seized Redwater from her line.",
+    "target_id": "corwin"
+   },
+   {
+    "holder_id": "harl",
+    "opinion": -30,
+    "reason": "Dunwick lost the Ford to Ashford's grasping.",
+    "target_id": "mira"
+   },
+   {
+    "holder_id": "bram",
+    "opinion": -25,
+    "reason": "Ellory turned back his father's host at the pass.",
+    "target_id": "sera"
+   }
+  ],
+  "regions": [
+   {
+    "faith_id": "old_faith",
+    "garrison": 50,
+    "governor_id": null,
+    "improvement_kinds": [],
+    "manpower": 90,
+    "owner_id": "house_ashford",
+    "population": 650,
+    "region_id": "aldgate",
+    "unrest": 10,
+    "wealth": 50
+   },
+   {
+    "faith_id": "old_faith",
+    "garrison": 55,
+    "governor_id": null,
+    "improvement_kinds": [],
+    "manpower": 98,
+    "owner_id": "house_ashford",
+    "population": 710,
+    "region_id": "ashford",
+    "unrest": 10,
+    "wealth": 55
+   },
+   {
+    "faith_id": "old_faith",
+    "garrison": 60,
+    "governor_id": null,
+    "improvement_kinds": [],
+    "manpower": 106,
+    "owner_id": "house_ashford",
+    "population": 770,
+    "region_id": "brennmoor",
+    "unrest": 10,
+    "wealth": 60
+   },
+   {
+    "faith_id": "old_faith",
+    "garrison": 65,
+    "governor_id": null,
+    "improvement_kinds": [],
+    "manpower": 114,
+    "owner_id": "house_ashford",
+    "population": 830,
+    "region_id": "stonehelm",
+    "unrest": 10,
+    "wealth": 65
+   },
+   {
+    "faith_id": "old_faith",
+    "garrison": 50,
+    "governor_id": null,
+    "improvement_kinds": [],
+    "manpower": 122,
+    "owner_id": "house_valis",
+    "population": 890,
+    "region_id": "wolfmere",
+    "unrest": 10,
+    "wealth": 50
+   },
+   {
+    "faith_id": "old_faith",
+    "garrison": 55,
+    "governor_id": null,
+    "improvement_kinds": [],
+    "manpower": 90,
+    "owner_id": null,
+    "population": 950,
+    "region_id": "highcliff",
+    "unrest": 10,
+    "wealth": 55
+   },
+   {
+    "faith_id": "old_faith",
+    "garrison": 60,
+    "governor_id": null,
+    "improvement_kinds": [],
+    "manpower": 98,
+    "owner_id": "house_dunwick",
+    "population": 650,
+    "region_id": "gull_point",
+    "unrest": 10,
+    "wealth": 60
+   },
+   {
+    "faith_id": "old_faith",
+    "garrison": 65,
+    "governor_id": null,
+    "improvement_kinds": [],
+    "manpower": 106,
+    "owner_id": "house_carrow",
+    "population": 710,
+    "region_id": "carrow_vale",
+    "unrest": 10,
+    "wealth": 65
+   },
+   {
+    "faith_id": "old_faith",
+    "garrison": 50,
+    "governor_id": null,
+    "improvement_kinds": [],
+    "manpower": 114,
+    "owner_id": "house_carrow",
+    "population": 770,
+    "region_id": "kings_ford",
+    "unrest": 10,
+    "wealth": 50
+   },
+   {
+    "faith_id": "old_faith",
+    "garrison": 55,
+    "governor_id": null,
+    "improvement_kinds": [],
+    "manpower": 122,
+    "owner_id": "house_valis",
+    "population": 830,
+    "region_id": "valis_keep",
+    "unrest": 10,
+    "wealth": 55
+   },
+   {
+    "faith_id": "old_faith",
+    "garrison": 60,
+    "governor_id": null,
+    "improvement_kinds": [],
+    "manpower": 90,
+    "owner_id": "house_valis",
+    "population": 890,
+    "region_id": "ember_reach",
+    "unrest": 10,
+    "wealth": 60
+   },
+   {
+    "faith_id": "old_faith",
+    "garrison": 65,
+    "governor_id": null,
+    "improvement_kinds": [],
+    "manpower": 98,
+    "owner_id": "house_stannic",
+    "population": 950,
+    "region_id": "saltmarsh",
+    "unrest": 10,
+    "wealth": 65
+   },
+   {
+    "faith_id": "old_faith",
+    "garrison": 50,
+    "governor_id": null,
+    "improvement_kinds": [],
+    "manpower": 106,
+    "owner_id": "house_dunwick",
+    "population": 650,
+    "region_id": "elmstead",
+    "unrest": 10,
+    "wealth": 50
+   },
+   {
+    "faith_id": "old_faith",
+    "garrison": 55,
+    "governor_id": null,
+    "improvement_kinds": [],
+    "manpower": 114,
+    "owner_id": "house_morrow",
+    "population": 710,
+    "region_id": "high_meadow",
+    "unrest": 10,
+    "wealth": 55
+   },
+   {
+    "faith_id": "old_faith",
+    "garrison": 60,
+    "governor_id": null,
+    "improvement_kinds": [],
+    "manpower": 122,
+    "owner_id": null,
+    "population": 770,
+    "region_id": "fenwatch",
+    "unrest": 10,
+    "wealth": 60
+   },
+   {
+    "faith_id": "old_faith",
+    "garrison": 65,
+    "governor_id": null,
+    "improvement_kinds": [],
+    "manpower": 90,
+    "owner_id": "house_valis",
+    "population": 830,
+    "region_id": "ironfell",
+    "unrest": 10,
+    "wealth": 65
+   },
+   {
+    "faith_id": "old_faith",
+    "garrison": 50,
+    "governor_id": null,
+    "improvement_kinds": [],
+    "manpower": 98,
+    "owner_id": "house_stannic",
+    "population": 890,
+    "region_id": "pale_hollow",
+    "unrest": 10,
+    "wealth": 50
+   },
+   {
+    "faith_id": "old_faith",
+    "garrison": 55,
+    "governor_id": null,
+    "improvement_kinds": [],
+    "manpower": 106,
+    "owner_id": "house_stannic",
+    "population": 950,
+    "region_id": "stannic_rock",
+    "unrest": 10,
+    "wealth": 55
+   },
+   {
+    "faith_id": "old_faith",
+    "garrison": 60,
+    "governor_id": null,
+    "improvement_kinds": [],
+    "manpower": 114,
+    "owner_id": "house_dunwick",
+    "population": 650,
+    "region_id": "dunwick",
+    "unrest": 10,
+    "wealth": 60
+   },
+   {
+    "faith_id": "old_faith",
+    "garrison": 65,
+    "governor_id": null,
+    "improvement_kinds": [],
+    "manpower": 122,
+    "owner_id": "house_morrow",
+    "population": 710,
+    "region_id": "morrow_hall",
+    "unrest": 10,
+    "wealth": 65
+   },
+   {
+    "faith_id": "old_faith",
+    "garrison": 50,
+    "governor_id": null,
+    "improvement_kinds": [],
+    "manpower": 90,
+    "owner_id": "house_morrow",
+    "population": 770,
+    "region_id": "redwater",
+    "unrest": 10,
+    "wealth": 50
+   },
+   {
+    "faith_id": "old_faith",
+    "garrison": 55,
+    "governor_id": null,
+    "improvement_kinds": [],
+    "manpower": 98,
+    "owner_id": "house_harrow",
+    "population": 830,
+    "region_id": "harrow_gate",
+    "unrest": 10,
+    "wealth": 55
+   },
+   {
+    "faith_id": "old_faith",
+    "garrison": 60,
+    "governor_id": null,
+    "improvement_kinds": [],
+    "manpower": 106,
+    "owner_id": "house_harrow",
+    "population": 890,
+    "region_id": "thornwood",
+    "unrest": 10,
+    "wealth": 60
+   },
+   {
+    "faith_id": "old_faith",
+    "garrison": 65,
+    "governor_id": null,
+    "improvement_kinds": [],
+    "manpower": 114,
+    "owner_id": "house_stannic",
+    "population": 950,
+    "region_id": "marrow_pass",
+    "unrest": 10,
+    "wealth": 65
+   },
+   {
+    "faith_id": "old_faith",
+    "garrison": 50,
+    "governor_id": null,
+    "improvement_kinds": [],
+    "manpower": 122,
+    "owner_id": "house_ellory",
+    "population": 650,
+    "region_id": "ellory_seat",
+    "unrest": 10,
+    "wealth": 50
+   },
+   {
+    "faith_id": "old_faith",
+    "garrison": 55,
+    "governor_id": null,
+    "improvement_kinds": [],
+    "manpower": 90,
+    "owner_id": "house_ellory",
+    "population": 710,
+    "region_id": "oakhaven",
+    "unrest": 10,
+    "wealth": 55
+   },
+   {
+    "faith_id": "old_faith",
+    "garrison": 60,
+    "governor_id": null,
+    "improvement_kinds": [],
+    "manpower": 98,
+    "owner_id": "house_morrow",
+    "population": 770,
+    "region_id": "mistfen",
+    "unrest": 10,
+    "wealth": 60
+   },
+   {
+    "faith_id": "old_faith",
+    "garrison": 65,
+    "governor_id": null,
+    "improvement_kinds": [],
+    "manpower": 106,
+    "owner_id": "house_harrow",
+    "population": 830,
+    "region_id": "cairn_down",
+    "unrest": 10,
+    "wealth": 65
+   },
+   {
+    "faith_id": "old_faith",
+    "garrison": 50,
+    "governor_id": null,
+    "improvement_kinds": [],
+    "manpower": 114,
+    "owner_id": "house_harrow",
+    "population": 890,
+    "region_id": "sunder_bay",
+    "unrest": 10,
+    "wealth": 50
+   },
+   {
+    "faith_id": "old_faith",
+    "garrison": 55,
+    "governor_id": null,
+    "improvement_kinds": [],
+    "manpower": 122,
+    "owner_id": null,
+    "population": 950,
+    "region_id": "greywatch",
+    "unrest": 10,
+    "wealth": 55
+   },
+   {
+    "faith_id": "old_faith",
+    "garrison": 60,
+    "governor_id": null,
+    "improvement_kinds": [],
+    "manpower": 90,
+    "owner_id": "house_ellory",
+    "population": 650,
+    "region_id": "rook_hill",
+    "unrest": 10,
+    "wealth": 60
+   },
+   {
+    "faith_id": "old_faith",
+    "garrison": 65,
+    "governor_id": null,
+    "improvement_kinds": [],
+    "manpower": 98,
+    "owner_id": "house_ellory",
+    "population": 710,
+    "region_id": "dun_cairn",
+    "unrest": 10,
+    "wealth": 65
+   },
+   {
+    "faith_id": "old_faith",
+    "garrison": 50,
+    "governor_id": null,
+    "improvement_kinds": [],
+    "manpower": 106,
+    "owner_id": null,
+    "population": 770,
+    "region_id": "wyvern_tor",
+    "unrest": 10,
+    "wealth": 50
+   },
+   {
+    "faith_id": "old_faith",
+    "garrison": 55,
+    "governor_id": null,
+    "improvement_kinds": [],
+    "manpower": 114,
+    "owner_id": null,
+    "population": 830,
+    "region_id": "lowmoor",
+    "unrest": 10,
+    "wealth": 55
+   },
+   {
+    "faith_id": "old_faith",
+    "garrison": 60,
+    "governor_id": null,
+    "improvement_kinds": [],
+    "manpower": 122,
+    "owner_id": null,
+    "population": 890,
+    "region_id": "ravenspur",
+    "unrest": 10,
+    "wealth": 60
+   },
+   {
+    "faith_id": "old_faith",
+    "garrison": 65,
+    "governor_id": null,
+    "improvement_kinds": [],
+    "manpower": 90,
+    "owner_id": null,
+    "population": 950,
+    "region_id": "tidewall",
+    "unrest": 10,
+    "wealth": 65
+   }
+  ],
+  "relations": [
+   {
+    "faction_a": "house_ashford",
+    "faction_b": "house_carrow",
+    "status": "peace"
+   },
+   {
+    "faction_a": "house_ashford",
+    "faction_b": "house_dunwick",
+    "status": "peace"
+   },
+   {
+    "faction_a": "house_ashford",
+    "faction_b": "house_ellory",
+    "status": "peace"
+   },
+   {
+    "faction_a": "house_ashford",
+    "faction_b": "house_harrow",
+    "status": "peace"
+   },
+   {
+    "faction_a": "house_ashford",
+    "faction_b": "house_morrow",
+    "status": "peace"
+   },
+   {
+    "faction_a": "house_ashford",
+    "faction_b": "house_stannic",
+    "status": "peace"
+   },
+   {
+    "faction_a": "house_ashford",
+    "faction_b": "house_valis",
+    "status": "peace"
+   },
+   {
+    "faction_a": "house_carrow",
+    "faction_b": "house_dunwick",
+    "status": "peace"
+   },
+   {
+    "faction_a": "house_carrow",
+    "faction_b": "house_ellory",
+    "status": "peace"
+   },
+   {
+    "faction_a": "house_carrow",
+    "faction_b": "house_harrow",
+    "status": "peace"
+   },
+   {
+    "faction_a": "house_carrow",
+    "faction_b": "house_morrow",
+    "status": "peace"
+   },
+   {
+    "faction_a": "house_carrow",
+    "faction_b": "house_stannic",
+    "status": "peace"
+   },
+   {
+    "faction_a": "house_carrow",
+    "faction_b": "house_valis",
+    "status": "peace"
+   },
+   {
+    "faction_a": "house_dunwick",
+    "faction_b": "house_ellory",
+    "status": "peace"
+   },
+   {
+    "faction_a": "house_dunwick",
+    "faction_b": "house_harrow",
+    "status": "peace"
+   },
+   {
+    "faction_a": "house_dunwick",
+    "faction_b": "house_morrow",
+    "status": "peace"
+   },
+   {
+    "faction_a": "house_dunwick",
+    "faction_b": "house_stannic",
+    "status": "peace"
+   },
+   {
+    "faction_a": "house_dunwick",
+    "faction_b": "house_valis",
+    "status": "peace"
+   },
+   {
+    "faction_a": "house_ellory",
+    "faction_b": "house_harrow",
+    "status": "peace"
+   },
+   {
+    "faction_a": "house_ellory",
+    "faction_b": "house_morrow",
+    "status": "peace"
+   },
+   {
+    "faction_a": "house_ellory",
+    "faction_b": "house_stannic",
+    "status": "peace"
+   },
+   {
+    "faction_a": "house_ellory",
+    "faction_b": "house_valis",
+    "status": "peace"
+   },
+   {
+    "faction_a": "house_harrow",
+    "faction_b": "house_morrow",
+    "status": "peace"
+   },
+   {
+    "faction_a": "house_harrow",
+    "faction_b": "house_stannic",
+    "status": "peace"
+   },
+   {
+    "faction_a": "house_harrow",
+    "faction_b": "house_valis",
+    "status": "peace"
+   },
+   {
+    "faction_a": "house_morrow",
+    "faction_b": "house_stannic",
+    "status": "peace"
+   },
+   {
+    "faction_a": "house_morrow",
+    "faction_b": "house_valis",
+    "status": "peace"
+   },
+   {
+    "faction_a": "house_stannic",
+    "faction_b": "house_valis",
+    "status": "peace"
+   }
+  ]
+ },
+ "theme": {
+  "archers_siege_name": "Archers & Siege",
+  "cavalry_name": "Cavalry",
+  "currency_name": "Gold",
+  "faith_name": "Faith",
+  "infantry_name": "Infantry",
+  "region_noun": "Region",
+  "ruler_title": "Ruler",
+  "temple_name": "Temple"
+ },
+ "toggles": {
+  "is_events_enabled": true,
+  "is_fog_enabled": true,
+  "is_loans_enabled": true,
+  "is_orders_budget_enabled": true,
+  "is_outrage_enabled": true,
+  "is_prisoners_enabled": true,
+  "is_religion_enabled": true,
+  "is_succession_enabled": true
+ },
+ "tuning": {
+  "end_year": 1100,
+  "event_frequency_percent": 50,
+  "order_costs": {
+   "attack": 1,
+   "besiege": 1,
+   "build_improvement": 2,
+   "diplomatic_play": 2,
+   "disband_army": 1,
+   "handle_prisoner": 1,
+   "merge_armies": 1,
+   "move_army": 1,
+   "propose_agreement": 1,
+   "raise_army": 2,
+   "send_envoy": 1,
+   "set_pay": 1,
+   "set_tax_rate": 1,
+   "split_army": 1,
+   "take_loan": 1
+  },
+  "orders_mode": "budget",
+  "orders_per_turn": 6,
+  "start_month": 3,
+  "start_year": 1000,
+  "summary_significance_threshold": 10
+ }
+}

@@ -1,4 +1,4 @@
-import type { TermsCard, TreatyVerdict } from "../../../../types/scene.types";
+import type { ClauseWeightBand, TermsCard, TreatyVerdict } from "../../../../types/scene.types";
 
 export interface NegotiationTreatyDrawerProps {
   isOpen: boolean;
@@ -7,6 +7,7 @@ export interface NegotiationTreatyDrawerProps {
   counterpartName: string;
   isBusy?: boolean;
   verdict?: TreatyVerdict | null;
+  clauseBands?: ClauseWeightBand[];
   onClose: () => void;
   onSign: () => void;
   onDecline?: () => void;

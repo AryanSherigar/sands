@@ -14,4 +14,5 @@ export interface StrategyRulerPersonaProps {
   onResetDefault?: () => void;
   onBeginReign?: () => void;
   isSubmitting?: boolean;
+  startYear?: number;
 }

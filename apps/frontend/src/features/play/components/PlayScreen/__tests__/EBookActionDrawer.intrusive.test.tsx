@@ -7,10 +7,6 @@ import { usePlayStore } from "../../../stores/play.store";
 import { PlaythroughData } from "../../../types/play.types";
 import { EBookActionDrawer } from "../EBook/EBookActionDrawer";
 
-vi.mock("@/shared/hooks/useIsAlphaMode", () => ({
-  useIsAlphaMode: () => false,
-}));
-
 vi.mock("../../../hooks/useVoiceInput");
 
 const setSanity = (sanity: number): void => {

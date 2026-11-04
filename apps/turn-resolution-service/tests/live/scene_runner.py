@@ -7,7 +7,12 @@ import structlog.testing
 from app.config import settings
 from app.integrations import simulation_client
 from app.models.scene import SceneMessageKind, SceneMessageRequest
-from app.services import scene_prompt, scene_service, scene_stream_service
+from app.services import (
+    judgment_prompt,
+    scene_prompt,
+    scene_service,
+    scene_stream_service,
+)
 from app.services.scene_service import PreparedExchange, SceneUsage
 from strategy_contracts.scene import SceneStatus, SceneType, SubmissionStatus
 from strategy_contracts.scene_exchange import (
@@ -84,9 +89,11 @@ class FakeSimulation:
         )
 
     def _status_after(self, submission: SceneExchangeSubmission) -> SceneStatus:
+        is_choice = submission.decision.action is SceneAction.CHOOSE_OPTION
+        if self.package.scene_type is SceneType.JUDGMENT:
+            return SceneStatus.RESOLVED if is_choice else SceneStatus.OPENED
         if self.package.scene_type is not SceneType.LETTER:
             return SceneStatus.OPENED
-        is_choice = submission.decision.action is SceneAction.CHOOSE_OPTION
         return SceneStatus.RESOLVED if is_choice else SceneStatus.DEFAULTED
 
     async def submit(self, scene_id, user_id, submission: SceneExchangeSubmission):
@@ -116,11 +123,18 @@ class FakeSimulation:
         patcher.setattr(simulation_client, "fetch_scene_package", self.fetch)
         patcher.setattr(simulation_client, "submit_exchange", self.submit)
         patcher.setattr(simulation_client, "store_letter_body", self.store_letter_body)
+        patcher.setattr(simulation_client, "store_opening_text", self.store_letter_body)
         patcher.setattr(simulation_client, "report_scene_failure", self.report_failure)
 
 
+def _system_for(package) -> str:
+    if package.scene_type is SceneType.JUDGMENT:
+        return judgment_prompt.build_judgment_system_instruction(package)
+    return scene_prompt.build_system_instruction(package)
+
+
 def _input_bound(prepared: PreparedExchange) -> int:
-    system = scene_prompt.build_system_instruction(prepared.package)
+    system = _system_for(prepared.package)
     history = sum(
         len(item.player_text) + len(item.leader_text) for item in prepared.transcript
     )
@@ -163,7 +177,11 @@ def _request_for(turn: str | ScriptedTurn) -> SceneMessageRequest:
     if isinstance(turn, str):
         return SceneMessageRequest(text=turn)
     return SceneMessageRequest(
-        kind=turn.kind, text=turn.text, current_draft=turn.current_draft
+        kind=turn.kind,
+        text=turn.text,
+        current_draft=turn.current_draft,
+        verdict=turn.verdict,
+        nuance=turn.nuance,
     )
 
 

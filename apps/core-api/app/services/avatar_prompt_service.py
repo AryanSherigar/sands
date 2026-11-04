@@ -9,16 +9,24 @@ Copyright (c) 2026 Yuki Shindo
 
 from __future__ import annotations
 
+# NOTE: the rig in avatar_mesh_builder places eyes and mouth at fixed fractions of the
+# image, so this framing must stay in step with the *_LINE constants there.
+FRAMING_DIRECTIVE = (
+    "face centered and symmetrical, eyes level about 42% of the way down the frame, "
+    "head top near the upper edge, chin about three quarters of the way down, "
+    "shoulders cropped by the bottom edge, hair kept clear of the eyes"
+)
+
 DEFAULT_SOVEREIGN_PROMPT = (
     "Front-facing bust portrait of a noble sovereign, head and shoulders visible, "
-    "resting closed mouth, clean neutral background."
+    f"{FRAMING_DIRECTIVE}, resting closed mouth, clean neutral background."
 )
 
 AVATAR_SYSTEM_PROMPT = (
     "You are an expert prompt engineer specializing in 2D character portrait generation for "
     "2.5D mesh rigging (Mesh Avatar Studio / Live2D). "
     "Convert the user's character description into a detailed image generation prompt following these rules: "
-    "1. Front-facing bust portrait (head and shoulders visible, centered). "
+    f"1. Front-facing bust portrait (head and shoulders visible, {FRAMING_DIRECTIVE}). "
     "2. Resting closed mouth with clean lip line (no open smiles or teeth showing). "
     "3. Both eyes wide open and clearly visible without heavy hair covering the eyes. "
     "4. Clean, solid or transparent/isolated simple background (no complex background clutter). "
@@ -42,6 +50,6 @@ async def optimize_avatar_prompt(description: str) -> str:
         return DEFAULT_SOVEREIGN_PROMPT
 
     return (
-        f"Front-facing bust portrait of {cleaned}, head and shoulders centered in frame, "
+        f"Front-facing bust portrait of {cleaned}, head and shoulders, {FRAMING_DIRECTIVE}, "
         f"resting closed mouth, clean eye contours, crisp lighting, isolated neutral background."
     )

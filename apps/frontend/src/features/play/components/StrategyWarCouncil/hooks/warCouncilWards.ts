@@ -1,109 +1,88 @@
 import type {
+  RankTier,
+  TroopClassification,
   WardConfig,
   WardIdentifier,
+  WardRankCohort,
 } from "../StrategyWarCouncil.types";
 
-const createLeftWard = (): WardConfig => ({
-  ward: "left",
-  title: "Left Ward (Vanguard)",
-  stance: "hold",
-  isAnchor: false,
-  ranks: [
-    {
-      id: "c-left-front",
-      troopType: "infantry",
-      name: "Vanguard Spearmen",
-      count: 500,
-      rankOrder: "front",
-      tacticalRole: "Locks shields, braces against flank charges",
-    },
-    {
-      id: "c-left-middle",
-      troopType: "archers_siege",
-      name: "Auxiliary Skirmishers",
-      count: 200,
-      rankOrder: "middle",
-      tacticalRole: "Harasses approaching vanguard",
-    },
-    {
-      id: "c-left-rear",
-      troopType: "cavalry",
-      name: "Outrider Horse",
-      count: 100,
-      rankOrder: "rear",
-      tacticalRole: "Screens left flank and pursues broken foes",
-    },
-  ],
-});
+interface RankTemplate {
+  troopType: TroopClassification;
+  rankOrder: RankTier;
+  name: string;
+  tacticalRole: string;
+}
 
-const createCenterWard = (): WardConfig => ({
-  ward: "center",
-  title: "Center (Main Battle)",
-  stance: "hold",
-  isAnchor: true,
-  ranks: [
-    {
-      id: "c-center-front",
-      troopType: "infantry",
-      name: "Shieldwall Spearmen",
-      count: 600,
-      rankOrder: "front",
-      tacticalRole: "Locks shields and braces against shock charges",
-    },
-    {
-      id: "c-center-middle",
-      troopType: "archers_siege",
-      name: "Longbowmen",
-      count: 400,
-      rankOrder: "middle",
-      tacticalRole: "Volley fire into attacking center",
-    },
-    {
-      id: "c-center-rear",
-      troopType: "cavalry",
-      name: "Armored Knights",
-      count: 200,
-      rankOrder: "rear",
-      tacticalRole: "Shock reserve to exploit breaches",
-    },
-  ],
-});
+interface WardTemplate {
+  ward: WardIdentifier;
+  title: string;
+  isAnchor: boolean;
+}
 
-const createRightWard = (): WardConfig => ({
-  ward: "right",
-  title: "Right Ward (Rearguard)",
-  stance: "hold",
-  isAnchor: false,
-  ranks: [
-    {
-      id: "c-right-front",
-      troopType: "infantry",
-      name: "Line Footmen",
-      count: 400,
-      rankOrder: "front",
-      tacticalRole: "Anchors right slope and checks skirmishers",
-    },
-    {
-      id: "c-right-middle",
-      troopType: "archers_siege",
-      name: "Crossbowmen",
-      count: 150,
-      rankOrder: "middle",
-      tacticalRole: "Point-blank armor penetration",
-    },
-    {
-      id: "c-right-rear",
-      troopType: "cavalry",
-      name: "Light Horse",
-      count: 100,
-      rankOrder: "rear",
-      tacticalRole: "Watches the right perimeter",
-    },
-  ],
-});
+const RANK_TEMPLATES: RankTemplate[] = [
+  {
+    troopType: "infantry",
+    rankOrder: "front",
+    name: "Infantry Line",
+    tacticalRole: "Holds the front and absorbs the enemy assault",
+  },
+  {
+    troopType: "archers_siege",
+    rankOrder: "middle",
+    name: "Archers and Siege",
+    tacticalRole: "Fires over the front rank into the enemy host",
+  },
+  {
+    troopType: "cavalry",
+    rankOrder: "rear",
+    name: "Cavalry",
+    tacticalRole: "Waits behind the line to strike flanks and pursue",
+  },
+];
 
-export const buildDefaultWards = (): Record<WardIdentifier, WardConfig> => ({
-  left: createLeftWard(),
-  center: createCenterWard(),
-  right: createRightWard(),
-});
+const WARD_TEMPLATES: WardTemplate[] = [
+  { ward: "left", title: "Left Ward (Vanguard)", isAnchor: false },
+  { ward: "center", title: "Center (Main Battle)", isAnchor: true },
+  { ward: "right", title: "Right Ward (Rearguard)", isAnchor: false },
+];
+
+const FLANK_WARD_COUNT = 2;
+const WARD_COUNT = WARD_TEMPLATES.length;
+
+const splitAcrossWards = (total: number): Record<WardIdentifier, number> => {
+  const flankShare = Math.floor(total / WARD_COUNT);
+  return {
+    left: flankShare,
+    right: flankShare,
+    center: total - flankShare * FLANK_WARD_COUNT,
+  };
+};
+
+const buildWardCohorts = (
+  ward: WardIdentifier,
+  activeTroops: Record<string, number>,
+): WardRankCohort[] =>
+  RANK_TEMPLATES.map((template) => ({
+    id: `c-${ward}-${template.rankOrder}`,
+    troopType: template.troopType,
+    name: template.name,
+    count: splitAcrossWards(activeTroops[template.troopType] ?? 0)[ward],
+    rankOrder: template.rankOrder,
+    tacticalRole: template.tacticalRole,
+  })).filter((cohort) => cohort.count > 0);
+
+export const buildWardsFromContingent = (
+  activeTroops: Record<string, number>,
+): Record<WardIdentifier, WardConfig> => {
+  const entries = WARD_TEMPLATES.map((template): [WardIdentifier, WardConfig] => [
+    template.ward,
+    {
+      ward: template.ward,
+      title: template.title,
+      stance: "hold",
+      isAnchor: template.isAnchor,
+      ranks: buildWardCohorts(template.ward, activeTroops),
+    },
+  ]);
+  return Object.fromEntries(entries) as Record<WardIdentifier, WardConfig>;
+};

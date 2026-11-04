@@ -1,6 +1,5 @@
 import React from "react";
 import { logEvent } from "@/shared/lib/logger";
-import { emitClientError } from "@/shared/lib/alpha-client-error";
 import { ErrorFallback } from "./ErrorFallback";
 
 interface ErrorBoundaryProps {
@@ -28,7 +27,6 @@ export class ErrorBoundary extends React.Component<
       stack: error.stack,
       componentStack: info.componentStack ?? undefined,
     });
-    emitClientError("react_error_boundary", error);
   }
 
   render(): React.ReactNode {

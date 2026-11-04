@@ -1,10 +1,9 @@
 """Client effects and authored images fired by conditions, through the real
-pipeline: emitted before narration, the image persisted, alpha mode no bar."""
+pipeline: emitted before narration, the image persisted."""
 
 import json
 
 import pytest
-from app.config import settings
 from app.db.models.turn_log import TurnLog
 from app.turn.steps import ai_orchestrator
 from pipeline_seed import narrator, seed_master_playthrough, take_turn
@@ -58,8 +57,6 @@ async def test_effect_and_authored_image_reach_the_client(
     playthrough, participant = await seed_master_playthrough(
         db_session, _snapshot(), {"clock": 0}
     )
-    monkeypatch.setattr(settings, "is_alpha_mode", True)
-    monkeypatch.setattr(settings, "alpha_scenario_id", playthrough.scenario_id)
 
     events = await take_turn(db_session, playthrough, participant)
 

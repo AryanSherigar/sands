@@ -45,8 +45,8 @@ EVENT_QUOTA_REFUND_FAILED = "quota_refund_failed"
 ACCOUNT_CREATION_SCOPE = "account_creation"
 
 FEATURE_LABELS: dict[str, str] = {
-    QuotaFeature.COVER_IMAGE.value: "cover image generation",
-    QuotaFeature.MUSIC_GENERATION.value: "music generation",
+    QuotaFeature.COVER_IMAGE.value: "image generation",
+    QuotaFeature.RULER_BACKSTORY.value: "ruler backstory drafting",
     QuotaFeature.PUBLISH.value: "publishing",
 }
 

@@ -4,7 +4,6 @@ import { EBookHeaderProps } from "./ebook.types";
 import { EBookAudioControl } from "./EBookAudioControl";
 import { EBookNarrationVoiceControl } from "./EBookNarrationVoiceControl";
 import { ReaderTypographyMenu } from "./ReaderTypographyMenu";
-import { FeedbackButton } from "../FeedbackButton/FeedbackButton";
 import { StatusHudContainer } from "../../StatusHud/StatusHudContainer";
 import { StatusHudStripContainer } from "../../StatusHud/StatusHudStripContainer";
 
@@ -63,7 +62,6 @@ export function EBookHeader({
 
         <div className="flex min-w-0 items-center gap-1.5 overflow-x-auto sm:gap-2">
           <StatusHudContainer />
-          <FeedbackButton />
           <EBookAudioControl />
           <EBookNarrationVoiceControl />
           <ReaderTypographyMenu isSepia={isSepia} />

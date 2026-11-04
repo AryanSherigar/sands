@@ -1,7 +1,7 @@
 from enum import Enum
 
 from app.models.base import WorldModel
-from app.models.battle_intelligence import ReconReport, StrengthInterval
+from app.models.battle_intelligence import Confidence, ReconReport, StrengthInterval
 from pydantic import (
     Field,
     SerializerFunctionWrapHandler,
@@ -289,6 +289,33 @@ class OpponentView(WorldModel):
     reports: list[ReconReport] = Field(default_factory=list)
 
 
+class LossEstimate(WorldModel):
+    low: WholeNumber
+    expected: WholeNumber
+    high: WholeNumber
+
+
+class OutlookBasis(str, Enum):
+    SCOUTED_COMPOSITION = "scouted_composition"
+    ASSUMED_EVEN_MIX = "assumed_even_mix"
+
+
+class OutlookFactor(WorldModel):
+    id: str
+    percent: WholeNumber
+
+
+class BattleOutlook(WorldModel):
+    """A deterministic next-exchange estimate built only from what the observer can see."""
+
+    own_losses: LossEstimate
+    enemy_losses: LossEstimate
+    own_share_percent: Percent
+    confidence: Confidence
+    basis: OutlookBasis
+    factors: list[OutlookFactor] = Field(default_factory=list)
+
+
 class BattleView(WorldModel):
     id: str
     region_id: RegionId
@@ -307,6 +334,7 @@ class BattleView(WorldModel):
     legal_commands: list[BattleAction] = Field(default_factory=list)
     command_cost: WholeNumber = 1
     frontage: WholeNumber = 0
+    outlook: BattleOutlook | None = None
 
 
 class ExchangeReport(WorldModel):

@@ -11,6 +11,7 @@ import { ArchivedScenarioCard } from "./ArchivedScenarioCard";
 import { GenreChip } from "./GenreChip";
 import { SaveButton } from "./SaveButton";
 import type { ScenarioPosterCardProps } from "./ScenarioPosterCard.types";
+import { IconStarFilled } from "@tabler/icons-react";
 
 export const ScenarioPosterCard: React.FC<ScenarioPosterCardProps> = ({
   scenario,
@@ -52,7 +53,7 @@ export const ScenarioPosterCard: React.FC<ScenarioPosterCardProps> = ({
         </h2>
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-xs text-content-faint">
           {genre && <GenreChip genre={genre} />}
-          <span className="text-warning">★ {formatRating(scenario)}</span>
+          <span className="inline-flex items-center gap-1 text-warning"><IconStarFilled size={14} aria-hidden="true" />{formatRating(scenario)}</span>
           <span>{formatPlayCount(scenario)}</span>
         </div>
         <div className="mt-auto flex gap-2">

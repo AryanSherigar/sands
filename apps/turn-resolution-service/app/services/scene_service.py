@@ -48,6 +48,7 @@ DEGRADED_ENDED_MESSAGE = (
 )
 EVENT_SCENE_FAILURE_REPORT_FAILED = "scene_failure_report_failed"
 NARRATION_FAILURES = (LlmUnavailableError, LlmContentBlockedError)
+JUDGMENT_SPOKEN_KINDS = (SceneMessageKind.MESSAGE, SceneMessageKind.PRONOUNCE)
 
 
 @dataclass
@@ -71,24 +72,41 @@ class PreparedExchange:
     player_text: str
     kind: SceneMessageKind = SceneMessageKind.MESSAGE
     current_draft: str = ""
+    verdict: str | None = None
+    nuance: str | None = None
 
     @property
     def sequence(self) -> int:
         return len(self.transcript) + 1
 
 
+def _require_judgment_kind(
+    fetched: InternalScenePackage, kind: SceneMessageKind
+) -> None:
+    if kind is SceneMessageKind.OPEN:
+        return
+    is_allowed = fetched.transcript and kind in JUDGMENT_SPOKEN_KINDS
+    has_only_the_pronouncement_left = fetched.exchanges_remaining <= 1
+    if not is_allowed or (
+        kind is SceneMessageKind.MESSAGE and has_only_the_pronouncement_left
+    ):
+        raise SceneKindMismatchError()
+
+
 def _require_matching_kind(
     fetched: InternalScenePackage, kind: SceneMessageKind
 ) -> None:
-    """Letters take open, scribe and seal; every other scene takes plain messages."""
+    """Letters take open, scribe and seal; judgments open, speak and pronounce; the rest take plain messages."""
+    if fetched.package.scene_type is SceneType.JUDGMENT:
+        _require_judgment_kind(fetched, kind)
+        return
     if fetched.package.scene_type is not SceneType.LETTER:
         if kind is not SceneMessageKind.MESSAGE:
             raise SceneKindMismatchError()
         return
     is_unopened = not fetched.transcript
-    if kind is SceneMessageKind.MESSAGE or (
-        is_unopened and kind is not SceneMessageKind.OPEN
-    ):
+    is_plain_speech = kind in (SceneMessageKind.MESSAGE, SceneMessageKind.PRONOUNCE)
+    if is_plain_speech or (is_unopened and kind is not SceneMessageKind.OPEN):
         raise SceneKindMismatchError()
 
 
@@ -109,6 +127,8 @@ async def prepare_exchange(
         player_text=request.text,
         kind=request.kind,
         current_draft=request.current_draft,
+        verdict=request.verdict.value if request.verdict else None,
+        nuance=request.nuance.value if request.nuance else None,
     )
 
 
@@ -133,6 +153,38 @@ async def collect_chunks(
         usage.add(sink)
 
 
+async def stream_narration(
+    system: str, contents: list, usage: SceneUsage, sink: list[str]
+) -> AsyncIterator[ServerSentEvent]:
+    """Stream one reply as narration events, collecting the text; an empty reply is a failure."""
+    async for chunk in collect_chunks(
+        system, contents, settings.scene_reply_max_output_tokens, usage
+    ):
+        sink.append(chunk)
+        yield ServerSentEvent(event="narration", data=chunk)
+    if not "".join(sink).strip():
+        raise LlmUnavailableError()
+
+
+async def degraded_event(
+    prepared: "PreparedExchange",
+    error: BaseAppException,
+    message: str,
+    ended_message: str,
+    is_countable: bool,
+) -> ServerSentEvent:
+    """Report a failed narration; a countable one may end the scene by its default."""
+    logger.warning(EVENT_SCENE_STREAM_DEGRADED, error_type=type(error).__name__)
+    has_ended = (
+        is_countable
+        and isinstance(error, NARRATION_FAILURES)
+        and await report_failure(prepared)
+    )
+    return ServerSentEvent(
+        event="degraded", data=ended_message if has_ended else message
+    )
+
+
 async def _decide(
     prepared: PreparedExchange, system: str, leader_text: str, usage: SceneUsage
 ) -> SceneDecision:
@@ -142,6 +194,7 @@ async def _decide(
         leader_text,
         prepared.package.exchange_cap,
         prepared.package.scene_type,
+        profile=scene_prompt.profile_for_package(prepared.package),
     )
     try:
         text = "".join(
@@ -161,7 +214,9 @@ async def _decide(
 
 
 def result_events(
-    prepared: PreparedExchange, result: SceneExchangeResult
+    prepared: PreparedExchange,
+    result: SceneExchangeResult,
+    tone_grade: int | None = None,
 ) -> list[ServerSentEvent]:
     events: list[ServerSentEvent] = []
     if result.pending_proposal is not None:
@@ -177,11 +232,13 @@ def result_events(
                 data=json.dumps({"scene_status": result.scene_status.value}),
             )
         )
-    done = {
+    done: dict[str, object] = {
         "sequence": prepared.sequence,
         "exchanges_remaining": result.exchanges_remaining,
         "scene_status": result.scene_status.value,
     }
+    if tone_grade is not None:
+        done["tone_grade"] = tone_grade
     return [*events, ServerSentEvent(event="done", data=json.dumps(done))]
 
 
@@ -232,6 +289,7 @@ async def _narrate(
         prepared.player_text,
         prepared.package.exchange_cap,
         prepared.package.scene_type,
+        profile=scene_prompt.profile_for_package(prepared.package),
     )
     reply: list[str] = []
     try:
@@ -252,6 +310,7 @@ async def _narrate(
                 player_text=prepared.player_text,
                 leader_text=leader_text,
                 decision=decision,
+                tone_grade=decision.tone_grade,
             ),
         )
     except BaseAppException as error:
@@ -268,5 +327,5 @@ async def _narrate(
         logger.warning(EVENT_SCENE_STREAM_DEGRADED, reason=result.reason)
         yield ServerSentEvent(event="degraded", data=DEGRADED_MESSAGE)
         return
-    for event in result_events(prepared, result):
+    for event in result_events(prepared, result, decision.tone_grade):
         yield event

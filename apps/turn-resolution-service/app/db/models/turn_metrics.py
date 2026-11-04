@@ -1,7 +1,6 @@
 """TurnMetrics ORM model (mirrors core-api's schema).
 
-One operational row per persisted alpha turn, written by TRS in the turn commit.
-See docs/specs/closed-alpha/alpha-data-collection.spec.md.
+One operational row per persisted turn, written by TRS in the turn commit.
 """
 
 import uuid

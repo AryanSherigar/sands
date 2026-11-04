@@ -41,7 +41,6 @@ class UserProfileResponse(UserPublicProfileResponse):
     show_mature: bool = False
     preferred_genres: list[str] = Field(default_factory=list)
     onboarding_completed_at: datetime | None = None
-    alpha_consent_is_current: bool = True
 
 
 class UserProfileUpdate(BaseModel):

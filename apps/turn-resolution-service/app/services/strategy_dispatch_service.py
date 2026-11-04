@@ -47,7 +47,7 @@ async def build_dispatch_response(
     existing = await client.get(identity, rumor_id)
     if existing.status == "completed":
         return EventSourceResponse(_saved_events(rumor_id, existing.narration or ""))
-    reservation = await quota.reserve(QuotaFeature.TURN, user_id)
+    reservation = await quota.reserve(QuotaFeature.STRATEGY_DISPATCH, user_id)
     try:
         claim = await client.claim(identity, rumor_id, claim_id)
     except BaseException:

@@ -10,6 +10,7 @@ from app.models.stance import StanceChoice
 from pydantic import Field, model_validator
 from strategy_contracts.battle_speech import CrowdReaction
 from strategy_contracts.limits import MAX_TEXT_CHARS
+from strategy_contracts.proclamation import ProclamationDraft, ProclamationVerdict
 from strategy_contracts.scene import (
     BattleSpeechOutcome,
     RefusedDemand,
@@ -31,6 +32,7 @@ class ReplayStepKind(str, Enum):
     RESOLVE_SCENE = "resolve_scene"
     SUBMIT_SPEECH_TALK = "submit_speech_talk"
     SKIP_BATTLE_SPEECH = "skip_battle_speech"
+    PROCLAMATION_DECISION = "proclamation_decision"
 
 
 class AcceptCommandReplayInput(WorldModel):
@@ -113,6 +115,16 @@ class SkipBattleSpeechReplayInput(WorldModel):
     battle_id: str = Field(min_length=1, max_length=128)
 
 
+class ProclamationDecisionReplayInput(WorldModel):
+    kind: Literal[ReplayStepKind.PROCLAMATION_DECISION] = (
+        ReplayStepKind.PROCLAMATION_DECISION
+    )
+    guard: OperationGuard
+    draft: ProclamationDraft
+    verdict: ProclamationVerdict
+    is_rescinding_previous: bool = False
+
+
 ReplayInput = Annotated[
     AcceptCommandReplayInput
     | CancelCommandReplayInput
@@ -123,7 +135,8 @@ ReplayInput = Annotated[
     | ResolveNegotiationReplayInput
     | ResolveSceneReplayInput
     | SubmitSpeechTalkReplayInput
-    | SkipBattleSpeechReplayInput,
+    | SkipBattleSpeechReplayInput
+    | ProclamationDecisionReplayInput,
     Field(discriminator="kind"),
 ]
 

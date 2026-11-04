@@ -172,3 +172,32 @@ def test_member_who_left_cannot_be_recruited_until_lockout_ends() -> None:
     tick_coalitions(world, SCENARIO)
 
     assert any(WRATHFUL_RIVAL in c.member_ids for c in world.coalition.coalitions)
+
+
+def _hoarded_world(player_gold: int):
+    world = make_world()
+    for faction_id, faction in world.factions.items():
+        faction.treasury = player_gold if faction_id == PLAYER else 0
+    return world
+
+
+def test_a_hoard_gives_neighbouring_rulers_a_pretext_for_war() -> None:
+    world = _hoarded_world(player_gold=5000)
+
+    tick_coalitions(world, SCENARIO)
+
+    pretexts = [
+        ground
+        for ground in world.grounds
+        if ground.target_faction_id == PLAYER and ground.kind.value == "broken_promise"
+    ]
+    assert pretexts
+    assert all(ground.holder_faction_id != PLAYER for ground in pretexts)
+
+
+def test_no_hoard_means_no_pretext() -> None:
+    world = _hoarded_world(player_gold=0)
+
+    tick_coalitions(world, SCENARIO)
+
+    assert world.grounds == []

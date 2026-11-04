@@ -15,7 +15,6 @@ from app.models.combat import (
     CombatStartRequest,
     CombatStateView,
 )
-from app.routers.alpha_guards import forbid_when_turns_suspended
 from app.services.combat_lifecycle_service import execute_lifecycle, get_combat_options
 from app.services.combat_service import apply_combat_action, get_combat_state
 from fastapi import APIRouter, Depends
@@ -24,7 +23,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 router = APIRouter(
     prefix="/v1/combat",
     tags=["Combat"],
-    dependencies=[Depends(forbid_when_turns_suspended)],
 )
 
 

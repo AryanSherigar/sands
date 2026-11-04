@@ -41,6 +41,8 @@ export const StrategyTopCanopy: FC<StrategyTopCanopyProps> = ({
   isHistoryAvailable = false,
   isHistoryActive = false,
   onToggleHistory,
+  activeEdict,
+  onIssueProclamation,
 }) => (
   <header className="fixed top-3 inset-x-3 z-40 flex flex-wrap items-start justify-between gap-2 pointer-events-none sm:top-4 sm:inset-x-4">
     <SovereignBadge name={world?.ruler?.name} />
@@ -75,6 +77,8 @@ export const StrategyTopCanopy: FC<StrategyTopCanopyProps> = ({
         activeMapMode={activeMapMode}
         onSelectMapMode={onSelectMapMode}
         onOpenTreasury={onOpenTreasury}
+        activeEdict={activeEdict}
+        onIssueProclamation={onIssueProclamation}
       />
     </div>
   </header>

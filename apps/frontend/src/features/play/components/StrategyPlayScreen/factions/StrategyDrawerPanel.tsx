@@ -13,7 +13,13 @@ function renderDrawerContent(props: StrategyDrawerPanelProps): React.ReactNode {
     return <TreasuryDrawerPanel world={world} onSubmitOrder={onSubmitOrder} />;
   }
   if (activeTab === "chronicle") {
-    return <LiveChronicleFeed playthroughId={playthroughId} onJumpToRegion={onJumpToRegion} />;
+    return (
+      <LiveChronicleFeed
+        playthroughId={playthroughId}
+        chroniclerId={world?.ruler?.chronicler_id}
+        onJumpToRegion={onJumpToRegion}
+      />
+    );
   }
   if (activeTab === "dispatches") {
     return <DispatchesPanel playthroughId={playthroughId} />;

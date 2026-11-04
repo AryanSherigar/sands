@@ -10,6 +10,7 @@ from app.exceptions.scenario_exceptions import (
     ScenarioAccessDeniedError,
     ScenarioNotFoundError,
 )
+from app.integrations.storage_client import object_key_from_url
 from app.models.entity import (
     ENTITY_TYPES,
     EntityCreate,
@@ -23,6 +24,7 @@ from app.repositories.fact_repo import FactRepo
 from app.repositories.scenario_entity_type_repo import ScenarioEntityTypeRepo
 from app.repositories.scenario_repo import ScenarioRepo
 from app.services.lore_render import render_lore_document
+from app.services.premade_avatars import premade_avatar_object_keys
 from app.services.scenario_edit_guard import ensure_not_publishing, ensure_not_stale
 
 
@@ -50,6 +52,7 @@ class EntityService:
         )
         await self._ensure_valid_entity_type(scenario_id, data.entity_type)
         self._validate_player_entity_type(data.entity_type, data.is_player)
+        self._validate_character_avatar(data.entity_type, data.avatar_url)
         if data.is_player:
             await self._handle_player_designation(scenario_id, None)
 
@@ -66,6 +69,7 @@ class EntityService:
             },
             narrator_instruction=data.narrator_instruction,
             is_player=data.is_player,
+            avatar_url=data.avatar_url,
         )
         created = await self.entity_repo.create(entity)
         return await self._to_stamped_response(created, scenario)
@@ -132,6 +136,9 @@ class EntityService:
                 scenario_id, str(update_dict["entity_type"])
             )
         self._validate_player_entity_type(str(next_type), bool(next_is_player))
+        self._validate_character_avatar(
+            str(next_type), update_dict.get("avatar_url", entity.avatar_url)
+        )
         if update_dict.get("is_player") is True:
             await self._handle_player_designation(scenario_id, entity.entity_id)
 
@@ -268,6 +275,26 @@ class EntityService:
         if scenario.creator_id != user_id:
             raise ScenarioAccessDeniedError()
         return scenario
+
+    @staticmethod
+    def _validate_character_avatar(entity_type: str, avatar_url: object) -> None:
+        if avatar_url is None:
+            return
+        if entity_type != "character":
+            raise EntityValidationError("Only characters can have an animated avatar")
+        key = object_key_from_url(avatar_url) if isinstance(avatar_url, str) else None
+        if key in premade_avatar_object_keys():
+            return
+        if (
+            key is None
+            or not key.startswith("avatars/")
+            or not key.endswith(".mavatar")
+        ):
+            raise EntityValidationError("Choose an avatar created by Studio")
+        try:
+            uuid.UUID(key[len("avatars/") : -len(".mavatar")])
+        except ValueError as exc:
+            raise EntityValidationError("Choose an avatar created by Studio") from exc
 
     def _validate_player_entity_type(
         self, entity_type: str, is_player: bool | None

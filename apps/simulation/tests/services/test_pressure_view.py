@@ -33,6 +33,7 @@ OWN_PRESSURE_KEYS = {
     "strain_band",
     "will_factors",
     "strain_factors",
+    "stability_factors",
 }
 RUMOR_KEYS = {"about_faction_id", "topic", "band", "line_key", "turn"}
 
@@ -66,6 +67,7 @@ def test_view_contains_own_bands_and_factors() -> None:
     assert set(view.own_pressure.model_dump()) == OWN_PRESSURE_KEYS
     assert view.own_pressure.strain_band in (PressureBand.HIGH, PressureBand.VERY_HIGH)
     assert "devastation" in view.own_pressure.strain_factors
+    assert "war_base" in view.own_pressure.stability_factors
 
 
 def test_view_has_no_pressure_for_a_faction_at_peace() -> None:

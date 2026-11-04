@@ -6,5 +6,4 @@ export interface MoodSlotCardProps {
   mood: ScenarioMood;
   label: string;
   slot: ScenarioMusicSlot | undefined;
-  quotaExceeded: boolean;
 }

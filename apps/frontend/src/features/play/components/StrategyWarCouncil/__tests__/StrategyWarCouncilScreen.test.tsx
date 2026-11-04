@@ -163,24 +163,17 @@ describe("StrategyWarCouncilScreen", () => {
       reservePolicy: "conserve",
       canCommitReserves: true,
       canReconnoitre: true,
-      canAddressTroops: false,
-      speechReception: null,
-      speechErrorMessage: null,
-      isSpeaking: false,
-      addressTroops: vi.fn().mockResolvedValue(true),
       setReservePolicy: vi.fn(),
       isCodexOpen: false,
       isRetreatModalOpen: false,
       odds: {
         balancePercent: 58,
-        isRange: false,
-        minPercent: 58,
-        maxPercent: 58,
-        tierText: "Decisive",
+        tierText: "Favorable",
+        confidence: "low",
+        basis: "assumed_even_mix",
         factors: [],
-        playerLossEstimated: 140,
-        enemyLossEstimated: 480,
-        warScoreEstimated: 28,
+        playerLoss: { low: 100, expected: 140, high: 180 },
+        enemyLoss: { low: 400, expected: 480, high: 560 },
       },
       isCommitting: false,
       receiptReport: null,
@@ -361,23 +354,5 @@ describe("StrategyWarCouncilScreen", () => {
     fireEvent.click(screen.getByRole("button", { name: "Try again" }));
     expect(screen.getByRole("alert")).toHaveTextContent("could not be loaded");
     expect(mockState.retryLoad).toHaveBeenCalled();
-  });
-
-  it("opens the speech before the battle and lets the player say nothing", () => {
-    mockState.canAddressTroops = true;
-
-    render(
-      <StrategyWarCouncilScreen
-        playthroughId="test-pt"
-        battleId="battle-1"
-        regionNames={{ ashford_ford: "Ashford Ridge" }}
-        world={{ rivals: [], armies: [] }}
-        onReturnToMap={vi.fn()}
-      />,
-    );
-
-    expect(screen.getByRole("dialog", { name: "Address your host" })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Say nothing" }));
-    expect(screen.queryByRole("dialog", { name: "Address your host" })).toBeNull();
   });
 });

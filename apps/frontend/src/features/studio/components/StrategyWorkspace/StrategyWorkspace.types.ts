@@ -13,6 +13,11 @@ export interface StrategyMapSectionProps {
   scenarioId: string;
 }
 
+export interface MapGenerationStatusProps {
+  scenarioId: string;
+  hasSavedMap: boolean;
+}
+
 export interface StrategyFactionsSectionProps {
   fields: StrategyFields;
   regions: MapRegion[];
@@ -36,7 +41,8 @@ export interface StrategyPublishSectionProps {
   scenario: ScenarioResponse;
   report: PublishReport | undefined;
   isMapMissing: boolean;
-  onFlush: () => Promise<void>;
+  onFlush: () => Promise<boolean>;
+  onRecheck: () => Promise<PublishReport | undefined>;
   onOpenPanel: (panelId: StartPanelId) => void;
 }
 
@@ -119,6 +125,8 @@ export interface StrategyTimelinePanelProps {
   onEdit: EditStrategyFields;
 }
 
+export type StrategyRulesPanelProps = StrategyTimelinePanelProps;
+
 export interface StrategyPresetPickerProps {
   fields: StrategyFields;
   regions: MapRegion[];
@@ -144,4 +152,15 @@ export interface StrategyStartSituationProps {
   openPanel: StartPanelId | null;
   onOpenPanel: (panelId: StartPanelId | null) => void;
   onEdit: EditStrategyFields;
+}
+
+export interface StrategyChatPanelProps {
+  scenarioId: string;
+  title: string;
+  fields: StrategyFields;
+  mapRegions: MapRegion[];
+  activePanel: string | null;
+  edit: EditStrategyFields;
+  isOpen: boolean;
+  onOpenChange: (isOpen: boolean) => void;
 }

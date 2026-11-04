@@ -33,6 +33,7 @@ PLAYER_DIRECTIVE_MARKER = "Address the player character"
 DRAFT_BOUNDARY = "CURRENT SCENARIO DRAFT IN STUDIO:"
 MASTER_BOUNDARY = "CURRENT MASTER-MODE SCENARIO DATA:"
 SCOPED_BOUNDARY = "CURRENT TAB IN STUDIO:"
+STRATEGY_BOUNDARY = "CURRENT STRATEGY SCENARIO DATA:"
 
 
 def _master_system(inputs: NarrationInputs) -> str:
@@ -295,6 +296,18 @@ def test_scoped_assistant_head_is_identical_when_the_tab_changes() -> None:
     assert first_instruction != second_instruction
     assert first_instruction.index("ACTION BLOCKS:") < first_instruction.index(
         SCOPED_BOUNDARY
+    )
+
+
+def test_strategy_assistant_head_is_identical_when_the_panel_changes() -> None:
+    first, second = assistant_requests()["strategy"]
+    first_instruction = build_system_instruction(first)
+    second_instruction = build_system_instruction(second)
+
+    assert_shared_through(first_instruction, second_instruction, STRATEGY_BOUNDARY)
+    assert first_instruction != second_instruction
+    assert first_instruction.index("ACTION BLOCKS:") < first_instruction.index(
+        STRATEGY_BOUNDARY
     )
 
 

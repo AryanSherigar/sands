@@ -51,6 +51,9 @@ vi.mock("../../../hooks/useSimulationWorld", () => ({
 vi.mock("../../../hooks/useRestoredTurnReport", () => ({
   useRestoredTurnReport: () => undefined,
 }));
+vi.mock("../../../hooks/useResumePendingBattleSpeech", () => ({
+  useResumePendingBattleSpeech: () => undefined,
+}));
 vi.mock("../../../hooks/useHistoricalWorld", () => ({
   useHistoricalWorld: () => ({ data: undefined, isFetching: false, isError: false }),
 }));

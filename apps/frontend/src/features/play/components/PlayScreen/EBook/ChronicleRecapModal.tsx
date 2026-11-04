@@ -1,7 +1,5 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { PostRunSurvey } from "@/shared/components/alpha-survey/PostRunSurvey/PostRunSurvey";
-import { useIsAlphaMode } from "@/shared/hooks/useIsAlphaMode";
 import { usePlayStore } from "../../../stores/play.store";
 import { ChronicleRecapModalProps } from "./ebook.types";
 import { IconCheck, IconCopy, IconStarFilled } from "@tabler/icons-react";
@@ -23,13 +21,11 @@ export function ChronicleRecapModal({
   const playthrough = usePlayStore((s) => s.playthrough);
   const theme = usePlayStore((s) => s.ebook_theme);
   const isSepia = theme === "antique-sepia";
-  const isAlphaMode = useIsAlphaMode();
 
   const [rating, setRating] = useState<number>(5);
   const [review, setReview] = useState<string>("");
   const [copied, setCopied] = useState<boolean>(false);
   const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
-  const [isSurveyOpen, setIsSurveyOpen] = useState<boolean>(false);
 
   if (!isOpen || !playthrough) return null;
 
@@ -41,25 +37,12 @@ export function ChronicleRecapModal({
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const finishJourney = () => {
+  const handleSubmit = () => {
     setIsSubmitted(true);
     setTimeout(() => {
       onClose();
       navigate("/discover");
     }, 1500);
-  };
-
-  const handleSubmit = () => {
-    if (isAlphaMode) {
-      setIsSurveyOpen(true);
-      return;
-    }
-    finishJourney();
-  };
-
-  const handleSurveyClose = () => {
-    setIsSurveyOpen(false);
-    finishJourney();
   };
 
   const modalStyle = isSepia
@@ -99,21 +82,19 @@ export function ChronicleRecapModal({
               "{playthrough.opening_premise}"
             </div>
 
-            {!isAlphaMode && (
-              <div className="flex items-center justify-between font-mono text-xs">
-                <span>Share this Chronicle:</span>
-                <button
-                  type="button"
-                  onClick={handleCopyLink}
-                  className="px-3 py-1.5 rounded-lg border border-inherit/30 hover:bg-zinc-800/50 transition-colors cursor-pointer"
-                >
-                  <span className="inline-flex items-center gap-1.5">
-                    {copied ? <IconCheck size={14} aria-hidden="true" /> : <IconCopy size={14} aria-hidden="true" />}
-                    {copied ? "Copied Link" : "Copy Share Link"}
-                  </span>
-                </button>
-              </div>
-            )}
+            <div className="flex items-center justify-between font-mono text-xs">
+              <span>Share this Chronicle:</span>
+              <button
+                type="button"
+                onClick={handleCopyLink}
+                className="px-3 py-1.5 rounded-lg border border-inherit/30 hover:bg-zinc-800/50 transition-colors cursor-pointer"
+              >
+                <span className="inline-flex items-center gap-1.5">
+                  {copied ? <IconCheck size={14} aria-hidden="true" /> : <IconCopy size={14} aria-hidden="true" />}
+                  {copied ? "Copied Link" : "Copy Share Link"}
+                </span>
+              </button>
+            </div>
 
             <div className="space-y-2 text-center">
               <label className="font-mono text-xs uppercase tracking-wider block opacity-75">
@@ -167,11 +148,6 @@ export function ChronicleRecapModal({
           </div>
         )}
       </div>
-      <PostRunSurvey
-        playthroughId={playthrough.playthrough_id}
-        isOpen={isSurveyOpen}
-        onClose={handleSurveyClose}
-      />
     </div>
   );
 }

@@ -69,11 +69,24 @@ def test_active_proclamation_defaults_and_validation() -> None:
         burden=ProclamationBurden.SEVERE,
         enacted_turn=3,
         immediate_deltas={"gold": 250, "unrest": 15},
-        ongoing_modifiers={"tax_rate_delta": 0.15, "unrest_delta": 3.0},
+        ongoing_modifiers={"tax_percent_points": 15, "unrest_per_turn": 3},
     )
     assert active.remaining_turns == 4
     assert active.immediate_deltas["gold"] == 250
-    assert active.ongoing_modifiers["tax_rate_delta"] == 0.15
+    assert active.ongoing_modifiers["tax_percent_points"] == 15
+
+
+def test_legacy_fractional_modifiers_are_dropped_not_rejected() -> None:
+    active = ActiveProclamation(
+        id="proc_old",
+        legal_summary="Old edict.",
+        domain=ProclamationDomain.EMERGENCY_TAXATION,
+        burden=ProclamationBurden.MODERATE,
+        enacted_turn=1,
+        immediate_deltas={"gold": 250},
+        ongoing_modifiers={"tax_rate_delta": 0.15, "unrest_delta": 3.0},
+    )
+    assert active.ongoing_modifiers == {}
 
 
 def test_proclamation_scene_package_structure() -> None:

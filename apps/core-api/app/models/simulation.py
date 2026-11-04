@@ -3,6 +3,7 @@
 import uuid
 
 from pydantic import BaseModel, ConfigDict, Field
+from strategy_contracts.chronicler import DEFAULT_CHRONICLER_ID, ChroniclerId
 from strategy_contracts.ids import AmbitionId, TraitId
 from strategy_contracts.scenario import StrategyScenario
 
@@ -16,6 +17,7 @@ class PlayerRulerRequest(BaseModel):
     trait_ids: list[TraitId]
     ambition_ids: list[AmbitionId]
     backstory: str = ""
+    chronicler_id: ChroniclerId = DEFAULT_CHRONICLER_ID
 
 
 class InitializeCampaignRequest(BaseModel):

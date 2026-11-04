@@ -2,9 +2,7 @@ from app.config import settings
 from app.db.connection import get_db_session
 from app.exceptions.auth_exceptions import InvalidTokenError
 from app.models.auth import TokenExchangeRequest, TokenResponse, UserResponse
-from app.repositories.alpha_invite_repo import AlphaInviteRepo
 from app.repositories.user_repo import UserRepo
-from app.services.alpha_invite_service import AlphaInviteService
 from app.services.auth_service import AuthService
 from app.services.rate_limit.client_identity import resolve_client_ip
 from app.services.rate_limit.quota_service import QuotaService, get_quota_service
@@ -34,7 +32,6 @@ def get_auth_service(
     return AuthService(
         UserRepo(session),
         quota_service,
-        AlphaInviteService(AlphaInviteRepo(session)),
     )
 
 
@@ -48,8 +45,6 @@ async def exchange_token(
     user = await auth_service.verify_firebase_token_and_upsert_user(
         req.firebase_id_token,
         client_ip=resolve_client_ip(request),
-        invite_code=req.invite_code,
-        alpha_consent_version=req.alpha_consent_version,
     )
 
     is_restored = await auth_service.restore_if_deletion_pending(user)

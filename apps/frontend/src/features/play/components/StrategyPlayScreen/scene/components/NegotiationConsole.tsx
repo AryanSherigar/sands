@@ -3,10 +3,12 @@ import { ClauseBuilderDialog } from "./ClauseBuilderDialog";
 import type { NegotiationConsoleProps } from "./NegotiationConsole.types";
 
 export const NegotiationConsole: React.FC<NegotiationConsoleProps> = ({
+  regions = [],
   isDisabled = false,
   hasPendingProposal = false,
   isDrawerOpen = false,
   isDeclinable = true,
+  isTreatyAvailable = true,
   onSend,
   onToggleDrawer,
   onBreakTalks,
@@ -62,6 +64,7 @@ export const NegotiationConsole: React.FC<NegotiationConsoleProps> = ({
             <span className="material-symbols-outlined text-[18px]">send</span>
           </button>
 
+          {isTreatyAvailable ? (
           <button
             type="button"
             onClick={onToggleDrawer}
@@ -76,6 +79,7 @@ export const NegotiationConsole: React.FC<NegotiationConsoleProps> = ({
               <span className="absolute -top-1 -right-1 w-3 h-3 bg-secondary rounded-full ring-2 ring-parchment-panel animate-pulse" />
             ) : null}
           </button>
+          ) : null}
         </form>
 
         <div className="flex items-center justify-between pt-1">
@@ -84,6 +88,8 @@ export const NegotiationConsole: React.FC<NegotiationConsoleProps> = ({
               Say
             </span>
 
+            {isTreatyAvailable ? (
+              <>
             <button
               type="button"
               onClick={onToggleDrawer}
@@ -100,6 +106,8 @@ export const NegotiationConsole: React.FC<NegotiationConsoleProps> = ({
             >
               Draft a clause
             </button>
+              </>
+            ) : null}
 
             {isDeclinable ? (
               <button
@@ -121,6 +129,7 @@ export const NegotiationConsole: React.FC<NegotiationConsoleProps> = ({
 
       {isClauseBuilderOpen ? (
         <ClauseBuilderDialog
+          regions={regions}
           onUse={(sentence) => {
             setText(sentence);
             setIsClauseBuilderOpen(false);

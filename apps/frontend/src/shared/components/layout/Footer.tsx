@@ -1,7 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { STUDIO_PATH } from "@/shared/constants/navigation";
-import { useIsAlphaMode } from "@/shared/hooks/useIsAlphaMode";
 
 const PRODUCT_LINKS = [
   { to: "/discover", label: "Discover" },
@@ -15,11 +14,6 @@ const LEGAL_LINKS = [
 ];
 
 export const Footer: React.FC = () => {
-  const isAlphaMode = useIsAlphaMode();
-  const productLinks = isAlphaMode
-    ? PRODUCT_LINKS.filter((link) => link.to !== STUDIO_PATH)
-    : PRODUCT_LINKS;
-
   return (
     <footer className="border-t border-border-subtle bg-surface">
       <div className="mx-auto flex max-w-[1440px] flex-col gap-6 px-6 py-8 md:flex-row md:items-center md:justify-between md:gap-4">
@@ -36,7 +30,7 @@ export const Footer: React.FC = () => {
         </div>
 
         <nav className="flex flex-wrap items-center gap-x-6 gap-y-2">
-          {[...productLinks, ...LEGAL_LINKS].map((link) => (
+          {[...PRODUCT_LINKS, ...LEGAL_LINKS].map((link) => (
             <Link
               key={link.to}
               to={link.to}

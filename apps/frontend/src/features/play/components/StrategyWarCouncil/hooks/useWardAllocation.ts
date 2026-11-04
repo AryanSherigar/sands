@@ -4,7 +4,7 @@ import type {
   WardConfig,
   WardIdentifier,
 } from "../StrategyWarCouncil.types";
-import { buildDefaultWards } from "./warCouncilWards";
+import { buildWardsFromContingent } from "./warCouncilWards";
 
 const MIN_COHORT_COUNT = 0;
 const MAX_COHORT_COUNT = 10000;
@@ -46,14 +46,36 @@ const swapWardRanks = (
   };
 };
 
-export function useWardAllocation() {
-  const [wards, setWards] = useState<Record<WardIdentifier, WardConfig>>(buildDefaultWards);
+const buildActiveTroopsKey = (activeTroops: Record<string, number>): string =>
+  Object.entries(activeTroops)
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([troopType, count]) => `${troopType}:${count}`)
+    .join("|");
+
+interface WardAllocationState {
+  sourceKey: string;
+  wards: Record<WardIdentifier, WardConfig>;
+}
+
+export function useWardAllocation(activeTroops: Record<string, number>) {
+  const sourceKey = buildActiveTroopsKey(activeTroops);
+  const [state, setState] = useState<WardAllocationState>(() => ({
+    sourceKey,
+    wards: buildWardsFromContingent(activeTroops),
+  }));
+
+  if (state.sourceKey !== sourceKey) {
+    setState({ sourceKey, wards: buildWardsFromContingent(activeTroops) });
+  }
 
   const updateCohortCount = useCallback(
     (ward: WardIdentifier, rank: RankTier, delta: number) => {
-      setWards((prev) => ({
-        ...prev,
-        [ward]: updateWardCohort(prev[ward], rank, delta),
+      setState((previous) => ({
+        ...previous,
+        wards: {
+          ...previous.wards,
+          [ward]: updateWardCohort(previous.wards[ward], rank, delta),
+        },
       }));
     },
     [],
@@ -61,13 +83,16 @@ export function useWardAllocation() {
 
   const reorderRank = useCallback(
     (ward: WardIdentifier, fromRank: RankTier, toRank: RankTier) => {
-      setWards((prev) => ({
-        ...prev,
-        [ward]: swapWardRanks(prev[ward], fromRank, toRank),
+      setState((previous) => ({
+        ...previous,
+        wards: {
+          ...previous.wards,
+          [ward]: swapWardRanks(previous.wards[ward], fromRank, toRank),
+        },
       }));
     },
     [],
   );
 
-  return { wards, updateCohortCount, reorderRank };
+  return { wards: state.wards, updateCohortCount, reorderRank };
 }

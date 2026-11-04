@@ -28,9 +28,13 @@ SOURCE_MODEL = "model"
 SOURCE_NONE = "none"
 
 _DIRECTION_WORDS = r"(?: to| toward| towards)?"
+_ROUTE_NOUNS = r"(?:road|path|trail|route|highway|stairs|stairway)"
 APPROACH_VERB_PATTERN = re.compile(
     rf"\b(?:go(?:ing)?{_DIRECTION_WORDS}|walk{_DIRECTION_WORDS}|head{_DIRECTION_WORDS}"
-    rf"|run{_DIRECTION_WORDS}|approach|move(?: to| toward| towards))\b",
+    rf"|run{_DIRECTION_WORDS}|approach|move(?: to| toward| towards)"
+    rf"|(?:travel|journey|ride|climb|descend){_DIRECTION_WORDS}|follow"
+    rf"|set out(?: for| to| toward| towards)?|make (?:my|your|our) way"
+    rf"|take (?:the |a )?(?:[\w'-]+ ){{0,2}}{_ROUTE_NOUNS})\b",
     re.IGNORECASE,
 )
 ENTER_VERB_PATTERN = re.compile(

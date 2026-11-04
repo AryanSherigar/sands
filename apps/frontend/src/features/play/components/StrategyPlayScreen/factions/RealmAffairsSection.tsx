@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { buildRealmAffairGroups, type RealmAffairAction, type RealmAffairForm } from "../../../lib/realmAffairs";
 import { AppeaseForm } from "./AppeaseForm";
 import { SubsidizeForm } from "./SubsidizeForm";
+import { GrantConsentForm } from "./GrantConsentForm";
 import { VassalDemandForm } from "./VassalDemandForm";
 import type { CampaignWorldView, StrategyOrder } from "../../../types/simulation.types";
 import { StrategyConfirmDialog } from "../ui/StrategyConfirmDialog";
@@ -79,6 +80,9 @@ export const RealmAffairsSection: React.FC<RealmAffairsSectionProps> = ({ world,
       ) : null}
       {activeForm?.kind === "appease" ? (
         <AppeaseForm factionId={world.my_faction.id} members={activeForm.members} claimedRegionsByMember={activeForm.claimedRegionsByMember} onSubmit={handleSubmitForm} onCancel={() => setActiveForm(null)} />
+      ) : null}
+      {activeForm?.kind === "grant_consent" ? (
+        <GrantConsentForm factionId={world.my_faction.id} vassalageId={activeForm.vassalageId} targets={activeForm.targets} onSubmit={handleSubmitForm} onCancel={() => setActiveForm(null)} />
       ) : null}
       {activeForm?.kind === "vassal_demand" ? (
         <VassalDemandForm factionId={world.my_faction.id} vassalageId={activeForm.vassalageId} tributePercent={activeForm.tributePercent} levyPercent={activeForm.levyPercent} onSubmit={handleSubmitForm} onCancel={() => setActiveForm(null)} />

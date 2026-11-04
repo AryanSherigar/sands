@@ -1,6 +1,7 @@
 import type { CampaignWorldView } from "../../../types/simulation.types";
 import type { StrategyMapMode } from "../../../stores/strategyPlay.types";
 import type { ReplayVerificationResponse } from "../../../api/simulation.api";
+import type { ActiveEdictInfo } from "./TopCanopyControls.types";
 
 export interface StrategyTopCanopyProps {
   world?: CampaignWorldView;
@@ -16,4 +17,6 @@ export interface StrategyTopCanopyProps {
   isHistoryAvailable?: boolean;
   isHistoryActive?: boolean;
   onToggleHistory?: () => void;
+  activeEdict?: ActiveEdictInfo | null;
+  onIssueProclamation?: () => void;
 }

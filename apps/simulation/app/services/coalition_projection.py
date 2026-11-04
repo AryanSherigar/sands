@@ -34,5 +34,6 @@ def project_own_threat(
             "treaty_breaking": reading.treaty_breaking,
             "atrocity": reading.atrocity,
             "balance": reading.balance,
+            "hoard": reading.hoard,
         },
     )

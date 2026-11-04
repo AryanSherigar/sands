@@ -1,13 +1,17 @@
 import {
   AMBITION_PRESETS,
   DEFAULT_AMBITION_PRESET_ID,
+  DEFAULT_ENDING_TOGGLES,
+  DEFAULT_EVENT_FREQUENCY_PERCENT,
   DEFAULT_FACTION_MANPOWER,
   DEFAULT_FACTION_STABILITY,
   DEFAULT_FACTION_TREASURY,
   DEFAULT_LEADER_AGE,
   DEFAULT_LEADER_TRAIT_IDS,
+  DEFAULT_ORDERS_PER_TURN,
   DEFAULT_START_MONTH,
   DEFAULT_START_YEAR,
+  DEFAULT_STRATEGY_TOGGLES,
   FACTION_COLORS,
   STUDIO_DEFAULT_END_YEAR,
 } from "../constants/strategyAuthoring";
@@ -16,15 +20,19 @@ import type {
   StrategyArmy,
   StrategyClaim,
   StrategyCommander,
+  StrategyEnding,
+  StrategyEndingToggles,
   StrategyFaction,
   StrategyFields,
   StrategyGrudge,
   StrategyLeader,
   StrategyRegionSetup,
   StrategyRelation,
+  StrategySystemToggles,
   StrategyTiming,
 } from "../types/strategyDocument.types";
 import { makeUniqueId } from "./strategyIds";
+import { applyRules, readRules } from "./strategyRules";
 import { addArmy, addPeaceWithAll, withEconomyDefaults } from "./strategyStart";
 
 export { makeUniqueId };
@@ -44,6 +52,46 @@ const readTiming = (raw: RawDocument): StrategyTiming => {
   };
 };
 
+const readToggles = (raw: RawDocument): StrategySystemToggles => {
+  const toggles = (raw.toggles ?? {}) as Partial<StrategySystemToggles>;
+  return {
+    is_loans_enabled: toggles.is_loans_enabled ?? DEFAULT_STRATEGY_TOGGLES.is_loans_enabled,
+    is_events_enabled: toggles.is_events_enabled ?? DEFAULT_STRATEGY_TOGGLES.is_events_enabled,
+    is_outrage_enabled: toggles.is_outrage_enabled ?? DEFAULT_STRATEGY_TOGGLES.is_outrage_enabled,
+    is_overtures_enabled: toggles.is_overtures_enabled ?? DEFAULT_STRATEGY_TOGGLES.is_overtures_enabled,
+    is_ai_peace_enabled: toggles.is_ai_peace_enabled ?? DEFAULT_STRATEGY_TOGGLES.is_ai_peace_enabled,
+    is_ai_pressure_enabled: toggles.is_ai_pressure_enabled ?? DEFAULT_STRATEGY_TOGGLES.is_ai_pressure_enabled,
+    is_ai_subsidy_enabled: toggles.is_ai_subsidy_enabled ?? DEFAULT_STRATEGY_TOGGLES.is_ai_subsidy_enabled,
+    is_ai_vassal_enabled: toggles.is_ai_vassal_enabled ?? DEFAULT_STRATEGY_TOGGLES.is_ai_vassal_enabled,
+    is_ai_alliance_enabled: toggles.is_ai_alliance_enabled ?? DEFAULT_STRATEGY_TOGGLES.is_ai_alliance_enabled,
+  };
+};
+
+const readEndingToggles = (raw: RawDocument): StrategyEndingToggles => {
+  const tuning = (raw.tuning ?? {}) as RawDocument;
+  const endingsBlock = (tuning.endings ?? {}) as RawDocument;
+  const toggles = (endingsBlock.toggles ?? {}) as Partial<StrategyEndingToggles>;
+  return {
+    is_regime_fall_enabled: toggles.is_regime_fall_enabled ?? DEFAULT_ENDING_TOGGLES.is_regime_fall_enabled,
+    is_hegemony_enabled: toggles.is_hegemony_enabled ?? DEFAULT_ENDING_TOGGLES.is_hegemony_enabled,
+    is_negotiated_end_enabled: toggles.is_negotiated_end_enabled ?? DEFAULT_ENDING_TOGGLES.is_negotiated_end_enabled,
+    is_end_date_enabled: toggles.is_end_date_enabled ?? DEFAULT_ENDING_TOGGLES.is_end_date_enabled,
+    is_vassal_outcome_enabled: toggles.is_vassal_outcome_enabled ?? DEFAULT_ENDING_TOGGLES.is_vassal_outcome_enabled,
+  };
+};
+
+const readOrdersPerTurn = (raw: RawDocument): number => {
+  const tuning = (raw.tuning ?? {}) as RawDocument;
+  return typeof tuning.orders_per_turn === "number" ? tuning.orders_per_turn : DEFAULT_ORDERS_PER_TURN;
+};
+
+const readEventFrequency = (raw: RawDocument): number => {
+  const tuning = (raw.tuning ?? {}) as RawDocument;
+  return typeof tuning.event_frequency_percent === "number"
+    ? tuning.event_frequency_percent
+    : DEFAULT_EVENT_FREQUENCY_PERCENT;
+};
+
 // NOTE: the server validates the full document; this only reads the slices Studio edits.
 export const readStrategyFields = (raw: RawDocument): StrategyFields => {
   const starting = (raw.starting ?? {}) as Record<string, unknown>;
@@ -58,25 +106,83 @@ export const readStrategyFields = (raw: RawDocument): StrategyFields => {
     claims: asArray<StrategyClaim>(starting.claims),
     grudges: asArray<StrategyGrudge>(starting.grudges),
     timing: readTiming(raw),
+    rules: readRules((raw.tuning ?? {}) as RawDocument),
+    toggles: readToggles(raw),
+    is_using_default_endings: raw.is_using_default_endings !== false,
+    endings: asArray<StrategyEnding>(raw.endings),
+    ending_toggles: readEndingToggles(raw),
+    disabled_builtin_event_ids: asArray<string>(raw.disabled_builtin_event_ids),
+    orders_per_turn: readOrdersPerTurn(raw),
+    event_frequency_percent: readEventFrequency(raw),
   };
 };
 
-export const applyStrategyFields = (raw: RawDocument, fields: StrategyFields): RawDocument => ({
-  ...raw,
-  factions: fields.factions,
-  leaders: fields.leaders,
-  ambitions: fields.ambitions,
-  commanders: fields.commanders,
-  starting: {
-    ...((raw.starting ?? {}) as RawDocument),
-    regions: fields.regions,
-    armies: fields.armies,
-    relations: fields.relations,
-    claims: fields.claims,
-    grudges: fields.grudges,
-  },
-  tuning: { ...((raw.tuning ?? {}) as RawDocument), ...fields.timing },
-});
+const hasDiff = (a: Record<string, unknown>, b: Record<string, unknown>): boolean => {
+  const keys = Object.keys(b);
+  return keys.some((key) => a[key] !== b[key]);
+};
+
+export const applyStrategyFields = (raw: RawDocument, fields: StrategyFields): RawDocument => {
+  const rawTuning = (raw.tuning ?? {}) as RawDocument;
+  const rawEndings = (rawTuning.endings ?? {}) as RawDocument;
+  const rawEndingToggles = (rawEndings.toggles ?? {}) as RawDocument;
+
+  const nextTuning: RawDocument = {
+    ...rawTuning,
+    ...fields.timing,
+  };
+
+  if (rawTuning.orders_per_turn !== undefined || fields.orders_per_turn !== DEFAULT_ORDERS_PER_TURN) {
+    nextTuning.orders_per_turn = fields.orders_per_turn;
+  }
+  if (rawTuning.event_frequency_percent !== undefined || fields.event_frequency_percent !== DEFAULT_EVENT_FREQUENCY_PERCENT) {
+    nextTuning.event_frequency_percent = fields.event_frequency_percent;
+  }
+  if (rawTuning.endings !== undefined || hasDiff(fields.ending_toggles as unknown as Record<string, unknown>, DEFAULT_ENDING_TOGGLES as unknown as Record<string, unknown>)) {
+    nextTuning.endings = {
+      ...rawEndings,
+      toggles: {
+        ...rawEndingToggles,
+        ...fields.ending_toggles,
+      },
+    };
+  }
+
+  const result: RawDocument = {
+    ...raw,
+    factions: fields.factions,
+    leaders: fields.leaders,
+    ambitions: fields.ambitions,
+    commanders: fields.commanders,
+    starting: {
+      ...((raw.starting ?? {}) as RawDocument),
+      regions: fields.regions,
+      armies: fields.armies,
+      relations: fields.relations,
+      claims: fields.claims,
+      grudges: fields.grudges,
+    },
+    tuning: applyRules(nextTuning, fields.rules),
+  };
+
+  if (raw.toggles !== undefined || hasDiff(fields.toggles as unknown as Record<string, unknown>, DEFAULT_STRATEGY_TOGGLES as unknown as Record<string, unknown>)) {
+    result.toggles = {
+      ...((raw.toggles ?? {}) as RawDocument),
+      ...fields.toggles,
+    };
+  }
+  if (raw.is_using_default_endings !== undefined || !fields.is_using_default_endings) {
+    result.is_using_default_endings = fields.is_using_default_endings;
+  }
+  if (raw.endings !== undefined || fields.endings.length > 0) {
+    result.endings = fields.endings;
+  }
+  if (raw.disabled_builtin_event_ids !== undefined || fields.disabled_builtin_event_ids.length > 0) {
+    result.disabled_builtin_event_ids = fields.disabled_builtin_event_ids;
+  }
+
+  return result;
+};
 
 const buildAmbition = (presetId: string, factionId: string): StrategyAmbition => {
   const preset = AMBITION_PRESETS.find((item) => item.id === presetId) ?? AMBITION_PRESETS[0];

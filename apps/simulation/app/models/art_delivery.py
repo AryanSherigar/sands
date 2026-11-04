@@ -2,7 +2,7 @@ from datetime import datetime
 from uuid import UUID
 
 from app.models.base import WorldModel
-from strategy_contracts.art import ArtKind, ArtStatus
+from strategy_contracts.art import ArtBriefing, ArtKind, ArtStatus
 
 
 class ArtDelivery(WorldModel):
@@ -18,3 +18,4 @@ class ArtDelivery(WorldModel):
     error_code: str | None
     created_at: datetime
     completed_at: datetime | None
+    briefing: ArtBriefing | None = None

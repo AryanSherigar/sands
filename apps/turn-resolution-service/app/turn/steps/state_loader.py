@@ -5,8 +5,6 @@ import time
 import uuid
 
 import structlog
-from app.config import settings
-from app.exceptions.alpha_exceptions import AlphaScenarioOnlyError
 from app.exceptions.turn_exceptions import PlaythroughNotActiveError
 from app.models.turn import LoadedState
 from app.repositories.playthrough_repo import PlaythroughRepo
@@ -18,27 +16,6 @@ EVENT_TURN_STEP_COMPLETED = "turn_step_completed"
 STEP_NAME = "state_loader"
 SNAPSHOT_VISIBILITY_KEY = "visibility"
 PRIVATE_VISIBILITY = "private"
-
-
-async def assert_alpha_scenario(
-    playthrough_id: uuid.UUID, playthrough_repo: PlaythroughRepo
-) -> None:
-    """Refuse a playthrough of any scenario but the alpha one before any turn work.
-
-    A private scenario is also allowed: Core API only lets its creator or an
-    allowlisted user start a playthrough of it, and the playthrough pins the
-    visibility it was created with.
-    """
-    if not settings.is_alpha_mode:
-        return
-    playthrough = await playthrough_repo.get_by_id(playthrough_id)
-    if playthrough is None:
-        return
-    if playthrough.scenario_id == settings.alpha_scenario_id:
-        return
-    snapshot = playthrough.scenario_snapshot or {}
-    if snapshot.get(SNAPSHOT_VISIBILITY_KEY) != PRIVATE_VISIBILITY:
-        raise AlphaScenarioOnlyError()
 
 
 async def load_state(

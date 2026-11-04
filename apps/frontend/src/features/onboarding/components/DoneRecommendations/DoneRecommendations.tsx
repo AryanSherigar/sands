@@ -11,6 +11,7 @@ import {
   SHOWCASE_RECOMMENDATIONS,
 } from "../../constants/onboarding.constants";
 import type { DoneRecommendationsProps } from "./DoneRecommendations.types";
+import { IconStarFilled } from "@tabler/icons-react";
 
 const SKELETON_SLOTS = Array.from(
   { length: RECOMMENDATION_SKELETON_COUNT },
@@ -105,8 +106,9 @@ export const DoneRecommendations: React.FC<DoneRecommendationsProps> = ({
               {scenario.description}
             </p>
             <div className="mt-3 flex items-center justify-between border-t border-border-subtle pt-2.5 font-mono text-[11px] text-content-faint">
-              <span>
-                ★ {scenario.rating} · {scenario.plays} plays
+              <span className="inline-flex items-center gap-1">
+                <IconStarFilled size={12} aria-hidden="true" />
+                {scenario.rating} · {scenario.plays} plays
               </span>
               <Link
                 to={`/play?scenario=${scenario.id}`}

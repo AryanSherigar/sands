@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import { Button } from "@/shared/components/ui/Button";
+import { StrategyChatPanel } from "../components/StrategyWorkspace/StrategyChatPanel";
 import { StrategyFactionsSection } from "../components/StrategyWorkspace/StrategyFactionsSection";
 import { StrategyMapSection } from "../components/StrategyWorkspace/StrategyMapSection";
 import { StrategyPublishSection } from "../components/StrategyWorkspace/StrategyPublishSection";
@@ -23,12 +25,18 @@ export const StrategyWorkspacePage: React.FC<StrategyWorkspacePageProps> = ({ sc
   const check = useStrategyCheck(scenario.scenario_id, scenario.content_edited_at);
   const regions = map?.regions ?? [];
   const [openPanel, setOpenPanel] = useState<StartPanelId | null>(null);
+  const [isChatOpen, setIsChatOpen] = useState(false);
 
   return (
     <main className="mx-auto max-w-3xl space-y-6 p-6 font-sans text-content">
       <header className="flex items-end justify-between gap-4">
         <h1 className="text-2xl font-semibold">Strategy scenario</h1>
-        <p role="status" className="text-xs text-content-muted">{SAVE_LABELS[saveState]}</p>
+        <div className="flex items-center gap-3">
+          <p role="status" className="text-xs text-content-muted">{SAVE_LABELS[saveState]}</p>
+          <Button variant="secondary" onClick={() => setIsChatOpen(true)}>
+            Chat
+          </Button>
+        </div>
       </header>
       <StrategyTitleField scenario={scenario} />
       <StrategyMapSection scenarioId={scenario.scenario_id} />
@@ -46,7 +54,18 @@ export const StrategyWorkspacePage: React.FC<StrategyWorkspacePageProps> = ({ sc
         report={check.data}
         isMapMissing={!isMapLoading && regions.length === 0}
         onFlush={flush}
+        onRecheck={async () => (await check.refetch()).data}
         onOpenPanel={setOpenPanel}
+      />
+      <StrategyChatPanel
+        scenarioId={scenario.scenario_id}
+        title={scenario.title}
+        fields={fields}
+        mapRegions={regions}
+        activePanel={openPanel}
+        edit={edit}
+        isOpen={isChatOpen}
+        onOpenChange={setIsChatOpen}
       />
     </main>
   );

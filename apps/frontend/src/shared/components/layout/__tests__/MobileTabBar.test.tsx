@@ -6,10 +6,6 @@ import { useAuthStore } from "@/features/auth/stores/auth.store";
 import { useSignInModalStore } from "@/shared/stores/signInModal.store";
 import { MobileTabBar } from "../MobileTabBar";
 
-vi.mock("@/shared/hooks/useIsAlphaMode", () => ({
-  useIsAlphaMode: () => false,
-}));
-
 const mockUser = vi.hoisted(() => ({ current: null as object | null }));
 vi.mock("@/features/auth/hooks/useAuth", () => ({
   useAuth: () => ({ user: mockUser.current }),

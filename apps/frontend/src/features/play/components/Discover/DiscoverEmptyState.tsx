@@ -1,7 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/shared/components/ui/Button";
-import { useIsAlphaMode } from "@/shared/hooks/useIsAlphaMode";
 import type { DiscoverEmptyStateProps } from "./DiscoverEmptyState.types";
 
 const EmptyMessage: React.FC<{
@@ -22,7 +21,6 @@ export const DiscoverEmptyState: React.FC<DiscoverEmptyStateProps> = ({
   onClearFilters,
   onExploreTopRated,
 }) => {
-  const isAlphaMode = useIsAlphaMode();
   const isLibraryOnly =
     filters.library !== null && !filters.query && filters.genres.length === 0;
 
@@ -41,14 +39,12 @@ export const DiscoverEmptyState: React.FC<DiscoverEmptyStateProps> = ({
   if (isLibraryOnly && filters.library === "created") {
     return (
       <EmptyMessage title="You haven't created a story">
-        {!isAlphaMode && (
-          <Link
-            to="/studio/new"
-            className="inline-flex rounded-md border border-accent bg-accent px-4 py-2 text-sm font-medium text-accent-contrast hover:bg-accent-strong"
-          >
-            New Story
-          </Link>
-        )}
+        <Link
+          to="/studio/new"
+          className="inline-flex rounded-md border border-accent bg-accent px-4 py-2 text-sm font-medium text-accent-contrast hover:bg-accent-strong"
+        >
+          New Story
+        </Link>
       </EmptyMessage>
     );
   }

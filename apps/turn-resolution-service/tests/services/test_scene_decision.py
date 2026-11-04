@@ -117,3 +117,16 @@ def test_an_unknown_promise_kind_means_keep_talking() -> None:
         SceneAction.CONTINUE_TALK,
         None,
     )
+
+
+def test_a_null_promise_flag_keeps_the_decision() -> None:
+    text = (
+        '{"action": "propose_terms", "duration_turns": 8, "promise_kind": null, '
+        '"promise_subject_id": null, "is_promise_by_ruler": null, "tone_grade": 1}'
+    )
+
+    decision = parse_decision(text)
+
+    assert decision.action is SceneAction.PROPOSE_TERMS
+    assert decision.duration_turns == 8
+    assert decision.is_promise_by_ruler is False

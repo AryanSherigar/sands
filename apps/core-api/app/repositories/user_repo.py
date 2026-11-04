@@ -1,7 +1,7 @@
 """User repository for database operations."""
 
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime
 
 from app.db.models.playthrough import Playthrough
 from app.db.models.review import ScenarioReview
@@ -33,16 +33,12 @@ class UserRepo:
         self,
         auth_provider_id: str,
         display_name: str,
-        alpha_consent_version: str | None = None,
     ) -> User:
         """Persist a newly registered user account."""
         user = User(
             auth_provider_id=auth_provider_id,
             display_name=display_name,
         )
-        if alpha_consent_version is not None:
-            user.alpha_consent_version = alpha_consent_version
-            user.alpha_consented_at = datetime.now(timezone.utc)
         self.session.add(user)
         await self.session.flush()
         return user
@@ -59,13 +55,6 @@ class UserRepo:
             display_name=display_name,
         )
         self.session.add(user)
-        await self.session.flush()
-        return user
-
-    async def record_alpha_consent(self, user: User, version: str) -> User:
-        """Store the consent version a user accepted and when."""
-        user.alpha_consent_version = version
-        user.alpha_consented_at = datetime.now(timezone.utc)
         await self.session.flush()
         return user
 
@@ -86,19 +75,6 @@ class UserRepo:
     async def clear_deletion_request(self, user: User) -> User:
         """Cancel a pending deletion, restoring the account."""
         user.deletion_requested_at = None
-        return await self.update(user)
-
-    async def mark_suspended(self, user: User, suspended_at: datetime) -> User:
-        """Suspend the account and revoke every issued token."""
-        user.alpha_suspended_at = suspended_at
-        user.token_version += 1
-        user.current_refresh_jti = None
-        user.previous_refresh_jti = None
-        return await self.update(user)
-
-    async def clear_suspension(self, user: User) -> User:
-        """Lift a suspension; the user signs in again to get fresh tokens."""
-        user.alpha_suspended_at = None
         return await self.update(user)
 
     async def update_profile(

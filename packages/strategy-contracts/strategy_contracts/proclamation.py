@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Literal
 
-from pydantic import Field
+from pydantic import Field, field_validator
 
 from strategy_contracts.base import StrictModel
 
@@ -26,6 +26,9 @@ class EstatePillar(str, Enum):
     MILITARY = "military"
     BURGHERS = "burghers"
     CLERGY = "clergy"
+
+
+ProclamationVerdict = Literal["fiat", "compromise"]
 
 
 class ProclamationDraft(StrictModel):
@@ -53,7 +56,16 @@ class ActiveProclamation(StrictModel):
     enacted_turn: int
     remaining_turns: int = 4
     immediate_deltas: dict[str, int]
-    ongoing_modifiers: dict[str, float]
+    ongoing_modifiers: dict[str, int]
+
+    @field_validator("ongoing_modifiers", mode="before")
+    @classmethod
+    def drop_legacy_fractional_modifiers(cls, value: object) -> object:
+        if isinstance(value, dict) and any(
+            isinstance(item, float) for item in value.values()
+        ):
+            return {}
+        return value
 
 
 class ProclamationScenePackage(StrictModel):

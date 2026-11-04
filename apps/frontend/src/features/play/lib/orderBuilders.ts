@@ -3,7 +3,9 @@ import type {
   AnnexVassalOrder,
   AppeaseCoalitionOrder,
   AppeaseOffer,
+  ConsentActionKind,
   DemandFromVassalOrder,
+  GrantConsentOrder,
   DemandTerm,
   DiplomaticPlayOrder,
   MobilizeOrder,
@@ -21,6 +23,9 @@ import type {
   DemandReply,
   DenounceAllianceOrder,
   DisbandArmyOrder,
+  MergeArmiesOrder,
+  SetArmyPolicyOrder,
+  SplitArmyOrder,
   FabricateClaimOrder,
   HaltArmyOrder,
   HandlePrisonerOrder,
@@ -216,6 +221,30 @@ export function buildDisbandOrder(factionId: string, armyId: string): DisbandArm
   return { kind: "disband_army", faction_id: factionId, army_id: armyId };
 }
 
+export function buildMergeOrder(
+  factionId: string,
+  armyIds: string[],
+  intoArmyId: string,
+): MergeArmiesOrder {
+  return { kind: "merge_armies", faction_id: factionId, army_ids: armyIds, into_army_id: intoArmyId };
+}
+
+export function buildSplitOrder(
+  factionId: string,
+  armyId: string,
+  troops: SplitArmyOrder["troops"],
+): SplitArmyOrder {
+  return { kind: "split_army", faction_id: factionId, army_id: armyId, troops };
+}
+
+export function buildArmyPolicyOrder(
+  factionId: string,
+  armyId: string,
+  policy: Pick<SetArmyPolicyOrder, "withdrawal_policy" | "reserve_policy">,
+): SetArmyPolicyOrder {
+  return { kind: "set_army_policy", faction_id: factionId, army_id: armyId, ...policy };
+}
+
 export function buildMapScoutOrder(factionId: string, regionId: string): MapScoutOrder {
   return { kind: "map_scout", faction_id: factionId, target_region_id: regionId };
 }
@@ -294,6 +323,21 @@ export function buildAppeaseOrder(
   offer: AppeaseOffer,
 ): AppeaseCoalitionOrder {
   return { kind: "appease_coalition", faction_id: factionId, member_id: memberId, offer };
+}
+
+export function buildGrantConsentOrder(
+  factionId: string,
+  vassalageId: string,
+  action: ConsentActionKind,
+  targetFactionId: string,
+): GrantConsentOrder {
+  return {
+    kind: "grant_consent",
+    faction_id: factionId,
+    vassalage_id: vassalageId,
+    action,
+    target_faction_id: targetFactionId,
+  };
 }
 
 export function buildVassalDemandOrder(

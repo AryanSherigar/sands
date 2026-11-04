@@ -262,4 +262,30 @@ describe("NegotiationTreatyDrawer", () => {
     );
     expect(screen.getByText("Refuses")).toBeInTheDocument();
   });
+
+  it("shows how much each clause weighs in the deal", () => {
+    render(
+      <NegotiationTreatyDrawer
+        isOpen={true}
+        currentTurn={10}
+        counterpartName="Queen Mira"
+        clauseBands={["heavy", "light"]}
+        proposal={{
+          proposer_id: "mira",
+          counterpart_id: "aldric",
+          is_confirmed_by_counterpart: true,
+          is_confirmed_by_player: false,
+          terms: [
+            { kind: "pay_gold", payer_id: "aldric", payee_id: "mira", amount: 90 },
+            { kind: "non_aggression", faction_a: "mira", faction_b: "aldric", duration_turns: 4 },
+          ],
+        }}
+        onClose={vi.fn()}
+        onSign={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText("Heavy weight")).toBeInTheDocument();
+    expect(screen.getByText("Light weight")).toBeInTheDocument();
+  });
 });

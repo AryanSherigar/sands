@@ -5,7 +5,6 @@ import { MapViewer } from "../components/MapViewer/MapViewer";
 import { MinigameOverlay } from "../components/MinigameOverlay/MinigameOverlay";
 import { CheckPromptOverlay } from "../components/CheckPromptOverlay/CheckPromptOverlay";
 import { RuleCheckOverlay } from "../components/RuleCheckOverlay/RuleCheckOverlay";
-import { TensionTap } from "../components/PlayScreen/TensionTap/TensionTap";
 import { PlayScreen } from "../components/PlayScreen/PlayScreen";
 import { usePlayStore } from "../stores/play.store";
 import { usePlaythrough } from "../hooks/usePlaythrough";
@@ -126,7 +125,6 @@ export function PlayPage() {
       <MinigameOverlay />
       <CheckPromptOverlay />
       <RuleCheckOverlay />
-      <TensionTap />
     </>
   );
 }

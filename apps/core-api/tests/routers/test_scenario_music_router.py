@@ -1,0 +1,150 @@
+"""Integration tests for scenario mood-music REST endpoints."""
+
+import uuid
+
+import httpx
+import pytest
+from app.integrations import storage_client
+from app.repositories.user_repo import UserRepo
+from app.services import default_music
+from sqlalchemy.ext.asyncio import AsyncSession
+
+
+@pytest.fixture
+async def dev_user(db_session: AsyncSession):
+    return await UserRepo(db_session).create(
+        auth_provider_id=f"dev-auth-{uuid.uuid4()}", display_name="Dev Creator"
+    )
+
+
+@pytest.fixture
+def headers(dev_user):
+    return {"x-dev-user-id": str(dev_user.user_id)}
+
+
+@pytest.fixture
+async def scenario_id(async_client: httpx.AsyncClient, headers) -> str:
+    response = await async_client.post(
+        "/v1/scenarios",
+        json={
+            "title": "The Hollow Cairn",
+            "mode": "master",
+            "complexity_tier": "master",
+        },
+        headers=headers,
+    )
+    return response.json()["scenario_id"]
+
+
+@pytest.fixture
+def mock_upload_image(monkeypatch):
+    async def _fake_upload_image(
+        content: bytes, content_type: str, object_key: str
+    ) -> str:
+        return f"https://storage.googleapis.com/fake-bucket/{object_key}"
+
+    monkeypatch.setattr(storage_client, "upload_image", _fake_upload_image)
+
+
+@pytest.mark.asyncio
+async def test_list_scenario_music_synthesizes_all_6_defaults(
+    async_client: httpx.AsyncClient, headers, scenario_id
+):
+    resp = await async_client.get(f"/v1/scenarios/{scenario_id}/music", headers=headers)
+    assert resp.status_code == 200
+    items = resp.json()["items"]
+    assert len(items) == 6
+    assert {item["mood"] for item in items} == {
+        "peaceful",
+        "mystery",
+        "tension",
+        "combat",
+        "melancholy",
+        "triumph",
+    }
+    assert all(item["source"] == "default" for item in items)
+    for item in items:
+        assert item["track_url"] == default_music.default_track_url(item["mood"])
+
+
+@pytest.mark.asyncio
+async def test_set_default_track_persists(
+    async_client: httpx.AsyncClient, headers, scenario_id
+):
+    resp = await async_client.post(
+        f"/v1/scenarios/{scenario_id}/music/peaceful/default", headers=headers
+    )
+    assert resp.status_code == 200
+    assert resp.json()["source"] == "default"
+    assert resp.json()["track_url"] == default_music.default_track_url("peaceful")
+
+    list_resp = await async_client.get(
+        f"/v1/scenarios/{scenario_id}/music", headers=headers
+    )
+    peaceful = next(
+        item for item in list_resp.json()["items"] if item["mood"] == "peaceful"
+    )
+    assert peaceful["source"] == "default"
+    assert peaceful["track_url"] == default_music.default_track_url("peaceful")
+
+
+@pytest.mark.asyncio
+async def test_default_track_url_is_stable_across_upload_then_revert(
+    async_client: httpx.AsyncClient,
+    headers,
+    scenario_id,
+    mock_upload_image,
+    monkeypatch,
+):
+    from app.services import music_service
+
+    async def _fake_probe_duration(content: bytes) -> float:
+        return 30.0
+
+    monkeypatch.setattr(music_service, "_probe_duration", _fake_probe_duration)
+
+    upload_resp = await async_client.post(
+        f"/v1/scenarios/{scenario_id}/music/peaceful/upload",
+        headers=headers,
+        files={"file": ("track.wav", b"\x00" * 1024, "audio/wav")},
+    )
+    assert upload_resp.status_code == 200
+    uploaded_track_url = upload_resp.json()["track_url"]
+    assert uploaded_track_url != default_music.default_track_url("peaceful")
+
+    revert_resp = await async_client.post(
+        f"/v1/scenarios/{scenario_id}/music/peaceful/default", headers=headers
+    )
+    assert revert_resp.status_code == 200
+    assert revert_resp.json()["track_url"] == default_music.default_track_url(
+        "peaceful"
+    )
+    assert revert_resp.json()["track_url"] != uploaded_track_url
+
+
+@pytest.mark.asyncio
+async def test_upload_track_rejects_unsupported_format(
+    async_client: httpx.AsyncClient, headers, scenario_id
+):
+    files = {"file": ("track.txt", b"not audio", "text/plain")}
+    resp = await async_client.post(
+        f"/v1/scenarios/{scenario_id}/music/tension/upload",
+        headers=headers,
+        files=files,
+    )
+    assert resp.status_code == 400
+
+
+@pytest.mark.asyncio
+async def test_other_user_cannot_access_scenario_music(
+    async_client: httpx.AsyncClient, scenario_id, db_session: AsyncSession
+):
+    other_user = await UserRepo(db_session).create(
+        auth_provider_id=f"dev-auth-{uuid.uuid4()}", display_name="Someone Else"
+    )
+    other_headers = {"x-dev-user-id": str(other_user.user_id)}
+
+    resp = await async_client.get(
+        f"/v1/scenarios/{scenario_id}/music", headers=other_headers
+    )
+    assert resp.status_code == 403

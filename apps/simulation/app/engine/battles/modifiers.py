@@ -79,7 +79,7 @@ def _require_flank(
         )
 
 
-def _troop_attack(
+def troop_attack(
     count: int,
     troop_type: TroopType,
     battle: BattleState,
@@ -98,6 +98,35 @@ def _troop_attack(
     return pressure
 
 
+def morale_factor_percent(tuning: BattleTuning, morale: int, fatigue: int) -> int:
+    return max(
+        tuning.morale_factor_floor_percent,
+        tuning.morale_factor_base_percent
+        + morale
+        - fatigue // tuning.fatigue_morale_divisor,
+    )
+
+
+def scale_attack_pressure(
+    pressure: int,
+    battle: BattleState,
+    plan: StandingPlan,
+    supply: SupplyState | None,
+    morale_factor: int,
+    tuning: BattleTuning,
+) -> int:
+    factors = (
+        tuning.formation_attack_percent[plan.formation],
+        tuning.tactic_attack_percent[plan.tactic],
+        tuning.weather_attack_percent[battle.weather or Weather.CLEAR],
+        tuning.supply_attack_percent[supply or SupplyState.SUPPLIED],
+        morale_factor,
+    )
+    for percent in factors:
+        pressure = pressure * percent // PERCENT
+    return pressure
+
+
 def attack_pressure(
     world: WorldState,
     battle: BattleState,
@@ -105,50 +134,50 @@ def attack_pressure(
     tuning: BattleTuning,
 ) -> int:
     pressure = sum(
-        _troop_attack(count, troop_type, battle, contingent, tuning)
+        troop_attack(count, troop_type, battle, contingent, tuning)
         for deployment in contingent.deployments.values()
         for troop_type, count in deployment.active.items()
     )
-    factor = max(
-        tuning.morale_factor_floor_percent,
-        tuning.morale_factor_base_percent
-        + weighted_attribute(world, contingent, "morale")
-        - weighted_attribute(world, contingent, "fatigue")
-        // tuning.fatigue_morale_divisor,
+    morale_factor = morale_factor_percent(
+        tuning,
+        weighted_attribute(world, contingent, "morale"),
+        weighted_attribute(world, contingent, "fatigue"),
     )
-    factors = (
-        tuning.formation_attack_percent[contingent.plan.formation],
-        tuning.tactic_attack_percent[contingent.plan.tactic],
-        tuning.weather_attack_percent[battle.weather or Weather.CLEAR],
-        tuning.supply_attack_percent[contingent.supply or SupplyState.SUPPLIED],
-        factor,
+    return scale_attack_pressure(
+        pressure, battle, contingent.plan, contingent.supply, morale_factor, tuning
     )
-    for percent in factors:
-        pressure = pressure * percent // PERCENT
-    return pressure
 
 
-def average_protection(
-    battle: BattleState, contingent: BattleContingent, tuning: BattleTuning
+def protection_for_active(
+    active: dict[TroopType, int],
+    battle: BattleState,
+    plan: StandingPlan,
+    tuning: BattleTuning,
 ) -> int:
-    engaged = sum(
-        sum(deployment.active.values())
-        for deployment in contingent.deployments.values()
-    )
+    engaged = sum(active.values())
     protection = max(
         1,
         sum(
             count * tuning.troop_protection[troop_type]
-            for deployment in contingent.deployments.values()
-            for troop_type, count in deployment.active.items()
+            for troop_type, count in active.items()
         )
         // max(1, engaged),
     )
     factors = (
-        tuning.formation_protection_percent[contingent.plan.formation],
-        tuning.tactic_protection_percent[contingent.plan.tactic],
+        tuning.formation_protection_percent[plan.formation],
+        tuning.tactic_protection_percent[plan.tactic],
         tuning.weather_protection_percent[battle.weather or Weather.CLEAR],
     )
     for percent in factors:
         protection = max(1, protection * percent // PERCENT)
     return protection
+
+
+def average_protection(
+    battle: BattleState, contingent: BattleContingent, tuning: BattleTuning
+) -> int:
+    active: dict[TroopType, int] = {}
+    for deployment in contingent.deployments.values():
+        for troop_type, count in deployment.active.items():
+            active[troop_type] = active.get(troop_type, 0) + count
+    return protection_for_active(active, battle, contingent.plan, tuning)

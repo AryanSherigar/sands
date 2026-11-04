@@ -22,9 +22,7 @@ services:
       - backend-net
 
   migration-runner:
-    build:
-      context: .
-      dockerfile: apps/core-api/Dockerfile
+    image: sands-core-api
     container_name: sands-migration-runner
     command: ["alembic", "upgrade", "head"]
     environment:
@@ -40,6 +38,7 @@ services:
     build:
       context: .
       dockerfile: apps/core-api/Dockerfile
+    image: sands-core-api
     container_name: sands-core-api
     restart: unless-stopped
     environment:
@@ -79,6 +78,12 @@ services:
         condition: service_healthy
       migration-runner:
         condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=3)"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
     networks:
       - frontend-net
       - backend-net
@@ -137,6 +142,12 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/health', timeout=3)"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
     networks:
       - frontend-net
       - backend-net
@@ -229,15 +240,15 @@ services:
           sleep "$$SWEEP_INTERVAL_SECONDS"
         done
     depends_on:
-      - turn-resolution-service
-      - memory
+      turn-resolution-service:
+        condition: service_healthy
+      memory:
+        condition: service_healthy
     networks:
       - backend-net
 
   memory-maintenance:
-    build:
-      context: .
-      dockerfile: apps/core-api/Dockerfile
+    image: sands-core-api
     container_name: sands-memory-maintenance
     restart: unless-stopped
     environment:
@@ -286,9 +297,17 @@ services:
     ports:
       - "80:8080"
     depends_on:
-      - core-api
-      - turn-resolution-service
-      - simulation
+      core-api:
+        condition: service_healthy
+      turn-resolution-service:
+        condition: service_healthy
+      simulation:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     networks:
       - frontend-net
 
@@ -342,6 +361,7 @@ services:
       SECRET_KEY: ${SECRET_KEY:-dev-secret-key-change-in-production}
       JWT_ALGORITHM: ${JWT_ALGORITHM:-HS256}
       INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:-dev-internal-service-token-change-me}
+      CORE_API_URL: http://core-api:8000
       LLM_PROVIDER_PROTOCOL: ${LLM_PROVIDER_PROTOCOL:-custom}
       LLM_PROVIDER_REASONING_EFFORT: ${LLM_PROVIDER_REASONING_EFFORT:-}
       STANCE_PROVIDER_ENABLED: ${STANCE_PROVIDER_ENABLED:-false}

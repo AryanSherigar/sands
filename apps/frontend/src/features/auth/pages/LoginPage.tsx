@@ -1,11 +1,9 @@
 import React from "react";
 import { useAuthStore } from "../stores/auth.store";
 import { useAuth } from "../hooks/useAuth";
-import { ALPHA_ERROR_MESSAGES } from "../constants/auth-messages";
 import { useLoginRedirect } from "../hooks/useLoginRedirect";
 import { LoginHero } from "../components/LoginHero/LoginHero";
 import { GoogleSignInButton } from "../components/GoogleSignInButton/GoogleSignInButton";
-import { AlphaConsent } from "../components/AlphaConsent/AlphaConsent";
 import { LegalLine } from "../components/LegalLine/LegalLine";
 import { SignInError } from "../components/SignInError/SignInError";
 import { LayoutTextFlip } from "@/shared/components/ui/aceternity/layout-text-flip";
@@ -23,12 +21,9 @@ const FLIP_CLASSES =
 
 export const LoginPage: React.FC = () => {
   const isLoading = useAuthStore((state) => state.isLoading);
-  const isSuspended = useAuthStore((state) => state.isSuspended);
   const { error, isGoogleLoading, loginWithGoogle, loginAsDevUser } =
     useAuth();
   useLoginRedirect();
-  const signInError =
-    error ?? (isSuspended ? ALPHA_ERROR_MESSAGES.account_suspended : null);
 
   if (isLoading) {
     return (
@@ -40,12 +35,12 @@ export const LoginPage: React.FC = () => {
 
   return (
     <main className="flex min-h-screen flex-col bg-surface text-content lg:flex-row">
-      <div className="h-[30dvh] w-full bg-surface-sunken lg:order-last lg:h-auto lg:min-h-screen lg:w-[55%]">
+      <div className="h-[30dvh] w-full bg-surface-sunken lg:order-last lg:h-auto lg:min-h-screen lg:w-2/3">
         <LoginHero />
       </div>
 
-      <div className="flex flex-1 items-center px-8 py-12 sm:px-14 lg:w-[45%] lg:flex-none lg:px-16">
-        <div className="w-full max-w-md">
+      <div className="flex flex-1 items-center px-6 py-12 sm:px-10 lg:w-1/3 lg:flex-none lg:px-10 xl:px-14">
+        <div className="w-full max-w-sm">
           <span className="block font-mono text-5xl font-semibold lowercase tracking-[0.12em] text-content sm:text-6xl">
             sands
           </span>
@@ -69,13 +64,12 @@ export const LoginPage: React.FC = () => {
           </p>
 
           <div className="mt-8 flex flex-col gap-4">
-            <AlphaConsent />
             <GoogleSignInButton
               onClick={loginWithGoogle}
               isPending={isGoogleLoading}
             />
-            {signInError && (
-              <SignInError message={signInError} onRetry={loginWithGoogle} />
+            {error && (
+              <SignInError message={error} onRetry={loginWithGoogle} />
             )}
           </div>
 

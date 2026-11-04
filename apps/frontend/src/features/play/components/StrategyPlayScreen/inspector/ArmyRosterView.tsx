@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import { StrategyConfirmDialog } from "../ui/StrategyConfirmDialog";
+import { ArmyPolicyPresets } from "./ArmyPolicyPresets";
+import { SplitArmyForm } from "./SplitArmyForm";
 import type { ArmyRosterViewProps } from "./ArmyRosterView.types";
 import type { PayLevel, TroopType } from "../../../types/simulation.types";
 
@@ -98,11 +100,12 @@ const ActionButton: React.FC<ActionButtonProps> = ({ label, isPrimary, onClick }
 
 interface ActionsProps {
   armyId: string;
+  troops?: Partial<Record<TroopType, number>> | null;
   canBesiege?: boolean;
   onAction?: ArmyRosterViewProps["onAction"];
 }
 
-const ArmyActionButtons: React.FC<ActionsProps> = ({ armyId, canBesiege, onAction }) => {
+const ArmyActionButtons: React.FC<ActionsProps> = ({ armyId, troops, canBesiege, onAction }) => {
   const handleMoveClick = (): void => {
     onAction?.({ type: "move", armyId });
   };
@@ -116,6 +119,7 @@ const ArmyActionButtons: React.FC<ActionsProps> = ({ armyId, canBesiege, onActio
     onAction?.({ type: "besiege", armyId });
   };
 
+  const [isSplitting, setIsSplitting] = useState(false);
   const [isConfirmingDisband, setIsConfirmingDisband] = useState(false);
   const handleConfirmDisband = (): void => {
     setIsConfirmingDisband(false);
@@ -128,7 +132,18 @@ const ArmyActionButtons: React.FC<ActionsProps> = ({ armyId, canBesiege, onActio
       <ActionButton label="Attack" onClick={handleAttackClick} />
       {canBesiege ? <ActionButton label="Besiege" onClick={handleBesiegeClick} /> : null}
       <ActionButton label="Halt" onClick={handleHaltClick} />
+      {troops ? <ActionButton label="Split" onClick={() => setIsSplitting(true)} /> : null}
       <ActionButton label="Disband" onClick={() => setIsConfirmingDisband(true)} />
+      {isSplitting && troops ? (
+        <SplitArmyForm
+          troops={troops}
+          onSubmit={(detachment) => {
+            setIsSplitting(false);
+            onAction?.({ type: "split", armyId, troops: detachment });
+          }}
+          onCancel={() => setIsSplitting(false)}
+        />
+      ) : null}
       <StrategyConfirmDialog
         isOpen={isConfirmingDisband}
         title="Disband this army?"
@@ -159,7 +174,15 @@ export const ArmyRosterView: React.FC<ArmyRosterViewProps> = ({
       />
     ) : null}
     {isOwnArmy ? (
-      <ArmyActionButtons armyId={army.army_id} canBesiege={canBesiege} onAction={onAction} />
+      <ArmyPolicyPresets
+        armyId={army.army_id}
+        withdrawalPolicy={army.withdrawal_policy}
+        reservePolicy={army.reserve_policy}
+        onAction={onAction}
+      />
+    ) : null}
+    {isOwnArmy ? (
+      <ArmyActionButtons armyId={army.army_id} troops={army.troops} canBesiege={canBesiege} onAction={onAction} />
     ) : null}
     {!isOwnArmy && !isAtWar && army.owner_id ? (
       <div className="p-3 border-t border-[#72787C]/30 grid grid-cols-1 gap-1.5">

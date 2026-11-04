@@ -96,6 +96,7 @@
       "Look around",
       "Wait"
     ],
+    "character_avatar_assets": {},
     "checkpoints": [],
     "enabled_tools": [
       "rule_checks",
@@ -436,6 +437,11 @@
         "fact_id": "f61831c2-4376-5f2e-927c-91e262262100",
         "text": "Stairwell door locked until 06:00."
       }
+    ],
+    "genre_tags": [
+      "rules-horror",
+      "psychological",
+      "liminal"
     ],
     "map_connections": [
       {
@@ -1102,7 +1108,7 @@
         }
       },
       {
-        "check_id": "056d4b5f-e411-59f6-a89a-792099370596",
+        "check_id": "056d4b5f-e411-59f6-a89a-792023370596",
         "kind": "timed_choice",
         "label": "Phone",
         "narrator_instruction_template": null,
@@ -4821,6 +4827,7 @@
         "type": "object"
       }
     },
+    "strategy_document": {},
     "tier_tracks": {
       "breaking": "http://localhost:8000/uploads/night-desk-music/breaking.mp3",
       "dread": "http://localhost:8000/uploads/night-desk-music/dread.mp3",

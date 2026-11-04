@@ -300,3 +300,81 @@ describe("AIChatSidebar - master mode", () => {
     ).toBeInTheDocument();
   });
 });
+
+describe("AIChatSidebar - strategy mode", () => {
+  const STRATEGY_KEY = `sands_studio_assistant_chat:strategy:${USER_ID}:${SCENARIO_ID}`;
+  const context = {
+    title: "The Reach",
+    timing: { start_year: 1000, start_month: 1, end_year: 1010 },
+    factions: [
+      {
+        faction_id: "ashford",
+        name: "Ashford",
+        leader_id: "ashford_ruler",
+        leader_name: "Lord Edric",
+        leader_history: "",
+        capital_region_id: null,
+        treasury: 100,
+        manpower: 100,
+        stability: 50,
+        is_playable: true,
+      },
+    ],
+    regions: [
+      { region_id: "north", name: "North Reach", owner_id: null, population: 0, wealth: 0, manpower: 0, unrest: 0, garrison: 0 },
+    ],
+    relations: [],
+    claims: [],
+    grudges: [],
+    armies: [],
+    rules: {},
+    active_panel: "",
+  };
+
+  beforeEach(() => {
+    localStorage.clear();
+    useAuthStore.setState({
+      user: { user_id: USER_ID, display_name: "Test Creator", onboarding_completed: true },
+      accessToken: "test-token",
+      isAuthenticated: true,
+    });
+    localStorage.setItem(
+      STRATEGY_KEY,
+      JSON.stringify([
+        {
+          id: "msg-1",
+          role: "assistant",
+          content: 'Take the north:\n```action:claim\n{"faction_id":"ashford","region_id":"north"}\n```',
+          timestamp: Date.now(),
+        },
+      ]),
+    );
+  });
+
+  afterEach(() => {
+    useAuthStore.setState({ user: null, accessToken: null, isAuthenticated: false });
+  });
+
+  it("describes the change by name and keeps the raw data behind a details toggle", () => {
+    const applier = { applyBatch: vi.fn() };
+    renderChatSidebar({ scenarioId: SCENARIO_ID, strategy: { context, applier } });
+
+    expect(screen.getByText("Ashford claims North Reach")).toBeInTheDocument();
+    expect(screen.getByText("Show details")).toBeInTheDocument();
+  });
+
+  it("keeps an applied suggestion applied after the chat is reopened", async () => {
+    const applier = { applyBatch: vi.fn().mockResolvedValue([true]) };
+    const user = userEvent.setup();
+    const first = renderChatSidebar({ scenarioId: SCENARIO_ID, strategy: { context, applier } });
+
+    await user.click(screen.getByRole("button", { name: /apply to claim/i }));
+    await waitFor(() => expect(screen.getByRole("button", { name: "Applied" })).toBeDisabled());
+    first.unmount();
+
+    renderChatSidebar({ scenarioId: SCENARIO_ID, strategy: { context, applier } });
+
+    expect(screen.getByRole("button", { name: "Applied" })).toBeDisabled();
+    expect(applier.applyBatch).toHaveBeenCalledTimes(1);
+  });
+});

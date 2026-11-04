@@ -1,11 +1,9 @@
 import { IconVolume, IconVolumeOff } from "@tabler/icons-react";
 import { usePlayStore } from "../../../stores/play.store";
-import { useIsAlphaMode } from "@/shared/hooks/useIsAlphaMode";
 import { useVoiceOutputPreference } from "@/shared/hooks/useVoiceOutputPreference";
 
 export function EBookNarrationVoiceControl() {
   const theme = usePlayStore((s) => s.ebook_theme);
-  const isAlphaMode = useIsAlphaMode();
   const { isVoiceOutputEnabled, setVoiceOutputEnabled, isUpdating } =
     useVoiceOutputPreference();
 
@@ -17,8 +15,6 @@ export function EBookNarrationVoiceControl() {
   const handleToggle = (): void => {
     setVoiceOutputEnabled(!isVoiceOutputEnabled);
   };
-
-  if (isAlphaMode) return null;
 
   return (
     <button

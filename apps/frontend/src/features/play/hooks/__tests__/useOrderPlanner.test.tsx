@@ -23,6 +23,18 @@ describe("useOrderPlanner", () => {
     useStrategyPlayStore.getState().reset();
   });
 
+  it("refuses to issue any order once the reign has ended", async () => {
+    const endedWorld = {
+      ...DEFAULT_PREVIEW_WORLD,
+      ending: { ending_id: "default_defeat_capital_lost", kind: "defeat" as const, turn: 2 },
+    };
+    const { result } = renderHook(() => useOrderPlanner("pt-1", endedWorld));
+    await act(async () => result.current.handleInspectorAction({ type: "halt", armyId: "army-royal-1" }));
+    expect(mockCheck).not.toHaveBeenCalled();
+    expect(mockMutateAsync).not.toHaveBeenCalled();
+    expect(useStrategyPlayStore.getState().orderFeedback?.message).toBe("The reign has ended.");
+  });
+
   it("accepts an order that passes the dry run", async () => {
     mockCheck.mockResolvedValue({ orders_remaining: 3 });
     mockMutateAsync.mockResolvedValue({});
@@ -189,6 +201,52 @@ describe("useOrderPlanner", () => {
     expect(useStrategyPlayStore.getState().groupArmyIds).toEqual([]);
   });
 
+  it("merges the grouped armies into the first one", async () => {
+    mockCheck.mockResolvedValue({ orders_remaining: 3 });
+    mockMutateAsync.mockResolvedValue({});
+    const store = useStrategyPlayStore.getState();
+    store.toggleGroupArmy("army-a");
+    store.toggleGroupArmy("army-b");
+    const { result } = renderHook(() => useOrderPlanner("pt-1", DEFAULT_PREVIEW_WORLD));
+
+    await act(async () => result.current.handleGroupAction("merge"));
+
+    expect(mockMutateAsync).toHaveBeenCalledWith(
+      expect.objectContaining({ kind: "merge_armies", army_ids: ["army-a", "army-b"], into_army_id: "army-a" }),
+    );
+    expect(useStrategyPlayStore.getState().groupArmyIds).toEqual([]);
+  });
+
+  it("submits a split from the inspector action", async () => {
+    mockCheck.mockResolvedValue({ orders_remaining: 3 });
+    mockMutateAsync.mockResolvedValue({});
+    const { result } = renderHook(() => useOrderPlanner("pt-1", DEFAULT_PREVIEW_WORLD));
+
+    await act(async () => result.current.handleInspectorAction({ type: "split", armyId: "army-a", troops: { cavalry: 30 } }));
+
+    expect(mockMutateAsync).toHaveBeenCalledWith(
+      expect.objectContaining({ kind: "split_army", army_id: "army-a", troops: { cavalry: 30 } }),
+    );
+  });
+
+  it("submits an army preset from the inspector", async () => {
+    mockCheck.mockResolvedValue({ orders_remaining: 3 });
+    mockMutateAsync.mockResolvedValue({});
+    const { result } = renderHook(() => useOrderPlanner("pt-1", DEFAULT_PREVIEW_WORLD));
+
+    await act(async () =>
+      result.current.handleInspectorAction({
+        type: "set_army_policy",
+        armyId: "army-a",
+        policy: { reserve_policy: "reinforce_on_pressure" },
+      }),
+    );
+
+    expect(mockMutateAsync).toHaveBeenCalledWith(
+      expect.objectContaining({ kind: "set_army_policy", army_id: "army-a", reserve_policy: "reinforce_on_pressure" }),
+    );
+  });
+
   it("refuses every order once the campaign has ended", async () => {
     const endedWorld = {
       ...DEFAULT_PREVIEW_WORLD,
@@ -199,7 +257,7 @@ describe("useOrderPlanner", () => {
     await act(async () => result.current.handleInspectorAction({ type: "halt", armyId: "army-royal-1" }));
 
     expect(mockCheck).not.toHaveBeenCalled();
-    expect(useStrategyPlayStore.getState().orderFeedback?.message).toContain("campaign has ended");
+    expect(useStrategyPlayStore.getState().orderFeedback?.message).toBe("The reign has ended.");
   });
 
   it("issues scout, claim and disband orders from inspector actions", async () => {

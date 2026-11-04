@@ -1,5 +1,4 @@
 import React, { useEffect } from "react";
-import { useIsAlphaMode } from "@/shared/hooks/useIsAlphaMode";
 import { useVoiceOutputPreference } from "@/shared/hooks/useVoiceOutputPreference";
 import {
   FONT_GENRE_CATEGORIES,
@@ -48,7 +47,6 @@ export const ReadingDefaultsSection: React.FC = () => {
   const preferences = useReaderPreferencesStore();
   const ambience = useAmbiencePreference();
   const voice = useVoiceOutputPreference();
-  const isAlphaMode = useIsAlphaMode();
   const activeFontId = preferences.fontId ?? STORY_FONT_OPTION_VALUE;
 
   useEffect(() => {
@@ -111,16 +109,14 @@ export const ReadingDefaultsSection: React.FC = () => {
         <h3 className="font-mono text-[11px] uppercase tracking-wider text-content-faint">
           Audio &amp; narration
         </h3>
-        {!isAlphaMode && (
-          <SettingsSwitch
-            id="voice-narration"
-            label="Voice narration stream"
-            description="Experimental text-to-speech for story turns."
-            isChecked={voice.isVoiceOutputEnabled}
-            isDisabled={voice.isLoading || voice.isUpdating}
-            onChange={voice.setVoiceOutputEnabled}
-          />
-        )}
+        <SettingsSwitch
+          id="voice-narration"
+          label="Voice narration stream"
+          description="Experimental text-to-speech for story turns."
+          isChecked={voice.isVoiceOutputEnabled}
+          isDisabled={voice.isLoading || voice.isUpdating}
+          onChange={voice.setVoiceOutputEnabled}
+        />
         <SettingsSwitch
           id="ambience"
           label="Background scenario ambience"

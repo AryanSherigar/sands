@@ -133,13 +133,16 @@ class UploadService:
         return await storage_client.upload_image(content, content_type, object_key)
 
     async def generate_and_upload_cover_image(
-        self, request: CoverImageGenerationRequest, user: User
+        self,
+        request: CoverImageGenerationRequest,
+        user: User,
+        size: str | None = None,
     ) -> str:
         """Generate a scenario cover image with AI and upload it, returning its public URL."""
         prompt = self._build_cover_prompt(request)
         async with quota_scope(self.quota_service, QuotaFeature.COVER_IMAGE, user):
             image_bytes = await image_gen_client.generate_image(
-                prompt, settings.image_generation_timeout_seconds
+                prompt, settings.image_generation_timeout_seconds, size=size
             )
             return await self._upload_with_prefix(
                 image_bytes, image_gen_client.output_content_type(), "scenario-covers"
@@ -147,9 +150,7 @@ class UploadService:
 
     def _build_cover_prompt(self, request: CoverImageGenerationRequest) -> str:
         """Compose a text-to-image prompt from scenario metadata."""
-        parts = [
-            f"A cinematic cover illustration for a tabletop RPG scenario titled '{request.title}'."
-        ]
+        parts = [f"A cover illustration titled '{request.title}'."]
         if request.genre_tags:
             parts.append(f"Genre: {', '.join(request.genre_tags)}.")
         if request.opening_scene:

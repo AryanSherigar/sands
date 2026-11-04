@@ -13,6 +13,12 @@ const resolveRegionName = (id: string, lookup: RegionNameLookup): string =>
 const resolveFactionName = (id: string, lookup: FactionNameLookup): string =>
   lookup[id] ?? toTitle(id);
 
+const CONSENT_TEXT = {
+  declare_war: "declare war on",
+  demand: "make demands of",
+  pact: "sign a pact with",
+} as const;
+
 export function describeOrder(
   target: StrategyOrder | QueuedOrderView,
   regionNames: RegionNameLookup = {},
@@ -48,6 +54,12 @@ export function describeOrder(
       return `Levy troops in ${resolveRegionName(order.region_id, regionNames)}`;
     case "disband_army":
       return "Disband army";
+    case "merge_armies":
+      return `Merge ${order.army_ids.length} armies`;
+    case "set_army_policy":
+      return "Set an army's standing orders";
+    case "split_army":
+      return "Split an army";
     case "map_scout":
       return `Scout ${resolveRegionName(order.target_region_id, regionNames)}`;
     case "fabricate_claim":
@@ -60,6 +72,8 @@ export function describeOrder(
       return "Cut a war subsidy";
     case "denounce_alliance":
       return "Denounce an alliance";
+    case "grant_consent":
+      return `Let your vassal ${CONSENT_TEXT[order.action]} ${resolveFactionName(order.target_faction_id, factionNames)}`;
     case "release_vassal":
       return "Release a vassal";
     case "annex_vassal":

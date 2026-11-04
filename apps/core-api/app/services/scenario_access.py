@@ -4,11 +4,9 @@ existence is not revealed to anyone else."""
 
 import uuid
 
-from app.config import settings
 from app.db.models.scenario import PRIVATE_VISIBILITY, Scenario
 from app.exceptions.scenario_exceptions import ScenarioNotFoundError
 from app.repositories.scenario_access_repo import ScenarioAccessRepo
-from app.repositories.scenario_repo import ScenarioRepo
 
 
 def is_private(scenario: Scenario) -> bool:
@@ -33,13 +31,3 @@ class ScenarioAccessChecker:
     ) -> None:
         if not await self.can_open(scenario, user_id):
             raise ScenarioNotFoundError()
-
-
-async def is_reachable_in_alpha(
-    scenario_repo: ScenarioRepo, scenario_id: uuid.UUID
-) -> bool:
-    """In alpha mode a route may serve the alpha scenario or a private scenario;
-    the service behind the route then applies the private scenario's allowlist."""
-    if scenario_id == settings.alpha_scenario_id:
-        return True
-    return await scenario_repo.get_visibility(scenario_id) == PRIVATE_VISIBILITY

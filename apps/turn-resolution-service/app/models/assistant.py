@@ -87,9 +87,79 @@ class AssistantScopedContext(BaseModel):
     tab_text: str = ""
 
 
+class AssistantStrategyFaction(BaseModel):
+    faction_id: str
+    name: str
+    leader_id: str | None = None
+    leader_name: str = ""
+    leader_history: str = ""
+    capital_region_id: str | None = None
+    treasury: int = 0
+    manpower: int = 0
+    stability: int = 0
+    is_playable: bool = False
+
+
+class AssistantStrategyRegion(BaseModel):
+    region_id: str
+    name: str = ""
+    owner_id: str | None = None
+    population: int = 0
+    wealth: int = 0
+    manpower: int = 0
+    unrest: int = 0
+    garrison: int = 0
+
+
+class AssistantStrategyRelation(BaseModel):
+    faction_a: str
+    faction_b: str
+    status: str
+
+
+class AssistantStrategyClaim(BaseModel):
+    faction_id: str
+    region_id: str
+
+
+class AssistantStrategyGrudge(BaseModel):
+    holder_id: str
+    target_id: str
+    opinion: int = 0
+    reason: str = ""
+
+
+class AssistantStrategyArmy(BaseModel):
+    army_id: str
+    owner_id: str
+    location_id: str
+    troops: dict[str, int] = Field(default_factory=dict)
+    commander_name: str = ""
+
+
+class AssistantStrategyTiming(BaseModel):
+    start_year: int
+    start_month: int
+    end_year: int
+
+
+class AssistantStrategyContext(BaseModel):
+    title: str = ""
+    timing: AssistantStrategyTiming | None = None
+    factions: list[AssistantStrategyFaction] = Field(default_factory=list)
+    regions: list[AssistantStrategyRegion] = Field(default_factory=list)
+    relations: list[AssistantStrategyRelation] = Field(default_factory=list)
+    claims: list[AssistantStrategyClaim] = Field(default_factory=list)
+    grudges: list[AssistantStrategyGrudge] = Field(default_factory=list)
+    armies: list[AssistantStrategyArmy] = Field(default_factory=list)
+    rules: dict[str, object] = Field(default_factory=dict)
+    active_panel: str = ""
+
+
 class AssistantChatRequest(BaseModel):
     messages: list[AssistantChatMessage]
-    mode: Literal["newbie", "master", "scoped"] = "newbie"
+    mode: Literal["newbie", "master", "scoped", "strategy"] = "newbie"
     draft_context: AssistantDraftContext | None = None
     master_context: AssistantMasterContext | None = None
     scoped_context: AssistantScopedContext | None = None
+    strategy_context: AssistantStrategyContext | None = None

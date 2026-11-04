@@ -9,7 +9,6 @@
  * the notifications endpoint. Using one mechanism for both GET and POST also
  * keeps this file's parsing logic single-sourced.
  */
-import { parseAlphaPausedError } from "./alpha-paused-error";
 import { REQUEST_ID_HEADER } from "./request-id";
 import { refreshAuthToken } from "./api-client";
 import { logEvent } from "./logger";
@@ -222,7 +221,6 @@ async function buildServiceUnavailableError(response: Response): Promise<Error> 
     });
   }
   return (
-    parseAlphaPausedError(response.status, body) ??
     parseRateLimitError(
       response.status,
       body,

@@ -15,6 +15,7 @@ from tests.services.art_helpers import (
     add_summary,
     add_uprising,
     remove_pending_events,
+    remove_uprisings,
     seed_campaign,
 )
 
@@ -174,3 +175,50 @@ async def test_uprising_and_chronicle_kinds_are_claimable(
     )
     assert uprising.briefing.kind == "uprising"
     assert chronicle.briefing.kind == "chronicle"
+
+
+async def _expire_lease(connection: AsyncConnection) -> None:
+    await connection.execute(
+        "UPDATE art_deliveries SET lease_expires_at = now() - interval '1 second'"
+    )
+
+
+async def test_a_late_claim_after_the_event_was_answered_uses_the_kept_briefing(
+    db_connection: AsyncConnection,
+) -> None:
+    service, identity = await _service(db_connection)
+    first = await service.claim(identity, OWNER, "event", EVENT_ID, uuid4())
+    await remove_pending_events(db_connection, identity)
+    await _expire_lease(db_connection)
+
+    late = await service.claim(identity, OWNER, "event", EVENT_ID, uuid4())
+
+    assert late.briefing == first.briefing
+    assert late.lease_token != first.lease_token
+
+
+async def test_a_late_claim_after_the_uprising_ended_uses_the_kept_briefing(
+    db_connection: AsyncConnection,
+) -> None:
+    identity = await seed_campaign(db_connection)
+    await add_uprising(db_connection, identity)
+    service = ArtService(db_connection)
+    first = await service.claim(identity, OWNER, "uprising", UPRISING_ID, uuid4())
+    await remove_uprisings(db_connection, identity)
+    await _expire_lease(db_connection)
+
+    late = await service.claim(identity, OWNER, "uprising", UPRISING_ID, uuid4())
+
+    assert late.briefing == first.briefing
+
+
+async def test_an_answered_event_that_was_never_claimed_is_still_not_found(
+    db_connection: AsyncConnection,
+) -> None:
+    service, identity = await _service(db_connection)
+    await remove_pending_events(db_connection, identity)
+
+    with pytest.raises(SimulationServiceError) as caught:
+        await service.claim(identity, OWNER, "event", EVENT_ID, uuid4())
+
+    assert caught.value.status_code == 404

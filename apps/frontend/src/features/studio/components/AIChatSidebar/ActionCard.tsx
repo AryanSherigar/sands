@@ -12,6 +12,7 @@ export interface ActionCardProps {
   onApply: (block: ActionBlock) => void;
   isApplied?: boolean;
   validationErrors?: string[];
+  summary?: string | null;
 }
 
 const describeStructuredBlock = (block: ActionBlock): string | null => {
@@ -49,6 +50,7 @@ export const ActionCard: React.FC<ActionCardProps> = ({
   onApply,
   isApplied = false,
   validationErrors,
+  summary: providedSummary = null,
 }) => {
   const [hasCopied, setHasCopied] = useState(false);
 
@@ -64,7 +66,8 @@ export const ActionCard: React.FC<ActionCardProps> = ({
   const isStructured = MASTER_STRUCTURED_TARGETS.includes(block.target);
   const isExpressionTarget = MASTER_EXPRESSION_TARGETS.includes(block.target);
   const summary =
-    isStructured || isExpressionTarget ? describeStructuredBlock(block) : null;
+    providedSummary ??
+    (isStructured || isExpressionTarget ? describeStructuredBlock(block) : null);
   const badgeTitle =
     isCard && block.metadata?.name
       ? `${block.metadata.type || "Card"}: ${block.metadata.name}`
@@ -105,9 +108,18 @@ export const ActionCard: React.FC<ActionCardProps> = ({
         </div>
       )}
 
-      <pre className="rounded-md font-mono text-xs text-content whitespace-pre-wrap bg-surface-inset p-2 border border-border-subtle max-h-48 overflow-y-auto">
-        {block.content}
-      </pre>
+      {providedSummary ? (
+        <details className="text-xs text-content-muted">
+          <summary className="cursor-pointer">Show details</summary>
+          <pre className="mt-1 rounded-md font-mono text-xs text-content whitespace-pre-wrap bg-surface-inset p-2 border border-border-subtle max-h-48 overflow-y-auto">
+            {block.content}
+          </pre>
+        </details>
+      ) : (
+        <pre className="rounded-md font-mono text-xs text-content whitespace-pre-wrap bg-surface-inset p-2 border border-border-subtle max-h-48 overflow-y-auto">
+          {block.content}
+        </pre>
+      )}
 
       <div className="flex items-center justify-end gap-2 pt-1">
         <button

@@ -57,24 +57,31 @@ describe("LiveChronicleFeed", () => {
     expect(screen.getByText("No chronicle entries yet")).toBeInTheDocument();
   });
 
-  it("starts a pending entry with the selected chronicler", () => {
+  it("starts a pending entry with no chronicler choice and offers no selector", () => {
     summaries = { ...summaries, data: { items: [pendingSummary] } };
     const onJumpToRegion = vi.fn();
-    render(<LiveChronicleFeed playthroughId="playthrough-1" onJumpToRegion={onJumpToRegion} />);
+    render(
+      <LiveChronicleFeed
+        playthroughId="playthrough-1"
+        chroniclerId="vaelen"
+        onJumpToRegion={onJumpToRegion}
+      />,
+    );
 
-    // Default chronicler is lucan
+    expect(screen.queryByLabelText("Select Chronicler")).toBeNull();
+    expect(screen.getByText(/Ready to be recorded by Vaelen the Scorned/)).toBeInTheDocument();
+
     fireEvent.click(screen.getByRole("button", { name: "Write entry" }));
-    expect(start).toHaveBeenCalledWith(pendingSummary, "lucan");
-
-    // Change chronicler to morvath
-    const select = screen.getByLabelText("Select Chronicler");
-    fireEvent.change(select, { target: { value: "morvath" } });
-
-    fireEvent.click(screen.getByRole("button", { name: "Write entry" }));
-    expect(start).toHaveBeenCalledWith(pendingSummary, "morvath");
+    expect(start).toHaveBeenCalledWith(pendingSummary);
 
     fireEvent.click(screen.getByRole("button", { name: "Map" }));
     expect(onJumpToRegion).toHaveBeenCalledWith("reg-dunmere");
+  });
+
+  it("names Brother Lucan when the world carries no chronicler", () => {
+    summaries = { ...summaries, data: { items: [pendingSummary] } };
+    render(<LiveChronicleFeed playthroughId="playthrough-1" onJumpToRegion={vi.fn()} />);
+    expect(screen.getByText(/Ready to be recorded by Brother Lucan/)).toBeInTheDocument();
   });
 
   it("keeps provisional streamed prose visible and reports recoverable errors", () => {

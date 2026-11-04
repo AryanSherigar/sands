@@ -2,10 +2,11 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useBattle } from "../../../hooks/useBattle";
 import { useBattleCommands } from "../../../hooks/useBattleCommands";
 import { useBattleReports } from "../../../hooks/useBattleReports";
-import { useBattleSpeech } from "../../../hooks/useBattleSpeech";
 import {
   buildAftermathSummary,
   findLatestReport,
+  withLiveEnemyEstimate,
+  withLiveEnemyEstimateOnLatest,
 } from "../../../lib/battleReports";
 import type {
   BattleView,
@@ -28,6 +29,7 @@ const FALLBACK_PLAN: StandingPlan = {
 };
 const NOTICE_VISIBLE_MS = 4000;
 const NO_REPORTS: ExchangeReport[] = [];
+const NO_TROOPS: Record<string, number> = {};
 const BATTLE_LOAD_FAILED_MESSAGE = "The battle report could not be loaded.";
 
 function canIssue(battle: BattleView | undefined, command: string): boolean {
@@ -42,9 +44,12 @@ export function useWarCouncilState(
   const battleQuery = useBattle(playthroughId, battleId, initialBattle);
   const reportsQuery = useBattleReports(playthroughId, battleId);
   const battle = battleQuery.data;
-  const reports = reportsQuery.data ?? NO_REPORTS;
+  const liveEnemyStrength = battle?.opponents[0]?.strength;
+  const reports = useMemo(
+    () => withLiveEnemyEstimateOnLatest(reportsQuery.data ?? NO_REPORTS, liveEnemyStrength),
+    [reportsQuery.data, liveEnemyStrength],
+  );
 
-  const speech = useBattleSpeech(playthroughId, battleId);
   const commands = useBattleCommands({
     playthroughId,
     battleId,
@@ -62,7 +67,9 @@ export function useWarCouncilState(
     return () => clearTimeout(timer);
   }, [notice]);
 
-  const { wards, updateCohortCount, reorderRank } = useWardAllocation();
+  const { wards, updateCohortCount, reorderRank } = useWardAllocation(
+    battle?.own_contingent?.active ?? battle?.own_contingent?.troops ?? NO_TROOPS,
+  );
   const modals = useWarCouncilModals();
 
   const stagedPlan: StandingPlan = useMemo(
@@ -70,10 +77,12 @@ export function useWarCouncilState(
     [battle?.own_contingent?.plan, planOverride],
   );
 
-  const odds = useMemo(
-    () => (battle ? calculateTacticalOdds(battle, stagedPlan) : null),
-    [battle, stagedPlan],
+  const refinedReceiptReport = useMemo(
+    () => (receiptReport ? withLiveEnemyEstimate(receiptReport, liveEnemyStrength) : null),
+    [receiptReport, liveEnemyStrength],
   );
+
+  const odds = useMemo(() => (battle ? calculateTacticalOdds(battle) : null), [battle]);
 
   const aftermath = useMemo(
     () => (battle && !receiptReport ? buildAftermathSummary(battle, reports) : null),
@@ -134,7 +143,7 @@ export function useWarCouncilState(
     stagedPlan,
     activeAnchor,
     odds,
-    receiptReport,
+    receiptReport: refinedReceiptReport,
     aftermath,
     isCommitting: commands.isCommitting,
     isSendingCommand: commands.isSendingCommand,
@@ -143,12 +152,6 @@ export function useWarCouncilState(
     canWithdraw: canIssue(battle, "withdraw"),
     canCommitReserves: canIssue(battle, "commit_reserves"),
     canReconnoitre: canIssue(battle, "reconnoitre"),
-    canAddressTroops: canIssue(battle, "address_troops"),
-    addressTroops: speech.address,
-    speechReception: speech.reception,
-    speechReactionLine: speech.reactionLine,
-    speechErrorMessage: speech.errorMessage,
-    isSpeaking: speech.isSending,
     isCodexOpen: modals.isCodexOpen,
     isRetreatModalOpen: modals.isRetreatModalOpen,
     updateCohortCount,

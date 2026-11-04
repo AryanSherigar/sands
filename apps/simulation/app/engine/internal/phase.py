@@ -8,6 +8,7 @@ from app.engine.internal.uprising_lifecycle import (
     choose_archetype,
     penalty_for_stage,
 )
+from app.engine.internal.war_drain import war_stability_factors
 from app.engine.outrage.effects import mobilization_exhaustion
 from app.engine.phases import PhaseContext, PhaseResult
 from app.engine.pressure.effects import pressure_stability_loss, pressure_unrest
@@ -81,7 +82,10 @@ def _apply_faction_pressure(
         0,
         PERCENT,
     )
-    faction.stability = _next_stability(faction.stability, wars, units, tuning)
+    war_loss = sum(war_stability_factors(world, scenario, faction_id).values())
+    faction.stability = _next_stability(
+        faction.stability, wars, war_loss, units, tuning
+    )
     if (exhaustion_before, stability_before) == (
         faction.war_exhaustion,
         faction.stability,
@@ -111,13 +115,13 @@ def _next_exhaustion(
     )
 
 
-def _next_stability(current: int, wars: int, units: int, tuning: InternalTuning) -> int:
+def _next_stability(
+    current: int, wars: int, war_loss: int, units: int, tuning: InternalTuning
+) -> int:
     if not wars:
         return clamp(current + tuning.peace_stability_recovery, 0, PERCENT)
-    decrease = wars * tuning.stability_loss_per_active_war
-    return clamp(
-        current - decrease - units * tuning.stability_loss_per_loss_unit, 0, PERCENT
-    )
+    loss = war_loss + units * tuning.stability_loss_per_loss_unit
+    return clamp(current - loss, 0, PERCENT)
 
 
 def _apply_pressure_stability(

@@ -1,4 +1,5 @@
 import type { CampaignWorldView, RivalView, StrategyOrder } from "../types/simulation.types";
+import { describeCondition } from "./conditionText";
 import {
   buildAnnexVassalOrder,
   buildCutSubsidyOrder,
@@ -27,7 +28,8 @@ export type RealmAffairForm =
       members: FormOption[];
       claimedRegionsByMember: Record<string, FormOption[]>;
     }
-  | { kind: "vassal_demand"; vassalageId: string; tributePercent: number; levyPercent: number };
+  | { kind: "vassal_demand"; vassalageId: string; tributePercent: number; levyPercent: number }
+  | { kind: "grant_consent"; vassalageId: string; targets: FormOption[] };
 
 export interface RealmAffairAction {
   label: string;
@@ -55,7 +57,9 @@ type AffairWorld = Pick<
   | "rivals"
   | "alliances"
   | "sworn_promises"
+  | "covenants"
   | "sworn_promise_history"
+  | "conditional_clauses"
   | "vassalages"
   | "coalitions"
   | "wars"
@@ -65,6 +69,7 @@ type AffairWorld = Pick<
   | "subsidies"
   | "mobilization"
   | "regions"
+  | "own_pressure"
 >;
 
 const nameOf = (rivals: RivalView[], factionId: string, myFactionId: string): string => {
@@ -100,6 +105,12 @@ function buildAlliances(world: AffairWorld): RealmAffair[] {
   }));
 }
 
+function consentTargets(world: AffairWorld, myId: string, vassalId: string): FormOption[] {
+  return world.rivals
+    .filter((rival) => rival.faction_id !== myId && rival.faction_id !== vassalId)
+    .map((rival) => ({ id: rival.faction_id, label: rival.name }));
+}
+
 function buildVassalages(world: AffairWorld): RealmAffair[] {
   const myId = world.my_faction.id;
   return (world.vassalages ?? []).map((vassalage) => {
@@ -121,6 +132,14 @@ function buildVassalages(world: AffairWorld): RealmAffair[] {
                 vassalageId: vassalage.id,
                 tributePercent: vassalage.tribute_share_percent,
                 levyPercent: vassalage.levy_share_percent,
+              },
+            },
+            {
+              label: "Grant consent",
+              form: {
+                kind: "grant_consent",
+                vassalageId: vassalage.id,
+                targets: consentTargets(world, myId, vassalage.vassal_id),
               },
             },
             {
@@ -151,19 +170,66 @@ const PROMISE_TEXT: Record<string, string> = {
   never_attack_faction: "never to attack",
   never_ally_with: "never to ally with",
   spare_prisoners: "to spare prisoners",
+  never_occupy_region: "never to occupy",
 };
 
-function buildOaths(world: AffairWorld): RealmAffair[] {
+const subjectName = (world: AffairWorld, subjectId: string, regionNames: RegionNames): string =>
+  regionNames[subjectId] ?? nameOf(world.rivals, subjectId, world.my_faction.id);
+
+function buildOaths(world: AffairWorld, regionNames: RegionNames): RealmAffair[] {
   const myId = world.my_faction.id;
   return (world.sworn_promises ?? []).map((oath) => {
     const isMine = oath.promisor_id === myId;
     const other = nameOf(world.rivals, isMine ? oath.beneficiary_id : oath.promisor_id, myId);
-    const subject = oath.subject_id ? ` ${nameOf(world.rivals, oath.subject_id, myId)}` : "";
+    const subject = oath.subject_id ? ` ${subjectName(world, oath.subject_id, regionNames)}` : "";
     const promiseText = PROMISE_TEXT[oath.promise] ?? oath.promise;
     return {
       id: oath.commitment_id,
       title: isMine ? `You swore to ${other} ${promiseText}${subject}` : `${other} swore to you ${promiseText}${subject}`,
       detail: `In force ${untilTurn(oath.end_turn)}`,
+      actions: [],
+    };
+  });
+}
+
+const COVENANT_TEXT: Record<string, string> = {
+  tax_relief: "to keep taxes low",
+  garrison_out: "to keep soldiers out",
+  amnesty: "not to crack down on the rebels",
+  relief_small: "a small relief",
+  relief_large: "a great relief",
+};
+
+function buildCovenants(world: AffairWorld, regionNames: RegionNames): RealmAffair[] {
+  return (world.covenants ?? []).map((covenant) => ({
+    id: covenant.covenant_id,
+    title: `You swore the people of ${regionNames[covenant.region_id] ?? covenant.region_id} ${COVENANT_TEXT[covenant.covenant] ?? covenant.covenant}`,
+    detail: `Breaking it rekindles the revolt. In force ${untilTurn(covenant.end_turn)}`,
+    actions: [],
+  }));
+}
+
+const CLAUSE_STATE_TEXT: Record<string, string> = {
+  pending: "Waiting for the condition to hold",
+  gate_open: "Gate open: the clause is in force",
+  gate_closed: "Gate closed: the clause is suspended",
+};
+
+function buildConditionalClauses(world: AffairWorld, regionNames: RegionNames): RealmAffair[] {
+  const myId = world.my_faction.id;
+  return (world.conditional_clauses ?? []).map((clause) => {
+    const condition = describeCondition(
+      clause.template,
+      nameOf(world.rivals, clause.condition_faction_id, myId),
+      clause.condition_value,
+      regionNames[clause.condition_region_id ?? ""] ?? clause.condition_region_id ?? undefined,
+    );
+    const parties = clause.party_ids.map((id) => nameOf(world.rivals, id, myId)).join(" and ");
+    const kind = clause.inner_kind.replace(/_/g, " ");
+    return {
+      id: clause.commitment_id,
+      title: `If ${condition}: ${kind} between ${parties}`,
+      detail: `${CLAUSE_STATE_TEXT[clause.state]}. Runs ${untilTurn(clause.end_turn)}`,
       actions: [],
     };
   });
@@ -199,12 +265,12 @@ const OUTCOME_TEXT: Record<string, string> = {
   expired: "Lapsed",
 };
 
-function buildOathHistory(world: AffairWorld): RealmAffair[] {
+function buildOathHistory(world: AffairWorld, regionNames: RegionNames): RealmAffair[] {
   const myId = world.my_faction.id;
   return (world.sworn_promise_history ?? []).map((oath) => {
     const isMine = oath.promisor_id === myId;
     const other = nameOf(world.rivals, isMine ? oath.beneficiary_id : oath.promisor_id, myId);
-    const subject = oath.subject_id ? ` ${nameOf(world.rivals, oath.subject_id, myId)}` : "";
+    const subject = oath.subject_id ? ` ${subjectName(world, oath.subject_id, regionNames)}` : "";
     const promiseText = PROMISE_TEXT[oath.promise] ?? oath.promise;
     return {
       id: `history-${oath.commitment_id}`,
@@ -339,12 +405,40 @@ function buildMobilization(world: AffairWorld): RealmAffair[] {
   ];
 }
 
+function describeFactors(factors: Record<string, number> | undefined): string {
+  if (!factors) return "none";
+  const active = Object.entries(factors)
+    .filter(([, val]) => val > 0)
+    .sort((a, b) => b[1] - a[1])
+    .map(([key]) => key.replace(/_/g, " "));
+  return active.length > 0 ? active.join(", ") : "none";
+}
+
+function buildWarPressure(world: AffairWorld): RealmAffair[] {
+  if (!world.own_pressure) return [];
+  const strainWord = world.own_pressure.strain_band.replace(/_/g, " ");
+  const willWord = world.own_pressure.will_band.replace(/_/g, " ");
+  const strainSources = describeFactors(world.own_pressure.strain_factors);
+  const willSources = describeFactors(world.own_pressure.will_factors);
+  return [
+    {
+      id: "own-war-pressure",
+      title: `Strain: ${strainWord} · Resolve: ${willWord}`,
+      detail: `Strain from ${strainSources}; resolve from ${willSources}.`,
+      actions: [],
+    },
+  ];
+}
+
 export function buildRealmAffairGroups(world: AffairWorld, regionNames: RegionNames = {}): RealmAffairGroup[] {
   const groups: RealmAffairGroup[] = [
+    { id: "war-pressure", heading: "War pressure", affairs: buildWarPressure(world) },
     { id: "wars", heading: "Wars", affairs: buildWars(world) },
     { id: "alliances", heading: "Alliances", affairs: buildAlliances(world) },
-    { id: "oaths", heading: "Sworn oaths", affairs: buildOaths(world) },
-    { id: "oath-history", heading: "Oaths of the past", affairs: buildOathHistory(world) },
+    { id: "oaths", heading: "Sworn oaths", affairs: buildOaths(world, regionNames) },
+    { id: "covenants", heading: "Covenants with the people", affairs: buildCovenants(world, regionNames) },
+    { id: "oath-history", heading: "Oaths of the past", affairs: buildOathHistory(world, regionNames) },
+    { id: "conditional-clauses", heading: "Conditional clauses", affairs: buildConditionalClauses(world, regionNames) },
     { id: "vassals", heading: "Overlords and vassals", affairs: buildVassalages(world) },
     { id: "coalitions", heading: "Coalitions", affairs: buildCoalitions(world, regionNames) },
     { id: "prisoners", heading: "Prisoners", affairs: buildPrisoners(world) },

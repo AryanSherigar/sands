@@ -99,3 +99,35 @@ def test_ledger_does_nothing_for_a_legacy_world() -> None:
     assert world.coalition.conquests == []
     assert world.coalition.atrocities == {}
     assert world.factions[PLAYER].reputation == before
+
+
+def _treasuries(world, rich_id, rich_gold, other_gold=0) -> None:
+    for faction_id, faction in world.factions.items():
+        faction.treasury = rich_gold if faction_id == rich_id else other_gold
+
+
+def test_hoarded_gold_raises_threat_once_it_dominates_and_is_a_real_pile() -> None:
+    world = make_world()
+    _treasuries(world, PLAYER, 1000)
+
+    reading = compute_threat(world, SCENARIO, PLAYER)
+
+    assert reading.hoard == (1000 - TUNING.hoard_free_gold) // (
+        TUNING.hoard_gold_per_point
+    )
+    assert reading.value >= reading.hoard
+
+
+def test_a_small_treasury_is_never_a_hoard_even_when_rivals_are_broke() -> None:
+    world = make_world()
+    _treasuries(world, PLAYER, TUNING.hoard_free_gold)
+
+    assert compute_threat(world, SCENARIO, PLAYER).hoard == 0
+
+
+def test_an_even_spread_of_gold_is_not_a_hoard() -> None:
+    world = make_world()
+    for faction in world.factions.values():
+        faction.treasury = 1000
+
+    assert compute_threat(world, SCENARIO, PLAYER).hoard == 0

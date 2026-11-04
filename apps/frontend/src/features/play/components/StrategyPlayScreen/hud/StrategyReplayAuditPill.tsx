@@ -90,9 +90,9 @@ export const StrategyReplayAuditPill: React.FC<StrategyReplayAuditPillProps> = (
             className="flex items-center gap-1.5 px-3 py-1 bg-[#EAF2E8] text-[#3B6638] border border-[#5E8A5A]/40 rounded-full text-xs font-bold hover:bg-[#DEF0DC] transition shadow-sm"
           >
             <span className="w-2 h-2 rounded-full bg-[#5E8A5A]" />
-            <span className="inline-flex items-center gap-1"><IconCheck size={12} aria-hidden="true" />Verified Turn {result.verified_turn}</span>
+            <span className="inline-flex items-center gap-1"><IconCheck size={12} aria-hidden="true" />History verified</span>
             <span className="text-[10px] font-mono text-[#5E8A5A] opacity-80">
-              {result.world_hash.slice(0, 6)}
+              Turn {result.verified_turn} · {result.world_hash.slice(0, 6)}
             </span>
           </button>
 

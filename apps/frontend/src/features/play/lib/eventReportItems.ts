@@ -1,8 +1,11 @@
 import { describeCause, eventTitle } from "./eventText";
+import { getEndingTitle } from "../components/StrategyPlayScreen/ending/strategyEnding.constants";
 import type { ReportItem } from "../types/turnReport.types";
 import type { ApiReportLine } from "../types/turnReportApi.types";
 
 const EVENT_KINDS = new Set(["event_fired", "event_answered", "event_neglected"]);
+const ENDING_KIND = "ending_reached";
+const ENDING_PREFIX = "endings.";
 const SUMMARY_PREFIX = "events.";
 const NEGLECTED_SUFFIX = "neglected";
 
@@ -51,7 +54,22 @@ function cardFor(
   };
 }
 
+function isEndingLine(line: ApiReportLine): boolean {
+  return line.kind === ENDING_KIND && line.text_key.startsWith(ENDING_PREFIX);
+}
+
+function toEndingReportItem(line: ApiReportLine, index: number): ReportItem {
+  return {
+    id: `ending-${index}`,
+    category: "internal",
+    title: getEndingTitle(line.text_key.slice(ENDING_PREFIX.length)),
+    description: "The reign has ended.",
+    badge: { label: "Reign ended", tone: "neutral" },
+  };
+}
+
 export function isEventLine(line: ApiReportLine): boolean {
+  if (isEndingLine(line)) return true;
   return EVENT_KINDS.has(line.kind) && line.text_key.startsWith(SUMMARY_PREFIX);
 }
 
@@ -60,6 +78,7 @@ export function toEventReportItem(
   index: number,
   regionNames: RegionNames,
 ): ReportItem {
+  if (isEndingLine(line)) return toEndingReportItem(line, index);
   const parsed = parseSummaryKey(line.text_key);
   const subjectId = line.subject_ids[0] ?? "";
   const subject = regionNames[subjectId] ?? toTitle(subjectId);

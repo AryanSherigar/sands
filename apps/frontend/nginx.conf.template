@@ -7,7 +7,7 @@ server {
     # 413s any upload above it before the request reaches core-api.
     client_max_body_size 15M;
 
-    # NOTE: closed alpha. Production serves the frontend from Cloudflare Pages,
+    # NOTE: not indexed yet. Production serves the frontend from Cloudflare Pages,
     # which sets the same header from public/_headers; this keeps the compose
     # and e2e stacks consistent with it.
     add_header X-Robots-Tag "noindex, nofollow" always;

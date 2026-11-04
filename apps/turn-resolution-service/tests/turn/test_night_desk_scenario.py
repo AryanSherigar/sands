@@ -7,9 +7,7 @@ stale (apps/core-api/tests/scripts/night_desk/test_night_desk_fixture.py).
 """
 
 import pytest
-from app.config import settings
 from app.db.models.turn_metrics import TurnMetrics
-from app.turn.steps import state_loader
 from night_desk_driver import EXPECTED_TURNS, NightPlayer, Strategy
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -201,11 +199,6 @@ async def test_at_most_one_fragment_per_act(
 async def test_every_turn_of_the_night_has_one_metrics_row(
     db_session: AsyncSession, monkeypatch
 ) -> None:
-    async def allow_any_scenario(*args, **kwargs) -> None:
-        return None
-
-    monkeypatch.setattr(settings, "is_alpha_mode", True)
-    monkeypatch.setattr(state_loader, "assert_alpha_scenario", allow_any_scenario)
     player = NightPlayer(db_session, monkeypatch, Strategy(seed="r6"))
 
     result = await player.play()

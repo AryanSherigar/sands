@@ -49,9 +49,19 @@ describe("buildRealmAffairGroups", () => {
     });
     const affairs = groups.find((group) => group.id === "vassals")?.affairs ?? [];
 
-    expect(affairs[0]?.actions.map((action) => action.label)).toEqual(["Make a demand", "Release", "Annex"]);
+    expect(affairs[0]?.actions.map((action) => action.label)).toEqual(["Make a demand", "Grant consent", "Release", "Annex"]);
     expect(affairs[1]?.title).toBe("You serve House Carrow");
     expect(affairs[1]?.actions).toEqual([]);
+  });
+
+  it("offers consent over every realm except the player's own and the vassal itself", () => {
+    const groups = buildRealmAffairGroups({
+      ...base,
+      vassalages: [{ id: "v1", overlord_id: ME, vassal_id: "ash", tribute_share_percent: 20, levy_share_percent: 10, is_foreign_policy_controlled: false, has_garrison_rights: false }],
+    });
+    const form = groups.find((group) => group.id === "vassals")?.affairs[0]?.actions[1]?.form;
+
+    expect(form).toEqual({ kind: "grant_consent", vassalageId: "v1", targets: [{ id: "car", label: "House Carrow" }] });
   });
 
   it("lets the player mediate other realms' wars only, and handle held prisoners", () => {
@@ -100,6 +110,35 @@ describe("buildRealmAffairGroups", () => {
     expect(oaths[0]?.detail).toBe("In force until turn 20");
     expect(oaths[1]?.title).toBe("House Carrow swore to you to spare prisoners");
     expect(oaths.every((oath) => oath.actions.length === 0)).toBe(true);
+  });
+
+  it("names the region in a region oath", () => {
+    const groups = buildRealmAffairGroups(
+      {
+        ...base,
+        sworn_promises: [
+          { commitment_id: "c3", promisor_id: "ash", beneficiary_id: ME, promise: "never_occupy_region", subject_id: "reg-dunmere", end_turn: 12 },
+        ],
+      },
+      { "reg-dunmere": "Dunmere" },
+    );
+    const oaths = groups.find((group) => group.id === "oaths")?.affairs ?? [];
+
+    expect(oaths[0]?.title).toBe("House Ashford swore to you never to occupy Dunmere");
+  });
+
+  it("lists the covenants given to a region's people", () => {
+    const groups = buildRealmAffairGroups(
+      {
+        ...base,
+        covenants: [{ covenant_id: "covenant_1", region_id: "reg-dunmere", covenant: "tax_relief", end_turn: 14 }],
+      },
+      { "reg-dunmere": "Dunmere" },
+    );
+    const covenants = groups.find((group) => group.id === "covenants")?.affairs ?? [];
+
+    expect(covenants[0]?.title).toBe("You swore the people of Dunmere to keep taxes low");
+    expect(covenants[0]?.detail).toBe("Breaking it rekindles the revolt. In force until turn 14");
   });
 
   it("offers a mobilize order only at war and not while already mobilized", () => {
@@ -176,5 +215,75 @@ describe("buildRealmAffairGroups", () => {
     const war = groups.find((group) => group.id === "wars")?.affairs[0];
 
     expect(war?.detail).toBe("War #w1; you are winning; 2 war goals to claim");
+  });
+
+  it("renders empire war pressure with strain and resolve factors", () => {
+    const groups = buildRealmAffairGroups({
+      ...base,
+      own_pressure: {
+        will_band: "high",
+        strain_band: "medium",
+        will_factors: { morale: 40, unity: 20 },
+        strain_factors: { treasury_debt: 25, devastation: 10 },
+      },
+    });
+    const pressureGroup = groups.find((g) => g.id === "war-pressure");
+    expect(pressureGroup?.affairs[0]?.title).toBe("Strain: medium · Resolve: high");
+    expect(pressureGroup?.affairs[0]?.detail).toBe("Strain from treasury debt, devastation; resolve from morale, unity.");
+  });
+});
+
+describe("conditional clauses", () => {
+  it("lists pending triggers and gates with their condition in words", () => {
+    const groups = buildRealmAffairGroups({
+      ...base,
+      conditional_clauses: [
+        {
+          commitment_id: "c9",
+          mode: "gate",
+          template: "treasury_above",
+          condition_faction_id: "ash",
+          condition_value: 200,
+          inner_kind: "trade_deal",
+          party_ids: [ME, "ash"],
+          state: "gate_closed",
+          end_turn: 18,
+        },
+      ],
+    });
+    const clauses = groups.find((group) => group.id === "conditional-clauses")?.affairs ?? [];
+
+    expect(clauses[0]?.title).toBe(
+      `If House Ashford's treasury rises above 200: trade deal between you and House Ashford`,
+    );
+    expect(clauses[0]?.detail).toBe("Gate closed: the clause is suspended. Runs until turn 18");
+  });
+
+  it("names the region in a region-ownership condition", () => {
+    const groups = buildRealmAffairGroups(
+      {
+        ...base,
+        conditional_clauses: [
+          {
+            commitment_id: "c10",
+            mode: "trigger",
+            template: "loses_region",
+            condition_faction_id: "ash",
+            condition_region_id: "reg-dunmere",
+            condition_value: 0,
+            inner_kind: "tribute",
+            party_ids: [ME, "ash"],
+            state: "pending",
+            end_turn: 12,
+          },
+        ],
+      },
+      { "reg-dunmere": "Dunmere" },
+    );
+    const clauses = groups.find((group) => group.id === "conditional-clauses")?.affairs ?? [];
+
+    expect(clauses[0]?.title).toBe(
+      "If House Ashford no longer holds Dunmere: tribute between you and House Ashford",
+    );
   });
 });

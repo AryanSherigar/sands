@@ -10,15 +10,23 @@ from app.models.orders import RaiseArmyOrder, SetPayOrder, TakeLoanOrder
 from app.models.world_events import PhaseName
 from app.models.world_state import WorldState
 from strategy_contracts.enums import PayLevel, TroopType
-from strategy_contracts.scenario import StrategyScenario
+from strategy_contracts.scenario import (
+    DEFAULT_RECRUIT_COST_PER_UNIT,
+    DEFAULT_UPKEEP_TROOP_UNIT,
+    StrategyScenario,
+)
 
 from tests.engine.battles.builders import ATTACKER, DEFENDER, battle_fixture
 
 LEVY_SIZE = 40
-LEVY_COST = 16
+LEVY_COST = (
+    LEVY_SIZE
+    * DEFAULT_RECRUIT_COST_PER_UNIT[TroopType.INFANTRY]
+    // DEFAULT_UPKEEP_TROOP_UNIT
+)
 FIRST_REGION = "home_a"
 SECOND_REGION = "home_b"
-LOAN_SIZE = 30
+LOAN_SIZE = LEVY_COST * 2
 
 
 def planning_world(treasury: int) -> tuple[WorldState, StrategyScenario]:

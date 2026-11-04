@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { useStrategyMap } from "../../hooks/useStrategyMap";
+import { MapGenerationStatus } from "./MapGenerationStatus";
 import type { StrategyMapSectionProps } from "./StrategyWorkspace.types";
 
 export const StrategyMapSection: React.FC<StrategyMapSectionProps> = ({ scenarioId }) => {
@@ -19,6 +20,7 @@ export const StrategyMapSection: React.FC<StrategyMapSectionProps> = ({ scenario
       <Link className="text-sm text-primary underline" to={`/studio/${scenarioId}/region-map`}>
         {label}
       </Link>
+      <MapGenerationStatus scenarioId={scenarioId} hasSavedMap={regionCount > 0} />
     </section>
   );
 };

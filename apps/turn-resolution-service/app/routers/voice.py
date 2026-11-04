@@ -15,7 +15,6 @@ from app.exceptions.voice_exceptions import AudioValidationError
 from app.middleware.auth import get_current_user
 from app.models.auth import CurrentUser
 from app.models.voice import TranscriptionResponse
-from app.routers.alpha_guards import forbid_in_alpha_mode
 from app.services.rate_limit.quota_service import QuotaService, get_quota_service
 from app.services.voice_service import load_phrase_hints, transcribe_turn_action_audio
 from fastapi import APIRouter, Depends, File, Form, UploadFile
@@ -24,7 +23,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 router = APIRouter(
     prefix="/v1/voice",
     tags=["Voice"],
-    dependencies=[Depends(forbid_in_alpha_mode)],
 )
 
 

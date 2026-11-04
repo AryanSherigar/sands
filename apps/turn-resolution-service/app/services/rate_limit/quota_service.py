@@ -13,7 +13,6 @@ from datetime import UTC, date, datetime, timedelta
 
 import structlog
 from app.config import settings
-from app.db.connection import AsyncSessionFactory
 from app.exceptions.rate_limit_exceptions import (
     CODE_FEATURE_UNAVAILABLE,
     CODE_QUOTA_EXCEEDED,
@@ -26,7 +25,6 @@ from app.services.rate_limit.exemption_service import (
     get_exemption_service,
 )
 from app.services.rate_limit.policies import QuotaFeature, QuotaPolicy, quota_policy
-from app.services.rate_limit.quota_event_recorder import QuotaEventRecorder
 from app.services.rate_limit.store import (
     EVENT_RATE_LIMIT_STORE_ERROR,
     STORE_ERRORS,
@@ -47,6 +45,9 @@ FEATURE_LABELS: dict[str, str] = {
     QuotaFeature.TURN.value: "turn",
     QuotaFeature.SCENE_IMAGE.value: "scene image",
     QuotaFeature.STRATEGY_ART.value: "strategy art",
+    QuotaFeature.STRATEGY_DISPATCH.value: "strategy dispatch",
+    QuotaFeature.STRATEGY_PROCLAMATION.value: "strategy proclamation",
+    QuotaFeature.STRATEGY_EVENT.value: "strategy event narration",
     QuotaFeature.TTS_NARRATION.value: "voice narration",
     QuotaFeature.SPEECH_TO_TEXT.value: "voice input",
     QuotaFeature.ASSISTANT.value: "studio assistant",
@@ -126,11 +127,9 @@ class QuotaService:
         self,
         store: RateLimitStore,
         exemptions: ExemptionService,
-        event_recorder: QuotaEventRecorder | None = None,
     ) -> None:
         self.store = store
         self.exemptions = exemptions
-        self.event_recorder = event_recorder
 
     async def reserve(
         self, feature: QuotaFeature, user_id: uuid.UUID
@@ -142,7 +141,6 @@ class QuotaService:
         limits = await self._limits_for(policy, user_id)
         result = await self._reserve_or_fail_closed(limits, policy)
         if result.window_start is None:
-            await self._record_exceeded(policy, result.exceeded_key, user_id)
             raise self._on_exceeded(policy, result.exceeded_key, user_id)
         keys = tuple(limit.key for limit in limits)
         return QuotaReservation(self.store, keys, result.window_start)
@@ -191,16 +189,6 @@ class QuotaService:
             )
             raise QuotaStoreUnavailableError(policy.feature) from error
 
-    async def _record_exceeded(
-        self, policy: QuotaPolicy, exceeded_key: str | None, user_id: uuid.UUID
-    ) -> None:
-        if self.event_recorder is None:
-            return
-        is_global = exceeded_key == global_quota_key(policy.feature)
-        await self.event_recorder.record_exceeded(
-            user_id, policy.feature, is_global=is_global
-        )
-
     def _on_exceeded(
         self, policy: QuotaPolicy, exceeded_key: str | None, user_id: uuid.UUID
     ) -> RateLimitExceededError:
@@ -216,4 +204,4 @@ def get_quota_service(
     store: RateLimitStore = Depends(get_rate_limit_store),
     exemptions: ExemptionService = Depends(get_exemption_service),
 ) -> QuotaService:
-    return QuotaService(store, exemptions, QuotaEventRecorder(AsyncSessionFactory))
+    return QuotaService(store, exemptions)

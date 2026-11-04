@@ -75,14 +75,16 @@ def _insert_battle(world: WorldState, scenario: StrategyScenario, index: int) ->
     world.battles.append(battle)
 
 
-def test_npc_last_point_is_reserved_globally_in_battle_order() -> None:
+def test_npc_battle_intents_cost_no_points_and_keep_battle_order() -> None:
     world, scenario = two_battles()
     world.factions[DEFENDER].is_player = False
     world.factions[DEFENDER].orders_remaining = 1
     first = advance_wave(world, scenario, expected_turn=0, expected_wave=1)
-    assert len(first.world.accepted_commands) == 1
-    assert first.world.accepted_commands[0].battle_id == "battle_1"
-    assert first.world.factions[DEFENDER].orders_remaining == 0
+    assert [item.battle_id for item in first.world.accepted_commands] == [
+        "battle_1",
+        "battle_2",
+    ]
+    assert first.world.factions[DEFENDER].orders_remaining == 1
     assert [battle.total_exchanges for battle in first.world.battles] == [1, 1]
     reversed_world = world.model_copy(deep=True)
     reversed_world.battles.reverse()

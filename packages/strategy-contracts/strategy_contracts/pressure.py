@@ -56,6 +56,9 @@ DEFAULT_MEDIATION_TTL_TURNS = 3
 DEFAULT_RUMOR_REPORT_PERCENT = 50
 DEFAULT_WRONG_HINT_BASE_PERCENT = 40
 DEFAULT_ACCEPTANCE_SHIFT_DIVISOR = 10
+DEFAULT_ACCEPTANCE_SHIFT_CAP = 40
+DEFAULT_EXHAUSTION_SHIFT_DIVISOR = 4
+DEFAULT_WAR_LENGTH_TURNS_PER_SHIFT_POINT = 2
 DEFAULT_DEVASTATION_STEP = 10
 DEFAULT_HOPE_CANCEL_TURNS = 3
 DEFAULT_RELIEF_ARMY_MIN_MORALE = 50
@@ -94,6 +97,13 @@ class PressureTuning(StrictModel):
     )
     acceptance_shift_divisor: int = Field(
         default=DEFAULT_ACCEPTANCE_SHIFT_DIVISOR, ge=1
+    )
+    acceptance_shift_cap: int = Field(default=DEFAULT_ACCEPTANCE_SHIFT_CAP, ge=0)
+    exhaustion_shift_divisor: int = Field(
+        default=DEFAULT_EXHAUSTION_SHIFT_DIVISOR, ge=1
+    )
+    war_length_turns_per_shift_point: int = Field(
+        default=DEFAULT_WAR_LENGTH_TURNS_PER_SHIFT_POINT, ge=1
     )
     devastation_step: int = Field(default=DEFAULT_DEVASTATION_STEP, ge=1, le=100)
     hope_cancel_turns: int = Field(default=DEFAULT_HOPE_CANCEL_TURNS, ge=0)

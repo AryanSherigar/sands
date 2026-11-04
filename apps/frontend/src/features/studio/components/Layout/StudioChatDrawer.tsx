@@ -1,16 +1,28 @@
 import React, { useState } from "react";
+import type { StrategyChatBinding } from "../../types/strategyChat.types";
 import { AIChatSidebar } from "../AIChatSidebar/AIChatSidebar";
 
 export interface StudioChatDrawerProps {
   activeSection?: string;
   scenarioId?: string;
+  strategy?: StrategyChatBinding;
+  isOpen?: boolean;
+  onOpenChange?: (isOpen: boolean) => void;
 }
 
 export const StudioChatDrawer: React.FC<StudioChatDrawerProps> = ({
   activeSection = "meta",
   scenarioId,
+  strategy,
+  isOpen,
+  onOpenChange,
 }) => {
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [isInternalOpen, setIsInternalOpen] = useState(false);
+  const isDrawerOpen = isOpen ?? isInternalOpen;
+  const setIsDrawerOpen = (next: boolean) => {
+    setIsInternalOpen(next);
+    onOpenChange?.(next);
+  };
 
   return (
     <>
@@ -67,6 +79,7 @@ export const StudioChatDrawer: React.FC<StudioChatDrawerProps> = ({
           <AIChatSidebar
             activeSection={activeSection}
             scenarioId={scenarioId}
+            strategy={strategy}
           />
         </div>
       </div>

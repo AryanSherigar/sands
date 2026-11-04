@@ -175,10 +175,12 @@ async def test_a_continuing_exchange_streams_then_records_and_finishes(
     assert submission.sequence == 1
     assert submission.leader_text == LEADER_REPLY
     assert submission.decision.action is SceneAction.CONTINUE_TALK
+    assert submission.tone_grade == 2
     assert json.loads(events[-1][1]) == {
         "sequence": 1,
         "exchanges_remaining": 5,
         "scene_status": "opened",
+        "tone_grade": 2,
     }
 
 

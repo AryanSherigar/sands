@@ -5,7 +5,6 @@ import { resolveNarrationFont } from "@/shared/constants/narration-fonts";
 import { loadNarrationFont } from "@/shared/lib/font-loader";
 import { EBookPrologueCard } from "./EBookPrologueCard";
 import { EBookTurnEntry } from "./EBookTurnEntry";
-import { PausedTurnNotice } from "./PausedTurnNotice";
 import { StreamingNarration } from "./StreamingNarration";
 import { useSanityBand } from "../../../hooks/useSanityBand";
 import { useReaderFlicker } from "../../../hooks/useReaderFlicker";
@@ -149,7 +148,6 @@ export function EBookCanvas({ isFantasy = false, sceneImage = null, children }: 
           />
         )}
 
-        <PausedTurnNotice />
         {children}
       </div>
 

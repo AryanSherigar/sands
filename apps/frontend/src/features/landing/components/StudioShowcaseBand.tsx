@@ -1,5 +1,4 @@
 import React from "react";
-import { useIsAlphaMode } from "@/shared/hooks/useIsAlphaMode";
 import { StudioShowcaseNarrative } from "./StudioShowcaseNarrative";
 import { StudioWorkbenchPreview } from "./StudioWorkbenchPreview";
 import type { StudioShowcaseBandProps } from "./StudioShowcaseBand.types";
@@ -7,9 +6,6 @@ import type { StudioShowcaseBandProps } from "./StudioShowcaseBand.types";
 export const StudioShowcaseBand: React.FC<StudioShowcaseBandProps> = ({
   className = "",
 }) => {
-  const isAlphaMode = useIsAlphaMode();
-  if (isAlphaMode) return null;
-
   return (
     <section className={`w-full bg-surface-sunken py-8 ${className}`}>
       <div className="rounded-md border border-border-subtle bg-surface-raised p-6 md:p-10">

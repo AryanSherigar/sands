@@ -1,16 +1,11 @@
-"""Integration tests for TurnMetricsRepo, AlphaEventRepo and the consent read."""
-
-import uuid
+"""Integration tests for TurnMetricsRepo."""
 
 import pytest
-from app.db.models.alpha_event import AlphaEvent
 from app.db.models.turn_log import TurnLog
 from app.db.models.turn_metrics import TurnMetrics
 from app.models.turn_metrics import CheckOutcome, TurnMetricsRecord
-from app.repositories.alpha_event_repo import AlphaEventRepo
 from app.repositories.turn_log_repo import TurnLogRepo
 from app.repositories.turn_metrics_repo import TurnMetricsRepo
-from app.repositories.user_repo import UserRepo
 from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from tests.repositories.test_turn_log_repo import _seed_playthrough
@@ -64,32 +59,6 @@ async def test_create_persists_every_field(db_session: AsyncSession) -> None:
     assert row.replay_count == 0
 
 
-async def test_increment_replay_count_updates_the_existing_row(
-    db_session: AsyncSession,
-) -> None:
-    turn = await _seed_turn(db_session)
-    repo = TurnMetricsRepo(db_session)
-    await repo.create(turn.turn_id, turn.playthrough_id, 1, _record())
-
-    await repo.increment_replay_count(turn.turn_id)
-    await repo.increment_replay_count(turn.turn_id)
-
-    row = (
-        await db_session.execute(
-            select(TurnMetrics.replay_count).where(TurnMetrics.turn_id == turn.turn_id)
-        )
-    ).scalar_one()
-    assert row == 2
-
-
-async def test_increment_replay_count_without_a_row_changes_nothing(
-    db_session: AsyncSession,
-) -> None:
-    await TurnMetricsRepo(db_session).increment_replay_count(uuid.uuid4())
-
-    assert await _count(db_session, TurnMetrics) == 0
-
-
 async def test_deleting_the_turn_removes_its_metrics(db_session: AsyncSession) -> None:
     turn = await _seed_turn(db_session)
     await TurnMetricsRepo(db_session).create(
@@ -99,29 +68,3 @@ async def test_deleting_the_turn_removes_its_metrics(db_session: AsyncSession) -
     await db_session.execute(delete(TurnLog).where(TurnLog.turn_id == turn.turn_id))
 
     assert await _count(db_session, TurnMetrics) == 0
-
-
-async def test_add_server_event_stores_a_server_source_row(
-    db_session: AsyncSession,
-) -> None:
-    playthrough = await _seed_playthrough(db_session)
-
-    await AlphaEventRepo(db_session).add_server_event(
-        playthrough.created_by, "server", "quota_exceeded", {"feature": "turn"}
-    )
-
-    row = (await db_session.execute(select(AlphaEvent))).scalar_one()
-    assert (row.source, row.name, row.playthrough_id) == (
-        "server",
-        "quota_exceeded",
-        None,
-    )
-
-
-async def test_get_alpha_consent_version_reads_the_user_column(
-    db_session: AsyncSession,
-) -> None:
-    playthrough = await _seed_playthrough(db_session)
-    repo = UserRepo(db_session)
-
-    assert await repo.get_alpha_consent_version(playthrough.created_by) is None

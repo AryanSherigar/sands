@@ -19,6 +19,9 @@ from app.routers import (
     session,
     strategy_art,
     strategy_dispatches,
+    strategy_epilogue,
+    strategy_events,
+    strategy_proclamation,
     strategy_summaries,
     turn,
     voice,
@@ -77,7 +80,10 @@ app.include_router(turn.router)
 app.include_router(combat.router)
 app.include_router(strategy_art.router)
 app.include_router(strategy_summaries.router)
+app.include_router(strategy_epilogue.router)
 app.include_router(strategy_dispatches.router)
+app.include_router(strategy_events.router)
+app.include_router(strategy_proclamation.router)
 app.include_router(session.router)
 app.include_router(assistant.router)
 app.include_router(scene.router)

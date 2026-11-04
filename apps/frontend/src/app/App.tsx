@@ -5,7 +5,6 @@ import { MotionConfig } from "motion/react";
 import { router } from "./router";
 import { AuthProvider } from "@/features/auth/providers/AuthProvider";
 import { ErrorBoundary } from "@/shared/components/feedback/ErrorBoundary";
-import { AlphaCollectionBridge } from "@/shared/components/AlphaCollectionBridge/AlphaCollectionBridge";
 import { MatureAttestationDialog } from "@/shared/components/MatureAttestationDialog/MatureAttestationDialog";
 import { SignInModal } from "@/shared/components/SignInModal/SignInModal";
 import { ToastHost } from "@/shared/components/feedback/ToastHost";
@@ -21,7 +20,6 @@ export const App: React.FC = () => {
             <SignInModal />
             <MatureAttestationDialog />
             <ToastHost />
-            <AlphaCollectionBridge />
           </AuthProvider>
         </QueryClientProvider>
       </MotionConfig>

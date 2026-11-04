@@ -10,7 +10,6 @@ from app.config import settings
 from app.db.connection import get_db_session
 from app.middleware.auth import get_current_user
 from app.models.auth import CurrentUser
-from app.routers.alpha_guards import forbid_in_alpha_mode
 from app.services.rate_limit.client_identity import resolve_client_ip
 from app.services.rate_limit.stream_lease_service import (
     StreamLeaseService,
@@ -26,7 +25,6 @@ from sse_starlette.sse import EventSourceResponse, ServerSentEvent
 router = APIRouter(
     prefix="/v1/session",
     tags=["Session"],
-    dependencies=[Depends(forbid_in_alpha_mode)],
 )
 logger = structlog.get_logger()
 

@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { SSEHandlers } from "./sse-client";
 import { startNarrativeTurn, type NarrativeTurnCallbacks } from "./turn-stream";
-import { AlphaPausedError } from "./alpha-paused-error";
+import { RateLimitError } from "./rate-limit-error";
 
 let capturedUrl = "";
 let capturedBody: Record<string, unknown> = {};
@@ -113,11 +113,15 @@ describe("startNarrativeTurn", () => {
     expect(callbacks.onFailure).not.toHaveBeenCalled();
   });
 
-  it("uses the error's own message for a paused narrator and a generic one otherwise", () => {
-    const paused = buildCallbacks();
-    startNarrativeTurn(request, paused);
-    capturedHandlers!.onError?.(new AlphaPausedError());
-    expect(paused.onFailure).toHaveBeenCalledWith(new AlphaPausedError().message);
+  it("uses a rate limit error's own message and a generic one otherwise", () => {
+    const limited = buildCallbacks();
+    const limit = new RateLimitError(
+      { detail: "Daily limit reached", code: "quota_exceeded", scope: "turn", reset_at: null },
+      null,
+    );
+    startNarrativeTurn(request, limited);
+    capturedHandlers!.onError?.(limit);
+    expect(limited.onFailure).toHaveBeenCalledWith(limit.message);
 
     const dropped = buildCallbacks();
     startNarrativeTurn(request, dropped);

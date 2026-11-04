@@ -12,7 +12,7 @@ from strategy_contracts.summary import (
 )
 
 
-def _claim() -> SummaryClaim:
+def _claim(chronicler_id: str = "lucan") -> SummaryClaim:
     summary_id = uuid4()
     return SummaryClaim(
         summary=SummaryView(
@@ -25,6 +25,7 @@ def _claim() -> SummaryClaim:
             summary_id=summary_id,
             playthrough_id=uuid4(),
             observer_faction_id="player",
+            chronicler_id=chronicler_id,
             requested_turn=3,
             trigger="major_event",
             facts=[
@@ -94,3 +95,48 @@ async def test_stream_claims_then_saves_before_done(async_client, monkeypatch) -
     )
     assert saved.calls[0].request.headers["x-internal-service-token"] == "service-token"
     assert saved.calls[0].request.headers["x-dev-user-id"] == str(user)
+
+
+@respx.mock
+async def test_stream_ignores_a_chronicler_sent_by_the_client(
+    async_client, monkeypatch
+) -> None:
+    from app.integrations import narration_router
+
+    claim = _claim("teresa")
+    monkeypatch.setattr(settings, "simulation_url", "http://simulation.test")
+    monkeypatch.setattr(settings, "internal_service_token", "service-token")
+    systems: list[str] = []
+
+    async def narrator(
+        system: str, prompt: str, timeout_seconds: int, **kwargs: object
+    ):
+        systems.append(system)
+        yield "Coin changed hands."
+
+    monkeypatch.setattr(narration_router, "stream_narration", narrator)
+    identity = claim.briefing.playthrough_id
+    base = f"http://simulation.test/v1/playthroughs/{identity}/summaries/{claim.summary.summary_id}"
+    pending = claim.summary.model_copy(update={"status": "pending"})
+    respx.get(base).mock(
+        return_value=httpx.Response(200, json=pending.model_dump(mode="json"))
+    )
+    internal = base.replace("/v1/", "/internal/v1/")
+    respx.post(internal + "/claim").mock(
+        return_value=httpx.Response(200, json=claim.model_dump(mode="json"))
+    )
+    done = claim.summary.model_copy(update={"status": "completed", "narration": "x"})
+    respx.post(internal + "/complete").mock(
+        return_value=httpx.Response(200, json=done.model_dump(mode="json"))
+    )
+
+    response = await async_client.post(
+        f"/v1/strategy/playthroughs/{identity}/summaries/{claim.summary.summary_id}/stream",
+        json={"client_request_id": str(uuid4()), "chronicler_id": "vaelen"},
+        headers={"X-Dev-User-Id": str(uuid4())},
+    )
+
+    assert response.status_code == 200
+    assert "Lady Teresa of Valis" in systems[0]
+    assert "Vaelen" not in systems[0]
+    assert '"chronicler_id": "teresa"' in response.text

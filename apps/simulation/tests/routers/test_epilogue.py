@@ -51,6 +51,7 @@ async def test_claim_then_complete_saves_the_entry_for_the_browser(
     api: AsyncClient,
 ) -> None:
     base = await _start_ended_game(api)
+    outcome_text = respx.patch(url__regex=r".*/outcome-text$").respond(200)
     internal = "/internal" + base + "/epilogue"
     claim = await api.post(
         internal + "/claim", json={"claim_id": str(uuid4())}, headers=HEADERS
@@ -65,6 +66,8 @@ async def test_claim_then_complete_saves_the_entry_for_the_browser(
     done = await api.post(internal + "/complete", json=completion, headers=HEADERS)
     assert done.status_code == 200
     assert done.json()["status"] == "completed"
+    assert outcome_text.called
+    assert completion["narration"] in outcome_text.calls.last.request.content.decode()
     public = (await api.get(f"{base}/epilogue")).json()
     assert public["narration"] == completion["narration"]
     assert "lease_token" not in public and "briefing" not in public

@@ -6,7 +6,6 @@ import {
   SSEHandlers,
 } from "./sse-client";
 import { refreshAuthToken } from "./api-client";
-import { AlphaPausedError } from "./alpha-paused-error";
 import { RateLimitError } from "./rate-limit-error";
 
 vi.mock("./api-client", () => ({
@@ -306,28 +305,6 @@ describe("sse-client", () => {
     expect(error).toBeInstanceOf(RateLimitError);
     expect(error.message).toBe(body.detail);
     expect(error.retryAfterSeconds).toBe(120);
-  });
-
-  it("reports a 503 alpha_paused as a typed AlphaPausedError", async () => {
-    const fetchMock = vi.fn().mockResolvedValue({
-      ok: false,
-      status: 503,
-      body: null,
-      headers: new Headers(),
-      json: () =>
-        Promise.resolve({ detail: "closed", code: "alpha_paused" }),
-    });
-    vi.stubGlobal("fetch", fetchMock);
-    const onError = vi.fn();
-
-    createPostSSEConnection("http://localhost:8001/v1/turn", {}, null, {
-      onEvent: vi.fn(),
-      onError,
-    });
-    await vi.runAllTimersAsync();
-
-    expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect(onError.mock.calls[0][0]).toBeInstanceOf(AlphaPausedError);
   });
 
   it("reports a fantasy exchange refusal with the server's reason", async () => {

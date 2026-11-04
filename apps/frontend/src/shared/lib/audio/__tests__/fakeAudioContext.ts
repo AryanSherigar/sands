@@ -70,6 +70,7 @@ export class FakeAudioContext {
   static instances: FakeAudioContext[] = [];
   currentTime = 0;
   state: "running" | "suspended" = "running";
+  isClosed = false;
   sampleRate = 8000;
   destination = { kind: "destination" };
   gains: FakeGainNode[] = [];
@@ -96,6 +97,10 @@ export class FakeAudioContext {
   }
   resume(): Promise<void> {
     this.state = "running";
+    return Promise.resolve();
+  }
+  close(): Promise<void> {
+    this.isClosed = true;
     return Promise.resolve();
   }
 }

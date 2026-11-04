@@ -19,7 +19,7 @@ export const HeroActions: React.FC<HeroActionsProps> = ({
       <Button
         variant="ghost"
         size="lg"
-        className="border bg-black hover:bg-black/80"
+        className="border bg-primary text-primary-contrast hover:opacity-90"
         style={{ borderColor: genreColor, color: genreColor }}
         onClick={handlePlay}
       >

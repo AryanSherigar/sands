@@ -2,6 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { MAX_RATING } from "../../constants/profileHeader.constants";
 import type { UserReviewCardProps } from "./UserReviewCard.types";
+import { IconStar, IconStarFilled } from "@tabler/icons-react";
 
 export const UserReviewCard: React.FC<UserReviewCardProps> = ({ review }) => {
   const rating = Math.min(Math.max(review.rating, 0), MAX_RATING);
@@ -20,9 +21,14 @@ export const UserReviewCard: React.FC<UserReviewCardProps> = ({ review }) => {
           {review.scenario_title}
         </Link>
         <div className="flex items-center gap-3">
-          <span aria-hidden="true" className="font-mono text-sm text-content">
-            {"★".repeat(rating)}
-            {"☆".repeat(MAX_RATING - rating)}
+          <span aria-hidden="true" className="flex items-center text-content">
+            {Array.from({ length: MAX_RATING }, (_, index) =>
+              index < rating ? (
+                <IconStarFilled key={index} size={14} />
+              ) : (
+                <IconStar key={index} size={14} />
+              ),
+            )}
           </span>
           <span className="sr-only">Rated {rating} out of {MAX_RATING}</span>
           <span className="font-mono text-xs text-content-faint">

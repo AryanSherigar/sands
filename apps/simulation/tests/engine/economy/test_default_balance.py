@@ -84,3 +84,24 @@ def test_high_taxes_pay_early_then_fall_behind_normal_taxes() -> None:
     normal = _treasuries(TaxRate.NORMAL, HIGH_TAX_TURNS)
     assert high[HIGH_TAX_EARLY_TURN] > normal[HIGH_TAX_EARLY_TURN]
     assert high[-1] < normal[-1]
+
+
+RECRUIT_MIN_TURNS_OF_INCOME = 4
+
+
+def test_raising_a_second_starting_army_costs_several_turns_of_income() -> None:
+    world = _start()
+    economy = SCENARIO.tuning.economy
+    troops = [
+        (kind, count)
+        for army in world.armies.values()
+        if army.owner_id == PLAYER
+        for kind, count in army.troops.items()
+    ]
+    cost = sum(
+        count * economy.recruit_cost_per_unit[kind] // economy.upkeep_troop_unit
+        for kind, count in troops
+    )
+    income = project_balance(world, SCENARIO, PLAYER, []).income
+
+    assert cost >= RECRUIT_MIN_TURNS_OF_INCOME * income

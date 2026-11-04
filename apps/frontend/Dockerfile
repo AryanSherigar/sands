@@ -8,7 +8,8 @@ COPY package.json package-lock.json ./
 # NOTE: npm 10.9.8 (node:22-alpine's bundled version) hits a reproducible
 # "Exit handler never called!" crash running `npm ci` against this lockfile.
 # Upgrading npm first avoids it.
-RUN npm install -g npm@11 && npm ci
+RUN --mount=type=cache,target=/root/.npm \
+    npm install -g npm@11 && npm ci
 
 COPY . .
 

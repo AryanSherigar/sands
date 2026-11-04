@@ -2,6 +2,7 @@
 
 from collections.abc import AsyncIterator
 
+from app.services.judgment_scene_service import stream_judgment_message
 from app.services.letter_scene_service import stream_letter_message
 from app.services.scene_service import (
     PreparedExchange,
@@ -17,4 +18,6 @@ def stream_prepared_message(
 ) -> AsyncIterator[ServerSentEvent]:
     if prepared.package.scene_type is SceneType.LETTER:
         return stream_letter_message(prepared, usage)
+    if prepared.package.scene_type is SceneType.JUDGMENT:
+        return stream_judgment_message(prepared, usage)
     return stream_scene_message(prepared, usage)

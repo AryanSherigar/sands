@@ -10,6 +10,7 @@ describe("StrategyRulerPersona", () => {
     traitIds: ["honorable", "cautious", "disciplined_steward"],
     ambitionIds: ["ambition_peace"],
     backstory: "Crowned in autumn.",
+    chroniclerId: "lucan",
   };
 
   it("renders sovereign identity fields, trait cards, and opens trait drawer", () => {
@@ -162,13 +163,14 @@ describe("StrategyRulerPersona", () => {
         availableAmbitions={[]}
         onResetDefault={onResetDefault}
         onBeginReign={onBeginReign}
+        startYear={1000}
       />
     );
 
     fireEvent.click(screen.getByText(/Restore Default Ruler/i));
     expect(onResetDefault).toHaveBeenCalledTimes(1);
 
-    fireEvent.click(screen.getByText(/Begin Reign Anno 1042/i));
+    fireEvent.click(screen.getByText(/Begin Reign Anno 1000/i));
     expect(onBeginReign).toHaveBeenCalledTimes(1);
   });
 });

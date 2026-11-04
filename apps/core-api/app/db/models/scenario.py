@@ -81,6 +81,9 @@ class Scenario(Base, TimestampMixin):
         default=dict,
         nullable=False,
     )
+    published_strategy_document: Mapped[dict[str, object] | None] = mapped_column(
+        JSONB, nullable=True
+    )
     strategy_data: Mapped[dict[str, object] | None] = mapped_column(
         JSONB, nullable=True
     )

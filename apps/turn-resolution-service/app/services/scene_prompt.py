@@ -12,17 +12,39 @@ from collections.abc import Callable
 from dataclasses import dataclass
 
 from app.exceptions.scene_exceptions import SceneTypeUnsupportedError
+from app.services.judgment_prompt_text import (
+    CLOSING_DIRECTIVE as JUDGMENT_CLOSING_DIRECTIVE,
+)
+from app.services.judgment_prompt_text import (
+    JUDGMENT_RULES,
+)
+from app.services.judgment_prompt_text import (
+    REPLY_DIRECTIVE as JUDGMENT_REPLY_DIRECTIVE,
+)
 from app.services.letter_prompt_text import (
     LETTER_ACK_DIRECTIVE,
     LETTER_DECISION_DIRECTIVE,
     LETTER_RULES,
     letter_private_brief,
 )
+from app.services.revolt_prompt_text import (
+    REVOLT_DECISION_DIRECTIVE,
+    REVOLT_REPLY_DIRECTIVE,
+    REVOLT_RULES,
+    revolt_private_brief,
+)
 from app.services.scene_prompt_peace import (
     PEACE_DECISION_DIRECTIVE,
     PEACE_REPLY_DIRECTIVE,
     PEACE_RULES,
     peace_private_brief,
+)
+from app.services.scene_prompt_treaty import (
+    TREATY_DECISION_DIRECTIVE,
+    TREATY_RULES,
+    is_treaty_package,
+    treaty_private_brief,
+    verdict_hint,
 )
 from google.genai import types
 from strategy_contracts.scene import (
@@ -55,20 +77,25 @@ REPLY_DIRECTIVE = (
 )
 
 DECISION_DIRECTIVE = (
-    "Now decide what the ruler's last reply amounted to. Answer with only a JSON "
+    "Now decide what the ruler's last reply amounted to and grade the player's tone. Answer with only a JSON "
     'object with flat keys (no nesting): {"action": "continue_talk" | "propose_terms" | "walk_out" | "refuse", '
     '"duration_turns": <whole number of turns or null>, '
-    '"promise_kind": "never_attack_faction" | "never_ally_with" | "spare_prisoners" | null, '
-    '"promise_subject_id": <realm id for never_ally_with, otherwise null>, '
-    '"is_promise_by_ruler": <true if the ruler swore, false if the player swore>}. '
+    '"promise_kind": "never_attack_faction" | "never_ally_with" | "spare_prisoners" '
+    '| "never_occupy_region" | null, '
+    '"promise_subject_id": <realm id for never_ally_with, a region id from '
+    '"Regions at the table" for never_occupy_region, otherwise null>, '
+    '"is_promise_by_ruler": <true if the ruler swore, false if the player swore>, '
+    '"tone_grade": <integer 0 to 5>}. '
     "Use propose_terms only if the ruler's reply clearly agreed to a pact of a "
     "specific length the player can now sign, and put that length in duration_turns "
     "with promise_kind null. Use propose_terms with a promise_kind instead if the "
     "reply clearly agreed to one sworn promise from the menu, and put its length "
     "in duration_turns. Use walk_out if the ruler ended the talks, refuse if the "
-    "ruler firmly turned the pact down, otherwise continue_talk. If your reply "
-    'openly raised one of your listed grudges, add "cited_grudge_ids": [its id]; '
-    "otherwise leave it out."
+    "ruler firmly turned the pact down, otherwise continue_talk. "
+    "For tone_grade: grade the player's demeanor from 0 to 5 (0-1: respectful and diplomatic; "
+    "2-3: measured and firm; 4-5: haughty, arrogant, demanding or insulting). "
+    "If your reply openly raised one of your listed grudges, add "
+    '"cited_grudge_ids": [its id]; otherwise leave it out.'
 )
 
 
@@ -111,9 +138,11 @@ def _private_brief(package: ScenePackage) -> str:
 
 GRUDGE_RULES = (
     "Grudges you hold against the player, each with an id. Raise at most one in a "
-    "reply, only when it fits what was said, and in your own words; never recite "
-    "the ids. A grudge marked inherited is a quarrel you took up from your "
-    "predecessor: speak of it as their successor would, not as if you lived it."
+    "reply, only when it fits what was said. Speak of the deed as you would to "
+    "someone's face, in fresh words: never copy a listed sentence or its "
+    "distinctive phrases, and never recite the ids. A grudge marked inherited is a "
+    "quarrel you took up from your predecessor: speak of it as their successor "
+    "would, not as if you lived it."
 )
 
 
@@ -150,6 +179,7 @@ class PromptProfile:
     reply_directive: str
     decision_directive: str
     private_brief: Callable[[ScenePackage], str]
+    has_verdict_hints: bool = False
 
 
 PROMPT_PROFILES: dict[SceneType, PromptProfile] = {
@@ -164,6 +194,19 @@ PROMPT_PROFILES: dict[SceneType, PromptProfile] = {
         reply_directive=PEACE_REPLY_DIRECTIVE,
         decision_directive=PEACE_DECISION_DIRECTIVE,
         private_brief=peace_private_brief,
+        has_verdict_hints=True,
+    ),
+    SceneType.JUDGMENT: PromptProfile(
+        rules=JUDGMENT_RULES,
+        reply_directive=JUDGMENT_REPLY_DIRECTIVE,
+        decision_directive=JUDGMENT_CLOSING_DIRECTIVE,
+        private_brief=lambda package: "",
+    ),
+    SceneType.REVOLT_TALK: PromptProfile(
+        rules=REVOLT_RULES,
+        reply_directive=REVOLT_REPLY_DIRECTIVE,
+        decision_directive=REVOLT_DECISION_DIRECTIVE,
+        private_brief=revolt_private_brief,
     ),
     SceneType.LETTER: PromptProfile(
         rules=LETTER_RULES,
@@ -174,6 +217,15 @@ PROMPT_PROFILES: dict[SceneType, PromptProfile] = {
 }
 
 
+TREATY_PROFILE = PromptProfile(
+    rules=TREATY_RULES,
+    reply_directive=REPLY_DIRECTIVE,
+    decision_directive=TREATY_DECISION_DIRECTIVE,
+    private_brief=treaty_private_brief,
+    has_verdict_hints=True,
+)
+
+
 def profile_for(scene_type: SceneType) -> PromptProfile:
     profile = PROMPT_PROFILES.get(scene_type)
     if profile is None:
@@ -181,8 +233,14 @@ def profile_for(scene_type: SceneType) -> PromptProfile:
     return profile
 
 
+def profile_for_package(package: ScenePackage) -> PromptProfile:
+    if package.scene_type is SceneType.NEGOTIATION and is_treaty_package(package):
+        return TREATY_PROFILE
+    return profile_for(package.scene_type)
+
+
 def build_system_instruction(package: ScenePackage) -> str:
-    profile = profile_for(package.scene_type)
+    profile = profile_for_package(package)
     facts = "\n".join(
         f"- {fact.label}: {fact.value}" for fact in package.situation.facts
     )
@@ -210,16 +268,25 @@ def _progress(exchange_number: int, exchange_cap: int) -> str:
     return f"This is exchange {exchange_number} of {exchange_cap}."
 
 
+def _hint_line(transcript: list[SceneExchangeView], profile: PromptProfile) -> str:
+    if not profile.has_verdict_hints or not transcript:
+        return ""
+    hint = verdict_hint(transcript[-1].verdict)
+    return f"{hint}\n" if hint else ""
+
+
 def build_reply_contents(
     transcript: list[SceneExchangeView],
     player_text: str,
     exchange_cap: int,
     scene_type: SceneType = SceneType.NEGOTIATION,
+    *,
+    profile: PromptProfile | None = None,
 ) -> list[types.Content]:
-    directive = profile_for(scene_type).reply_directive
+    chosen = profile or profile_for(scene_type)
     tail = (
-        f"{quote_player(player_text)}\n\n"
-        f"{_progress(len(transcript) + 1, exchange_cap)} {directive}"
+        f"{quote_player(player_text)}\n\n{_hint_line(transcript, chosen)}"
+        f"{_progress(len(transcript) + 1, exchange_cap)} {chosen.reply_directive}"
     )
     return [*_history(transcript), _text_content("user", tail)]
 
@@ -230,8 +297,10 @@ def build_decision_contents(
     leader_text: str,
     exchange_cap: int,
     scene_type: SceneType = SceneType.NEGOTIATION,
+    *,
+    profile: PromptProfile | None = None,
 ) -> list[types.Content]:
-    directive = profile_for(scene_type).decision_directive
+    directive = (profile or profile_for(scene_type)).decision_directive
     return [
         *_history(transcript),
         _text_content("user", quote_player(player_text)),

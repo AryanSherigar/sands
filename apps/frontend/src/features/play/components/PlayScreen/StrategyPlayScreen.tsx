@@ -1,5 +1,6 @@
+import { describeEdictEffects } from "../../lib/edictEffects";
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { usePlayStore } from "../../stores/play.store";
 import { useSimulationWorld } from "../../hooks/useSimulationWorld";
 import { useSimulationCommands } from "../../hooks/useSimulationCommands";
@@ -39,15 +40,21 @@ import { StrategySituationsDrawer } from "../StrategyPlayScreen/situations/Strat
 import { StrategySituationBanner } from "../StrategyPlayScreen/situations/StrategySituationBanner";
 import { StrategyEventDialog } from "../StrategyPlayScreen/events/StrategyEventDialog";
 import { StrategyOrdersTray } from "../StrategyPlayScreen/orders/StrategyOrdersTray";
+import { StrategyChronicleBook } from "../StrategyChronicleBook/StrategyChronicleBook";
+import { StrategyEndingGate } from "../StrategyPlayScreen/ending/StrategyEndingGate";
 import { StrategyEndTurnModule } from "../StrategyPlayScreen/orders/StrategyEndTurnModule";
 import { StrategyNoticeBanner } from "../StrategyPlayScreen/orders/StrategyNoticeBanner";
 import { StrategyArmyGroupBar } from "../StrategyPlayScreen/orders/StrategyArmyGroupBar";
 import { DeclareWarForm } from "../StrategyPlayScreen/factions/DeclareWarForm";
 import { buildDeclareWarOrder } from "../../lib/orderBuilders";
-import { StrategyEndingDialog } from "../StrategyPlayScreen/ending/StrategyEndingDialog";
+import { StrategyBattleSpeechGate } from "../StrategyPlayScreen/battleSpeech/StrategyBattleSpeechGate";
 import { StrategyBattleDecision } from "../StrategyPlayScreen/orders/StrategyBattleDecision";
 import { StrategyWarCouncilScreen } from "../StrategyWarCouncil";
 import { StrategyLetterDialog } from "../StrategyPlayScreen/letter/StrategyLetterDialog";
+import { useProclamationScene } from "../../hooks/useProclamationScene";
+import { useResumePendingBattleSpeech } from "../../hooks/useResumePendingBattleSpeech";
+import { StrategyProclamationDraftModal } from "../StrategyPlayScreen/proclamation/StrategyProclamationDraftModal";
+import { StrategyProclamationDialog } from "../StrategyPlayScreen/proclamation/StrategyProclamationDialog";
 import { DEFAULT_PREVIEW_WORLD } from "../StrategyPlayScreen/defaultPreviewWorld";
 import { FALLBACK_STRATEGY_MAP } from "../StrategyPlayScreen/fallbackStrategyMap";
 import { EMPTY_STRATEGY_MAP } from "../StrategyPlayScreen/emptyStrategyMap";
@@ -148,8 +155,6 @@ function pickNotice(
 
 export function StrategyPlayScreen() {
   const { id: playthroughId } = useParams<{ id: string }>();
-  const navigate = useNavigate();
-  const [isReviewingEndedRealm, setIsReviewingEndedRealm] = useState(false);
   const [mapControls, setMapControls] = useState<ReactZoomPanPinchRef | null>(null);
   const [isTenRegionDemo, setIsTenRegionDemo] = useState(() => {
     // NOTE: demo fixtures are for the preview route only; a real playthrough never reads them.
@@ -172,6 +177,7 @@ export function StrategyPlayScreen() {
   const { data: mapData, isLoading: isMapLoading } = useStrategyMap(scenarioId);
   const { data: world, isLoading, isError, refetch } = useSimulationWorld(playthroughId);
   const { cancelMutation } = useSimulationCommands(playthroughId);
+  const [isLegacyRequested, setIsLegacyRequested] = useState(false);
 
   const activeMapDoc = isPlaythrough
     ? (mapData ?? EMPTY_STRATEGY_MAP)
@@ -208,6 +214,15 @@ export function StrategyPlayScreen() {
   const { eventPackage, resolveChoice } = useStrategyEvent(playthroughId, activeWorld);
   const letter = useLiveLetter(playthroughId, activeWorld);
   const judgment = useLiveJudgment(playthroughId, activeWorld);
+  const proclamation = useProclamationScene(playthroughId);
+  const edictSource = activeWorld.active_proclamation ?? proclamation.activeEdict;
+  const activeEdict = edictSource
+    ? {
+        title: edictSource.legal_summary,
+        remainingTurns: edictSource.remaining_turns,
+        effects: describeEdictEffects(edictSource.ongoing_modifiers),
+      }
+    : null;
   const [devEventPackage, setDevEventPackage] = useState<StrategyEventPackage | null>(null);
   const [reviewedEventId, setReviewedEventId] = useState<string | null>(null);
   const reviewedPackage = useMemo(
@@ -216,15 +231,23 @@ export function StrategyPlayScreen() {
   );
   const [isBannerDismissed, setIsBannerDismissed] = useState(false);
   const [activeWarCouncilBattleId, setActiveWarCouncilBattleId] = useState<string | null>(null);
+  useResumePendingBattleSpeech(
+    playthroughId,
+    historyTurn === null ? activeWorld.battles : undefined,
+    activeWarCouncilBattleId,
+    setActiveWarCouncilBattleId,
+  );
   const closeScene = useStrategyPlayStore((s) => s.closeScene);
 
   useEffect(() => {
+    if (!import.meta.env.DEV) return;
     (window as unknown as { __TRIGGER_EVENT__: (pkg?: StrategyEventPackage) => void }).__TRIGGER_EVENT__ = (pkg) => {
       setDevEventPackage(pkg ?? DEFAULT_DEV_EVENT);
     };
   }, []);
 
   useEffect(() => {
+    if (!import.meta.env.DEV) return;
     (
       window as unknown as {
         __TRIGGER_NEGOTIATION__: (sceneId?: string) => void;
@@ -310,6 +333,9 @@ export function StrategyPlayScreen() {
   };
   const budget = deriveOrdersBudget(activeWorld);
   const nextDate = deriveDate(activeWorld.clock, 1);
+  const reignStart = deriveDate(activeWorld.clock, -activeWorld.clock.turn);
+  const reignEnd = deriveDate(activeWorld.clock);
+  const eraLabel = `${reignStart.season} ${reignStart.year} to ${reignEnd.season} ${reignEnd.year}`;
   const notice = pickNotice(
     activeWorld,
     planner.targeting?.action,
@@ -361,6 +387,7 @@ export function StrategyPlayScreen() {
         isTargeting={Boolean(planner.targeting)}
         onMove={() => planner.handleGroupAction("move")}
         onHalt={() => planner.handleGroupAction("halt")}
+        onMerge={() => planner.handleGroupAction("merge")}
         onClear={clearGroupArmies}
       />
       <StrategyTopCanopy
@@ -376,6 +403,8 @@ export function StrategyPlayScreen() {
         isHistoryAvailable={Boolean(playthroughId) && latestCompletedTurn > 0}
         isHistoryActive={historyTurn !== null}
         onToggleHistory={() => setHistoryTurn(historyTurn === null ? latestCompletedTurn : null)}
+        activeEdict={activeEdict}
+        onIssueProclamation={proclamation.openDraft}
       />
       {historyTurn !== null ? (
         <StrategyHistoryScrubber
@@ -506,6 +535,39 @@ export function StrategyPlayScreen() {
           onDecline={letter.handleDecline}
         />
       )}
+      <StrategyProclamationDraftModal
+        isOpen={proclamation.isDraftOpen}
+        isClassifying={proclamation.isClassifying}
+        draftError={proclamation.draftError}
+        activeEdict={activeEdict}
+        onSubmitDraft={proclamation.submitDraft}
+        onClose={proclamation.closeDraft}
+      />
+      {proclamation.councilPackage && (
+        <StrategyProclamationDialog
+          isOpen={proclamation.isCouncilOpen}
+          ministers={proclamation.councilPackage.ministers}
+          legalSummary={proclamation.councilPackage.draft.legal_summary}
+          domain={proclamation.councilPackage.draft.domain}
+          burden={proclamation.councilPackage.draft.burden}
+          transcript={proclamation.transcript}
+          isStreaming={proclamation.isStreaming}
+          isEnacting={proclamation.isEnacting}
+          onAddressCouncil={proclamation.sendAddress}
+          onPronounce={(verdict) => {
+            void proclamation.commitDecision(
+              verdict,
+              proclamation.councilPackage?.is_rescinding_previous,
+              () => {
+                if (playthroughId) {
+                  void refetch();
+                }
+              }
+            );
+          }}
+          onClose={proclamation.closeCouncil}
+        />
+      )}
       {notice ? (
         <StrategyNoticeBanner
           message={notice}
@@ -529,7 +591,7 @@ export function StrategyPlayScreen() {
           onTakeCommand={(battleId) => setActiveWarCouncilBattleId(battleId)}
         />
       )}
-      {!activeWorld.ending && activeWorld.status === "awaiting_commands" && (
+      {activeWorld.status === "awaiting_commands" && !activeWorld.ending && (
         <div className="absolute bottom-28 left-1/2 z-30 -translate-x-1/2 flex items-center gap-3">
           {activeWorld.battles?.some(
             (b) => b.control_mode === "player" && b.status !== "resolved",
@@ -558,23 +620,20 @@ export function StrategyPlayScreen() {
         </div>
       )}
       {activeWarCouncilBattleId && playthroughId && (
-        <StrategyWarCouncilScreen
+        <StrategyBattleSpeechGate
           playthroughId={playthroughId}
           battleId={activeWarCouncilBattleId}
-          regionNames={regionNames}
-          world={activeWorld}
-          heldCaptives={prisonersToCaptives(activeWorld.own_prisoners)}
-          onReturnToMap={() => setActiveWarCouncilBattleId(null)}
-        />
+        >
+          <StrategyWarCouncilScreen
+            playthroughId={playthroughId}
+            battleId={activeWarCouncilBattleId}
+            regionNames={regionNames}
+            world={activeWorld}
+            heldCaptives={prisonersToCaptives(activeWorld.own_prisoners)}
+            onReturnToMap={() => setActiveWarCouncilBattleId(null)}
+          />
+        </StrategyBattleSpeechGate>
       )}
-      {activeWorld.ending ? (
-        <StrategyEndingDialog
-          ending={activeWorld.ending}
-          isOpen={!isReviewingEndedRealm}
-          onReviewRealm={() => setIsReviewingEndedRealm(true)}
-          onLeave={() => navigate("/discover")}
-        />
-      ) : null}
       {pendingWarTargetId ? (
         <DeclareWarForm
           targetName={activeWorld.rivals.find((rival) => rival.faction_id === pendingWarTargetId)?.name ?? pendingWarTargetId}
@@ -591,9 +650,25 @@ export function StrategyPlayScreen() {
         ordersRemaining={activeWorld.orders_remaining}
         nextSeason={`${nextDate.season} ${nextDate.year}`}
         isLoading={isEndingTurn}
-        isDisabled={historyTurn !== null || Boolean(activeWorld.ending) || !playthroughId || activeWorld.status === "awaiting_scene" || activeWorld.status === "awaiting_battle_decision" || activeWorld.status === "awaiting_commands"}
+        isDisabled={historyTurn !== null || !playthroughId || Boolean(activeWorld.ending) || activeWorld.status === "awaiting_scene" || activeWorld.status === "awaiting_battle_decision" || activeWorld.status === "awaiting_commands"}
         onEndTurn={() => endTurn()}
       />
+      {activeWorld.ending && isLegacyRequested ? (
+        <StrategyChronicleBook
+          playthroughId={playthroughId}
+          rulerName={activeWorld.ruler.name}
+          chroniclerId={activeWorld.ruler.chronicler_id}
+          eraLabel={eraLabel}
+          onClose={() => setIsLegacyRequested(false)}
+        />
+      ) : null}
+      {activeWorld.ending && !isLegacyRequested ? (
+        <StrategyEndingGate
+          ending={activeWorld.ending}
+          scenarioId={scenarioId}
+          onReadLegacy={() => setIsLegacyRequested(true)}
+        />
+      ) : null}
     </main>
   );
 }

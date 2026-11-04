@@ -41,6 +41,7 @@ asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "session"
 asyncio_default_test_loop_scope = "session"
 testpaths = ["tests"]
+pythonpath = [".", "../../packages/strategy-contracts"]
 addopts = "-m \"not live_scene\""
 markers = [
     "live_scene: opt-in scene tests against live Muse; need MUSE_API_KEY and spend tokens from the live budget, run with -m live_scene.",

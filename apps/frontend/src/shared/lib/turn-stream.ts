@@ -1,6 +1,5 @@
 import { useAuthStore } from "@/features/auth/stores/auth.store";
 import { TRS_BASE_URL } from "@/shared/constants/api";
-import { isAlphaPausedError } from "./alpha-paused-error";
 import { isRateLimitError } from "./rate-limit-error";
 import {
   generateClientActionId,
@@ -48,7 +47,7 @@ const buildNotice = (eventName: string, data: string): string | null => {
 };
 
 const describeError = (error: unknown): string =>
-  isRateLimitError(error) || isAlphaPausedError(error)
+  isRateLimitError(error)
     ? error.message
     : CONNECTION_LOST_MESSAGE;
 

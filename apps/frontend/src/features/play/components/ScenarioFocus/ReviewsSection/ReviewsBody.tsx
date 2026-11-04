@@ -1,6 +1,5 @@
 import React from "react";
 import { Button } from "@/shared/components/ui/Button";
-import { useIsAlphaMode } from "@/shared/hooks/useIsAlphaMode";
 import { getRatingBuckets } from "../../../utils/scenarioPage.utils";
 import { RatingSummary } from "./RatingSummary";
 import { ReviewComposer } from "./ReviewComposer";
@@ -27,7 +26,6 @@ export const ReviewsBody: React.FC<ReviewsBodyProps> = ({
   onRequestSignIn,
   onSubmitReview,
 }) => {
-  const isAlphaMode = useIsAlphaMode();
   const canCompose = canReview || Boolean(ownReview);
 
   return (
@@ -37,7 +35,7 @@ export const ReviewsBody: React.FC<ReviewsBodyProps> = ({
         reviewCount={totalReviews}
         buckets={getRatingBuckets(ratingCounts, totalReviews)}
       />
-      {canCompose && !isAlphaMode && (
+      {canCompose && (
         <ReviewComposer
           key={ownReview?.review_id ?? "new"}
           existingReview={ownReview ?? undefined}
@@ -45,7 +43,7 @@ export const ReviewsBody: React.FC<ReviewsBodyProps> = ({
           onSubmit={onSubmitReview}
         />
       )}
-      {!canCompose && !isAlphaMode && (
+      {!canCompose && (
         <ReviewEligibility
           isSignedIn={isSignedIn}
           onRequestSignIn={onRequestSignIn}

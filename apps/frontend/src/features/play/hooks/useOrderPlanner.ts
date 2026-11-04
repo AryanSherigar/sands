@@ -1,4 +1,5 @@
 import { useStrategyPlayStore } from "../stores/strategyPlay.store";
+import { describeRejectReason } from "../lib/rejectReasonText";
 import {
   buildAnswerCallOrder,
   buildAnswerDemandOrder,
@@ -6,7 +7,10 @@ import {
   buildBesiegeOrder,
   buildCallNegotiationOrder,
   buildDeclareWarOrder,
+  buildArmyPolicyOrder,
   buildDisbandOrder,
+  buildMergeOrder,
+  buildSplitOrder,
   buildFabricateClaimOrder,
   buildHaltOrder,
   buildLevyOrder,
@@ -24,8 +28,7 @@ import { useSimulationCommands } from "./useSimulationCommands";
 
 const SUBMIT_FAILURE_MESSAGE = "Could not issue that order";
 const HISTORY_VIEW_MESSAGE = "You are looking at a past turn. Return to the present to give orders.";
-const CAMPAIGN_ENDED_MESSAGE = "The campaign has ended. No more orders can be given.";
-const REFUSED_FALLBACK_MESSAGE = "That order cannot be issued right now";
+const REIGN_ENDED_MESSAGE = "The reign has ended.";
 
 export function useOrderPlanner(playthroughId: string | undefined, world: CampaignWorldView) {
   const { acceptMutation, check } = useSimulationCommands(playthroughId);
@@ -40,6 +43,10 @@ export function useOrderPlanner(playthroughId: string | undefined, world: Campai
   const factionId = world.my_faction.id;
 
   const submitOrder = async (order: StrategyOrder): Promise<void> => {
+    if (world.ending) {
+      setOrderFeedback({ message: REIGN_ENDED_MESSAGE });
+      return;
+    }
     if (!playthroughId) {
       setOrderFeedback({ message: PREVIEW_ORDERS_DISABLED_MESSAGE });
       return;
@@ -48,14 +55,10 @@ export function useOrderPlanner(playthroughId: string | undefined, world: Campai
       setOrderFeedback({ message: HISTORY_VIEW_MESSAGE });
       return;
     }
-    if (world.ending) {
-      setOrderFeedback({ message: CAMPAIGN_ENDED_MESSAGE });
-      return;
-    }
     try {
       const verdict = await check(order);
       if (verdict.flag) {
-        setOrderFeedback({ message: verdict.reason ?? REFUSED_FALLBACK_MESSAGE });
+        setOrderFeedback({ message: describeRejectReason(verdict.reason) });
         return;
       }
       await acceptMutation.mutateAsync(order);
@@ -78,6 +81,14 @@ export function useOrderPlanner(playthroughId: string | undefined, world: Campai
     }
     if (action.type === "halt") {
       void submitOrder(buildHaltOrder(factionId, action.armyId));
+      return;
+    }
+    if (action.type === "set_army_policy") {
+      void submitOrder(buildArmyPolicyOrder(factionId, action.armyId, action.policy));
+      return;
+    }
+    if (action.type === "split") {
+      void submitOrder(buildSplitOrder(factionId, action.armyId, action.troops));
       return;
     }
     if (action.type === "disband") {
@@ -134,9 +145,15 @@ export function useOrderPlanner(playthroughId: string | undefined, world: Campai
     }
   };
 
-  const handleGroupAction = (action: "move" | "halt"): void => {
+  const handleGroupAction = (action: "move" | "halt" | "merge"): void => {
     if (groupArmyIds.length === 0) return;
     setOrderFeedback(null);
+    if (action === "merge") {
+      const order = buildMergeOrder(factionId, groupArmyIds, groupArmyIds[0] ?? "");
+      clearGroupArmies();
+      void submitOrder(order);
+      return;
+    }
     if (action === "halt") {
       const orders = groupArmyIds.map((armyId) => buildHaltOrder(factionId, armyId));
       clearGroupArmies();

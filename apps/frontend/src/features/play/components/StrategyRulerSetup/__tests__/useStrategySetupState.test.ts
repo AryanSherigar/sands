@@ -126,7 +126,7 @@ describe("useStrategySetupState", () => {
     });
 
     expect(apiClient.post).toHaveBeenCalledWith(
-      "/api/v1/strategy/ruler-backstory",
+      "/v1/strategy/ruler-backstory",
       expect.objectContaining({
         scenario_id: "scen-strat-1",
         faction_id: "faction-a",

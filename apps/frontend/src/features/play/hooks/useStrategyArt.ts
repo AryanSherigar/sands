@@ -5,6 +5,7 @@ import type { StrategyArtKind } from "../types/strategyArt.types";
 
 export const ART_POLL_INTERVAL_MS = 3000;
 const HTTP_CONFLICT = 409;
+const HTTP_NOT_FOUND = 404;
 
 const strategyArtQueryKey = (
   playthroughId: string | undefined,
@@ -14,6 +15,10 @@ const strategyArtQueryKey = (
 
 function isInProgressError(error: unknown): boolean {
   return isAxiosError(error) && error.response?.status === HTTP_CONFLICT;
+}
+
+function isItemGoneError(error: unknown): boolean {
+  return isAxiosError(error) && error.response?.status === HTTP_NOT_FOUND;
 }
 
 export interface StrategyArtState {
@@ -57,7 +62,7 @@ export function useStrategyArt(
       !hasFailed &&
       (query.isPending || isInProgressError(query.error) || isStillPainting(query.data?.status)),
     hasFailed,
-    canRetry: !isGenerationFailed || Boolean(query.data?.is_retryable),
+    canRetry: !isItemGoneError(query.error) && (!isGenerationFailed || Boolean(query.data?.is_retryable)),
     retry: () => void query.refetch(),
   };
 }

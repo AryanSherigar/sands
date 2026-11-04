@@ -1,11 +1,9 @@
 import { usePlayStore } from "../../stores/play.store";
-import { useState } from "react";
 import { MAX_BATTLE_WAVES } from "../../constants/strategy.constants";
 import { buildBattleParticipants } from "../../lib/battleParticipants";
 import { formatTerrainLabel, formatWeatherLabel } from "../../lib/battleLabels";
 import type { CampaignWorldView } from "../../types/simulation.types";
 import type { BattleView, NobleCaptive } from "./StrategyWarCouncil.types";
-import { BattleSpeechDialog } from "./speech/BattleSpeechDialog";
 import { WarCouncilLoadState } from "./WarCouncilLoadState";
 import { WarCouncilOverlays } from "./WarCouncilOverlays";
 import { useWarCouncilState } from "./hooks/useWarCouncilState";
@@ -37,12 +35,11 @@ export function StrategyWarCouncilScreen({
   initialBattle,
 }: StrategyWarCouncilScreenProps) {
   const council = useWarCouncilState(playthroughId, battleId, initialBattle);
-  const [isSpeechDismissed, setIsSpeechDismissed] = useState(false);
   const isAudioMuted = usePlayStore((state) => state.is_audio_muted);
   const toggleAudioMute = usePlayStore((state) => state.toggleAudioMute);
   const { battle, odds } = council;
 
-  if (!battle || !odds) {
+  if (!battle) {
     return (
       <WarCouncilLoadState
         isLoading={council.isLoading}
@@ -104,6 +101,8 @@ export function StrategyWarCouncilScreen({
           onReorderRank={council.reorderRank}
           onSelectAnchor={council.setAnchor}
           troops={battle.own_contingent?.troops ?? {}}
+          activeTroops={battle.own_contingent?.active}
+          reserveTroops={battle.own_contingent?.reserve}
           morale={morale ?? undefined}
           reservePolicy={council.reservePolicy}
           onChangeReservePolicy={council.setReservePolicy}
@@ -120,7 +119,7 @@ export function StrategyWarCouncilScreen({
           cavalryCount={battle.own_contingent?.troops["cavalry"] ?? 0}
           terrain={battle.terrain}
           frontlineCount={totalTroops}
-          oddsBadgeText={`Odds: ${odds.tierText}`}
+          oddsBadgeText={odds ? `Odds: ${odds.tierText}` : "Odds: Unavailable"}
           isCommitting={council.isCommitting}
           isCommitDisabled={!council.canCommitWave}
           commitErrorMessage={council.commandErrorMessage}
@@ -129,17 +128,6 @@ export function StrategyWarCouncilScreen({
         />
       </div>
 
-      {(council.canAddressTroops || council.speechReception) && !isSpeechDismissed ? (
-        <BattleSpeechDialog
-          isSending={council.isSpeaking}
-          reception={council.speechReception}
-          reactionLine={council.speechReactionLine}
-          errorMessage={council.speechErrorMessage}
-          onSpeak={(speechText) => void council.addressTroops(speechText)}
-          onSkip={() => setIsSpeechDismissed(true)}
-          onFinish={() => setIsSpeechDismissed(true)}
-        />
-      ) : null}
       <WarCouncilOverlays
         battle={battle}
         isCodexOpen={council.isCodexOpen}

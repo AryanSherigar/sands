@@ -30,6 +30,7 @@ from strategy_contracts.terms import (
 from strategy_contracts.treaty import Verdict
 
 REASON_INVALID_TERMS = "invalid_terms"
+REASON_CANNOT_PAY = "cannot_pay"
 TIMED_TERMS = (NonAggressionTerm, TradeDealTerm, MilitaryAccessTerm, SwornPromiseTerm)
 
 
@@ -87,14 +88,14 @@ def _is_between(terms: list[Term], player_id: str, counterpart_id: str) -> bool:
     return all(term_parties(term) == pair for term in terms)
 
 
-def _is_signable(
+def _signing_failure(
     world: WorldState, scenario: StrategyScenario, card: TermsCard
-) -> bool:
+) -> str | None:
     try:
         validate_card(world, scenario, card)
-    except CampaignProgressError:
-        return False
-    return True
+    except CampaignProgressError as error:
+        return error.code
+    return None
 
 
 def _judge(
@@ -111,7 +112,12 @@ def _judge(
         return Interpretation(
             reason=result.reason, verdict=result.verdict, bands=result.bands
         )
-    if not _is_signable(world, scenario, card):
+    failure = _signing_failure(world, scenario, card)
+    if failure == REASON_CANNOT_PAY:
+        return Interpretation(
+            reason=REASON_CANNOT_PAY, verdict=Verdict.HAGGLE, bands=result.bands
+        )
+    if failure is not None:
         return Interpretation(reason=REASON_INVALID_TERMS)
     return Interpretation(proposal=card, verdict=result.verdict, bands=result.bands)
 

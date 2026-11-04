@@ -7,9 +7,6 @@ changes.
 
 import uuid
 
-from sqlalchemy import event, func, inspect, update
-from sqlalchemy.orm import Session
-
 from app.db.models.end_condition import EndCondition
 from app.db.models.entity import Entity
 from app.db.models.fact import Fact
@@ -23,6 +20,8 @@ from app.db.models.scenario_map import ScenarioMap
 from app.db.models.scenario_minigame import ScenarioMinigame
 from app.db.models.scenario_music import ScenarioMusic
 from app.db.models.scenario_rule_check import ScenarioRuleCheck
+from sqlalchemy import event, func, inspect, update
+from sqlalchemy.orm import Session
 
 AUTHORED_CHILD_MODELS: tuple[type, ...] = (
     EndCondition,

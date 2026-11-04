@@ -2,6 +2,7 @@
 
 import uuid
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 from strategy_contracts.scenario import PlayerRulerCustomization
@@ -29,6 +30,8 @@ class PlaytestCreate(BaseModel):
 
     setup_values: dict[str, object] = Field(default_factory=dict)
     state_overrides: dict[str, object] = Field(default_factory=dict)
+    faction_id: str | None = None
+    player_ruler: PlayerRulerCustomization | None = None
 
 
 class PlaythroughCharacterUpdate(BaseModel):
@@ -99,3 +102,23 @@ class PlaythroughResponse(BaseModel):
     # NOTE: Master-mode-only; [] for newbie or a master playthrough with no
     # scenario_conditions currently true.
     active_conditions: list[str] = Field(default_factory=list)
+
+
+OUTCOME_TEXT_MAX_CHARS = 4000
+
+
+class PlaythroughTurnSyncRequest(BaseModel):
+    turn_count: int = Field(ge=0)
+    is_ended: bool = False
+    ended_outcome_tag: Literal["win", "lose"] | None = None
+    ended_outcome_title: str | None = Field(default=None, max_length=255)
+
+
+class PlaythroughOutcomeTextRequest(BaseModel):
+    ended_outcome_text: str = Field(min_length=1, max_length=OUTCOME_TEXT_MAX_CHARS)
+
+
+class PlaythroughTurnSyncResponse(BaseModel):
+    playthrough_id: uuid.UUID
+    turn_count: int
+    status: str

@@ -8,7 +8,8 @@ WORKDIR /app
 COPY --from=contracts . /packages/strategy-contracts
 COPY requirements.txt .
 
-RUN pip install --no-cache-dir /packages/strategy-contracts -r requirements.txt
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install /packages/strategy-contracts -r requirements.txt
 
 COPY app ./app
 

@@ -17,6 +17,7 @@ from app.models.api_world_view import (
     SiegeView,
     Visibility,
 )
+from app.models.battle_command import ResolveUprisingCommand
 from app.models.world_army import ArmyState
 from app.models.world_internal import is_rebel_faction
 from app.models.world_state import WorldState
@@ -44,7 +45,6 @@ from app.services.promise_projection import (
     project_sworn_promise_history,
     project_sworn_promises,
 )
-from app.services.succession_projection import project_succession
 from app.services.uprising_projection import project_uprisings
 from app.services.vassal_projection import (
     project_pending_demands,
@@ -154,6 +154,7 @@ def queued_order_views(world: WorldState, faction_id: str) -> list[QueuedOrderVi
         if command.faction_id == faction_id
         and command.battle_id is None
         and command.status in PENDING_STATUSES
+        and not isinstance(command.command, ResolveUprisingCommand)
     ]
 
 
@@ -262,7 +263,6 @@ def project_world(
         pending_demands=project_pending_demands(world, faction_id),
         coalitions=project_coalitions(world, faction_id),
         own_threat=project_own_threat(world, scenario, faction_id),
-        succession=project_succession(world, scenario, faction_id),
         regions=[
             project_region(world, identity, faction_id, index, visible)
             for identity in sorted(world.regions)

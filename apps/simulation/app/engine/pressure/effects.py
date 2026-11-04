@@ -15,7 +15,6 @@ STRAIN_LOSS_DIVISOR = 10
 WILL_LOSS_CEILING = 40
 WILL_LOSS_DIVISOR = 10
 UNREST_DIVISOR = 2
-ACCEPTANCE_SHIFT_CAP = 10
 
 
 def _readings(
@@ -54,15 +53,29 @@ def pressure_unrest(
     )
 
 
+def _longest_war_turns(world: WorldState, faction_id: FactionId) -> int:
+    started = [war.started_turn for war in wars_of(world, faction_id)]
+    return world.clock.turn - min(started)
+
+
 def acceptance_shift(
     world: WorldState, scenario: StrategyScenario, faction_id: FactionId
 ) -> int:
     readings = _readings(world, scenario, faction_id)
     if readings is None:
         return 0
+    pressure = scenario.tuning.pressure
     strain, will = readings
-    shift = (strain - will) // scenario.tuning.pressure.acceptance_shift_divisor
-    return max(-ACCEPTANCE_SHIFT_CAP, min(ACCEPTANCE_SHIFT_CAP, shift))
+    exhaustion = world.factions[faction_id].war_exhaustion
+    shift = (strain - will) // pressure.acceptance_shift_divisor
+    shift += exhaustion // pressure.exhaustion_shift_divisor
+    shift += (
+        _longest_war_turns(world, faction_id)
+        // pressure.war_length_turns_per_shift_point
+    )
+    return max(
+        -pressure.acceptance_shift_cap, min(pressure.acceptance_shift_cap, shift)
+    )
 
 
 def mediation_shift(

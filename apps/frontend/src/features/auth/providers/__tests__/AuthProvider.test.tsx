@@ -1,13 +1,13 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
 import { beforeEach, describe, expect, it } from "vitest";
 import { server } from "@/test/msw/server";
-import { clearInvite, readInvite } from "../../lib/inviteStorage";
+import { useAuthStore } from "../../stores/auth.store";
 import { AuthProvider } from "../AuthProvider";
 
-describe("AuthProvider invite capture", () => {
+describe("AuthProvider", () => {
   beforeEach(() => {
-    clearInvite();
+    useAuthStore.setState({ user: null, accessToken: null, isAuthenticated: false, isLoading: true });
     server.use(
       http.post(
         "*/v1/auth/refresh",
@@ -16,9 +16,7 @@ describe("AuthProvider invite capture", () => {
     );
   });
 
-  it("captures ?invite= from the landing URL on mount", async () => {
-    window.history.pushState({}, "", "/?invite=landing-code");
-
+  it("renders its children and finishes loading when the silent refresh is refused", async () => {
     render(
       <AuthProvider>
         <p>app</p>
@@ -26,7 +24,7 @@ describe("AuthProvider invite capture", () => {
     );
 
     expect(await screen.findByText("app")).toBeInTheDocument();
-    expect(readInvite()).toBe("landing-code");
-    window.history.pushState({}, "", "/");
+    await waitFor(() => expect(useAuthStore.getState().isLoading).toBe(false));
+    expect(useAuthStore.getState().isAuthenticated).toBe(false);
   });
 });

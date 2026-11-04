@@ -36,7 +36,6 @@ describe("MoodSlotCard", () => {
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       },
-      quotaExceeded: false,
     });
 
     const audioElement = screen.getByLabelText(/track preview/i);
@@ -65,7 +64,6 @@ describe("MoodSlotCard", () => {
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       },
-      quotaExceeded: false,
     });
 
     expect(screen.queryByLabelText(/track preview/i)).not.toBeInTheDocument();
@@ -89,7 +87,6 @@ describe("MoodSlotCard", () => {
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       },
-      quotaExceeded: false,
     });
 
     const audioElement = screen.getByLabelText(/track preview/i);

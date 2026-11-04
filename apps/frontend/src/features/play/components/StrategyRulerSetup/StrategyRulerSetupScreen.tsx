@@ -9,6 +9,8 @@ import { extractErrorMessage } from "@/shared/lib/extractErrorMessage";
 import { useStrategySetupState } from "./useStrategySetupState";
 import { StrategyRealmExplorer } from "./StrategyRealmExplorer";
 import { StrategyRulerPersona } from "./StrategyRulerPersona";
+import { ChroniclerPicker } from "./ChroniclerPicker";
+import { buildPlayerRulerPayload } from "./buildPlayerRulerPayload";
 import { StrategyCampaignLoader } from "./StrategyCampaignLoader";
 import type { PlayableFactionInfo } from "./StrategyRulerSetup.types";
 import type { ScenarioDetailResponse } from "@/features/play/types/scenario";
@@ -89,7 +91,10 @@ export const StrategyRulerSetupScreen: React.FC<StrategyRulerSetupScreenProps> =
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  const handleSelectChronicler = (chroniclerId: string) => updateRuler({ chroniclerId });
+
   const handleBeginReign = async () => {
+    if (isSubmitting) return;
     if (!isPlaytest && !(await requireAuth())) return;
 
     if (!isValid) {
@@ -116,14 +121,7 @@ export const StrategyRulerSetupScreen: React.FC<StrategyRulerSetupScreenProps> =
       const result = await startRunMutation.mutateAsync({
         scenario_id: targetScenarioId,
         faction_id: activeFactionId,
-        player_ruler: {
-          name: ruler.name,
-          epithet: ruler.epithet || null,
-          portrait_url: ruler.portraitUrl || null,
-          trait_ids: ruler.traitIds,
-          ambition_ids: ruler.ambitionIds,
-          backstory: ruler.backstory,
-        },
+        player_ruler: buildPlayerRulerPayload(ruler),
       });
 
       navigate(`/play/${result.playthrough_id}`);
@@ -163,7 +161,7 @@ export const StrategyRulerSetupScreen: React.FC<StrategyRulerSetupScreenProps> =
           <div className="flex items-center gap-2.5 self-start sm:self-auto px-3.5 py-1.5 rounded-full bg-[#F3EAD3] border border-[#3A3128]/20 shadow-sm">
             <span className="w-2 h-2 rounded-full bg-[#5E8A5A] animate-pulse" />
             <span className="text-xs font-semibold tracking-wide text-[#3A3128] font-['Manrope',sans-serif]">
-              Anno Domini 1042 / Campaign Turn 0
+              {startYear ? `Anno Domini ${startYear} / ` : ""}Campaign Turn 0
             </span>
           </div>
         </header>
@@ -181,6 +179,10 @@ export const StrategyRulerSetupScreen: React.FC<StrategyRulerSetupScreenProps> =
             />
           </div>
           <div className="xl:col-span-6">
+            <ChroniclerPicker
+              selectedId={ruler.chroniclerId}
+              onSelect={handleSelectChronicler}
+            />
             <StrategyRulerPersona
               ruler={ruler}
               onUpdateRuler={updateRuler}
@@ -191,6 +193,7 @@ export const StrategyRulerSetupScreen: React.FC<StrategyRulerSetupScreenProps> =
               onResetDefault={restoreDefaultRuler}
               onBeginReign={handleBeginReign}
               isSubmitting={isSubmitting}
+              startYear={startYear}
             />
           </div>
         </main>
@@ -210,7 +213,7 @@ export const StrategyRulerSetupScreen: React.FC<StrategyRulerSetupScreenProps> =
       </div>
 
       {/* Transition Loader overlay */}
-      {isSubmitting && <StrategyCampaignLoader />}
+      {isSubmitting && <StrategyCampaignLoader startYear={startYear} />}
 
       {/* Error Toast */}
       {errorMessage && (

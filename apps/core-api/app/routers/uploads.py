@@ -6,7 +6,6 @@ from app.db.models.user import User
 from app.middleware.auth import get_current_user
 from app.models.image_generation import CoverImageGenerationRequest
 from app.models.upload import ImageUploadResponse
-from app.routers.alpha_guards import forbid_in_alpha_mode
 from app.routers.upload_reading import read_capped
 from app.services.rate_limit.quota_service import QuotaService, get_quota_service
 from app.services.upload_service import (
@@ -19,7 +18,6 @@ from fastapi import APIRouter, Depends, File, UploadFile, status
 router = APIRouter(
     prefix="/v1/uploads",
     tags=["Uploads"],
-    dependencies=[Depends(forbid_in_alpha_mode)],
 )
 
 

@@ -1,124 +1,108 @@
+"""Browser check of the strategy letter flow against a real playthrough.
+
+Needs a running stack and a playthrough that has a letter armed (letters are
+opt-in per scenario and need an authored grudge or an earlier negotiation).
+
+    LETTER_PLAYTHROUGH_URL=http://127.0.0.1:5173/play/<playthrough-id> \
+    LETTER_STORAGE_STATE=/path/to/signed-in-state.json \
+    python scripts/test_letter_scenario_playwright.py
+
+LETTER_STORAGE_STATE is a Playwright storage_state file saved from a signed-in
+session. LETTER_SCREENSHOTS_DIR defaults to scripts/screenshots/letter.
+"""
+
 import asyncio
 import os
+import re
 import sys
-from playwright.async_api import async_playwright, expect
+from pathlib import Path
 
-SCREENSHOTS_DIR = "/home/aryan-sherigar/.gemini/antigravity-cli/brain/596606ec-752e-4c41-91ed-412ac21585e0"
+from playwright.async_api import Page, async_playwright, expect
 
-async def test_letter_scenario():
-    print("=== STARTING PLAYWRIGHT E2E TEST FOR STRATEGY LETTER SCENARIO ===")
-    async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=True)
+ENV_URL = "LETTER_PLAYTHROUGH_URL"
+ENV_STORAGE_STATE = "LETTER_STORAGE_STATE"
+ENV_SCREENSHOTS_DIR = "LETTER_SCREENSHOTS_DIR"
+DEFAULT_SCREENSHOTS_DIR = Path(__file__).parent / "screenshots" / "letter"
+DIALOG = '[role="dialog"]'
+LETTER_WAIT_MS = 15_000
+SHORT_WAIT_MS = 5_000
+SETTLE_MS = 400
+SHELF_PILL_PATTERN = re.compile(r"Dispatch #\d+")
+SCRIBE_HINT = "Make it firmer about the river fords."
+
+
+async def open_letter_or_exit(page: Page) -> None:
+    try:
+        await page.wait_for_selector(DIALOG, timeout=LETTER_WAIT_MS)
+    except Exception:
+        print(
+            "No letter dialog opened. This playthrough has no letter armed; "
+            "arm one (authored grudge or an earlier negotiation) and rerun."
+        )
+        sys.exit(2)
+
+
+async def set_aside_and_reopen(page: Page, shots: Path) -> None:
+    print("[2/5] Setting the letter aside and reopening it from the shelf pill...")
+    await page.get_by_role("button", name=re.compile("Set it aside", re.I)).click()
+    pill = page.get_by_role("button", name=SHELF_PILL_PATTERN)
+    await expect(pill).to_be_visible()
+    await page.screenshot(path=shots / "shelf-pill.png")
+    await pill.click()
+    await expect(page.locator(DIALOG)).to_be_visible()
+
+
+async def draft_with_scribe(page: Page, shots: Path) -> None:
+    print("[3/5] Asking the scribe for a draft...")
+    await page.get_by_role("button", name=re.compile("Ask my scribe", re.I)).click()
+    await expect(
+        page.get_by_role("button", name=re.compile("Seal and send", re.I))
+    ).to_be_visible()
+    await expect(page.get_by_text(re.compile(r"Draft Rev\. 1"))).to_be_visible()
+    await page.screenshot(path=shots / "drafting.png")
+
+    print("[4/5] Rewriting with a hint, then undo and redo...")
+    await page.get_by_label("Draft hint for scribe").fill(SCRIBE_HINT)
+    await page.get_by_role("button", name=re.compile("Rewrite", re.I)).click()
+    await expect(page.get_by_text(re.compile(r"Draft Rev\. 2"))).to_be_visible(
+        timeout=LETTER_WAIT_MS
+    )
+    await page.get_by_label("Undo draft change").click()
+    await expect(page.get_by_text(re.compile(r"Draft Rev\. 1"))).to_be_visible()
+    await page.get_by_label("Redo draft change").click()
+    await expect(page.get_by_text(re.compile(r"Draft Rev\. 2"))).to_be_visible()
+
+
+async def seal_and_confirm_closed(page: Page) -> None:
+    print("[5/5] Sealing and sending...")
+    await page.get_by_role("button", name=re.compile("Seal and send", re.I)).click()
+    await expect(page.locator(DIALOG)).to_have_count(0, timeout=LETTER_WAIT_MS)
+
+
+async def run_letter_flow() -> None:
+    url = os.environ.get(ENV_URL)
+    if not url:
+        print(f"Set {ENV_URL} to a playthrough URL with an armed letter.")
+        sys.exit(2)
+    shots = Path(os.environ.get(ENV_SCREENSHOTS_DIR, DEFAULT_SCREENSHOTS_DIR))
+    shots.mkdir(parents=True, exist_ok=True)
+    async with async_playwright() as playwright:
+        browser = await playwright.chromium.launch(headless=True)
         context = await browser.new_context(
             viewport={"width": 1440, "height": 900},
-            device_scale_factor=1,
+            storage_state=os.environ.get(ENV_STORAGE_STATE),
         )
         page = await context.new_page()
-
-        # Step 1: Navigate to strategy preview
-        print("[1/8] Navigating to http://localhost:5173/play/strategy-preview...")
-        await page.goto("http://localhost:5173/play/strategy-preview", wait_until="networkidle")
-        await page.wait_for_timeout(1000)
-
-        # Step 2: Trigger Letter Scenario Dialog
-        print("[2/8] Triggering Letter Scenario modal...")
-        await page.wait_for_function("typeof window.__TRIGGER_LETTER__ === 'function'", timeout=10000)
-        await page.evaluate("window.__TRIGGER_LETTER__()")
-        await page.wait_for_selector('[role="dialog"]', timeout=5000)
-
-        # Step 3: Verify Stage 1 - Unfolded Courier Pouch
-        print("[3/8] Verifying Stage 1 (Courier Pouch)...")
-        await expect(page.locator("text=Unfolded Courier Pouch")).to_be_visible()
-        await expect(page.locator("text=Queen Mira").first).to_be_visible()
-        await expect(page.locator("text=Courteous • Guarded Kin")).to_be_visible()
-        await expect(page.locator("text=To my brother Aldric, ruler of the Marches")).to_be_visible()
-        await expect(page.locator("text=Mira, Regina")).to_be_visible()
-        await expect(page.locator("text=Ask my scribe")).to_be_visible()
-
-        stage1_path = os.path.join(SCREENSHOTS_DIR, "playwright-stage1-pouch.png")
-        await page.screenshot(path=stage1_path)
-        print(f" -> Stage 1 screenshot saved to {stage1_path}")
-
-        # Step 4: Click 'Ask my scribe' to enter Stage 2 (Drafting Desk)
-        print("[4/8] Transitioning to Stage 2 (Drafting Desk)...")
-        scribe_btn = page.locator('button:has-text("Ask my scribe")')
-        await scribe_btn.click()
-        await page.wait_for_timeout(600)
-
-        # Step 5: Verify Stage 2 - Sovereign Desk & Scribe Drafting
-        print("[5/8] Verifying Stage 2 layout, spacing, icons and typography...")
-        await expect(page.locator("text=Drafting Courier Missive")).to_be_visible()
-        await expect(page.get_by_text("Brother Lucan", exact=True)).to_be_visible()
-        await expect(page.locator("text=Draft Rev. 1")).to_be_visible()
-        await expect(page.locator("text=Marches Council • Privy Scroll")).to_be_visible()
-        await expect(page.locator("text=Active Quill: Line 8")).to_be_visible()
-        await expect(page.locator("text=Aldric").first).to_be_visible()
-        await expect(page.locator("text=Seal and send")).to_be_visible()
-
-        stage2_path = os.path.join(SCREENSHOTS_DIR, "playwright-stage2-scribe-drafting.png")
-        await page.screenshot(path=stage2_path)
-        print(f" -> Stage 2 screenshot saved to {stage2_path}")
-
-        # Step 6: Test Interactive Scribe Rewrite
-        print("[6/8] Testing Scribe Whisper & Rewrite Flow...")
-        hint_input = page.locator('input[aria-label="Draft hint for scribe"]')
-        await hint_input.fill("Make it firmer on the boundary stones")
-        rewrite_btn = page.locator('button:has-text("Rewrite")')
-        await rewrite_btn.click()
-        await page.wait_for_timeout(400)
-
-        # Verify revision incremented to Rev. 2
-        await expect(page.locator("text=Draft Rev. 2")).to_be_visible()
-        print(" -> Scribe generated Draft Rev. 2 successfully.")
-
-        # Test Undo
-        undo_btn = page.locator('button[aria-label="Undo draft change"]')
-        await undo_btn.click()
-        await page.wait_for_timeout(300)
-        await expect(page.locator("text=Draft Rev. 1")).to_be_visible()
-        print(" -> Undo reverted to Draft Rev. 1 successfully.")
-
-        # Test Redo
-        redo_btn = page.locator('button[aria-label="Redo draft change"]')
-        await redo_btn.click()
-        await page.wait_for_timeout(300)
-        await expect(page.locator("text=Draft Rev. 2")).to_be_visible()
-        print(" -> Redo advanced back to Draft Rev. 2 successfully.")
-
-        # Step 7: Test Sealing and Sending Missive
-        print("[7/8] Testing 'Seal and send' submission...")
-        seal_btn = page.locator('button:has-text("Seal and send")')
-        await seal_btn.click()
-        await page.wait_for_timeout(500)
-        # Verify dialog closed
-        dialog_count = await page.locator('[role="dialog"]').count()
-        assert dialog_count == 0, "Dialog should be closed after sealing"
-        print(" -> Letter sealed and dialog closed cleanly.")
-
-        # Step 8: Test 'Set it aside' and HUD shelf pill
-        print("[8/8] Testing 'Set it aside' shelf pill persistence...")
-        await page.evaluate("window.__TRIGGER_LETTER__()")
-        await page.wait_for_selector('[role="dialog"]', timeout=5000)
-        aside_btn = page.locator('button:has-text("Set it aside")')
-        await aside_btn.click()
-        await page.wait_for_timeout(500)
-
-        shelf_pill = page.locator('button:has-text("Dispatch #8")')
-        await expect(shelf_pill).to_be_visible()
-        print(" -> Shelf pill is visible in the top HUD shelf.")
-
-        shelf_path = os.path.join(SCREENSHOTS_DIR, "playwright-stage3-shelf-pill.png")
-        await page.screenshot(path=shelf_path)
-        print(f" -> Shelf pill screenshot saved to {shelf_path}")
-
-        # Reopen from shelf pill
-        await shelf_pill.click()
-        await page.wait_for_timeout(400)
-        await expect(page.locator("text=Unfolded Courier Pouch")).to_be_visible()
-        print(" -> Restored letter scenario dialog from HUD shelf pill.")
-
+        print(f"[1/5] Opening {url} and waiting for the letter...")
+        await page.goto(url, wait_until="networkidle")
+        await open_letter_or_exit(page)
+        await page.screenshot(path=shots / "pouch.png")
+        await set_aside_and_reopen(page, shots)
+        await draft_with_scribe(page, shots)
+        await seal_and_confirm_closed(page)
         await browser.close()
-        print("=== ALL PLAYWRIGHT E2E ASSERTIONS PASSED WITH 100% SUCCESS ===")
+    print("Letter flow passed.")
+
 
 if __name__ == "__main__":
-    asyncio.run(test_letter_scenario())
+    asyncio.run(run_letter_flow())

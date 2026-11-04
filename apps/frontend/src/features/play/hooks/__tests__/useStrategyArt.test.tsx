@@ -106,4 +106,16 @@ describe("useStrategyArt", () => {
     expect(result.current.isLoading).toBe(false);
     expect(handler).not.toHaveBeenCalled();
   });
+
+  it("stops offering a retry when the item is gone from the world", async () => {
+    server.use(http.post(ART_PATH, () => HttpResponse.json({ detail: "Art item not found" }, { status: 404 })));
+    const { result } = renderHook(
+      () => useStrategyArt(PLAYTHROUGH_ID, "event", "evt_1", 20),
+      { wrapper: createQueryWrapper() },
+    );
+
+    await waitFor(() => expect(result.current.hasFailed).toBe(true));
+    expect(result.current.canRetry).toBe(false);
+    expect(result.current.artUrl).toBeNull();
+  });
 });

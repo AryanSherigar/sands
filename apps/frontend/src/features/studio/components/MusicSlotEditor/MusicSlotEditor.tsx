@@ -25,14 +25,8 @@ const MOOD_ORDER: ScenarioMood[] = [
 export const MusicSlotEditor: React.FC<MusicSlotEditorProps> = ({
   scenarioId,
 }) => {
-  const { slots, isLoading, quota } = useScenarioMusic(scenarioId);
+  const { slots, isLoading } = useScenarioMusic(scenarioId);
   const slotsByMood = new Map(slots.map((slot) => [slot.mood, slot]));
-  const quotaExceeded = Boolean(
-    quota &&
-    (quota.scenario_generations_used >= quota.scenario_generations_limit ||
-      quota.creator_generations_used_today >=
-        quota.creator_generations_limit_per_day),
-  );
 
   if (isLoading) {
     return <p className="text-sm text-content-muted">Loading mood tracks…</p>;
@@ -46,14 +40,6 @@ export const MusicSlotEditor: React.FC<MusicSlotEditorProps> = ({
           Set a track for each of the 6 moods your narrator can call for. Any
           mood left unset automatically falls back to its default track.
         </p>
-        {quota && (
-          <p className="text-xs text-content-faint mt-1">
-            Generations used: {quota.scenario_generations_used}/
-            {quota.scenario_generations_limit} this scenario,{" "}
-            {quota.creator_generations_used_today}/
-            {quota.creator_generations_limit_per_day} today.
-          </p>
-        )}
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {MOOD_ORDER.map((mood) => (
@@ -63,7 +49,6 @@ export const MusicSlotEditor: React.FC<MusicSlotEditorProps> = ({
             mood={mood}
             label={MOOD_LABELS[mood]}
             slot={slotsByMood.get(mood)}
-            quotaExceeded={quotaExceeded}
           />
         ))}
       </div>

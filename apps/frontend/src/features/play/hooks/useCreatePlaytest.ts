@@ -7,6 +7,9 @@ import { startPlaytest } from "@/shared/api/playthroughs.api";
 
 export const useCreatePlaytest = () =>
   useMutation<PlaythroughResponse, Error, CreatePlaythroughPayload>({
-    mutationFn: ({ scenario_id, setup_values }) =>
-      startPlaytest(scenario_id, setup_values),
+    mutationFn: ({ scenario_id, setup_values, faction_id, player_ruler }) =>
+      startPlaytest(scenario_id, setup_values, {}, {
+        factionId: faction_id,
+        playerRuler: player_ruler,
+      }),
   });

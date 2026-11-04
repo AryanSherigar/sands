@@ -19,6 +19,7 @@ from app.engine.diplomacy.war_score import tally_war_scores
 from app.engine.outrage.ledger import tick_outrage
 from app.engine.outrage.mobilize import apply_mobilize
 from app.engine.peace.breach import tick_breach
+from app.engine.peace.decisive_defeat import apply_decisive_defeats
 from app.engine.peace.hostages import release_due_hostages
 from app.engine.peace.truces import expire_truces
 from app.engine.phases import PhaseContext, PhaseResult
@@ -253,6 +254,10 @@ class TimePhase:
         if world.peace_ruleset:
             events += tick_breach(world, context.scenario, context.rng)
             tick_captivity(world, context.scenario)
+            events += [
+                event.model_copy(update={"phase": PhaseName.TIME})
+                for event in apply_decisive_defeats(world, context.scenario)
+            ]
         events += tick_coalitions(world, context.scenario)
         events += [
             event.model_copy(update={"phase": PhaseName.TIME})

@@ -14,8 +14,6 @@ class UserResponse(BaseModel):
 
 class TokenExchangeRequest(BaseModel):
     firebase_id_token: str
-    invite_code: str | None = None
-    alpha_consent_version: str | None = None
 
 
 class TokenResponse(BaseModel):

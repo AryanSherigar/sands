@@ -116,7 +116,9 @@ async def upload_public_bytes(
     object_key: str, content: bytes, content_type: str = "application/octet-stream"
 ) -> str:
     """Upload arbitrary bytes to public object storage; return public URL."""
-    return await upload_image(content=content, content_type=content_type, object_key=object_key)
+    return await upload_image(
+        content=content, content_type=content_type, object_key=object_key
+    )
 
 
 def object_key_from_url(url: str) -> str | None:

@@ -1,12 +1,7 @@
-import { useState } from "react";
-import { PostRunSurvey } from "@/shared/components/alpha-survey/PostRunSurvey/PostRunSurvey";
-import { useIsAlphaMode } from "@/shared/hooks/useIsAlphaMode";
-
 interface PlaythroughEndedBannerProps {
   outcomeTag: "win" | "lose";
   outcomeTitle: string;
   outcomeText: string;
-  playthroughId: string;
   onBackToLibrary: () => void;
 }
 
@@ -14,11 +9,8 @@ export function PlaythroughEndedBanner({
   outcomeTag,
   outcomeTitle,
   outcomeText,
-  playthroughId,
   onBackToLibrary,
 }: PlaythroughEndedBannerProps) {
-  const isAlphaMode = useIsAlphaMode();
-  const [isSurveyOpen, setIsSurveyOpen] = useState(false);
   const accentClass =
     outcomeTag === "win"
       ? "border-success/40 text-success"
@@ -38,15 +30,6 @@ export function PlaythroughEndedBanner({
           {outcomeText}
         </p>
         <div className="flex flex-wrap justify-center gap-2">
-          {isAlphaMode && (
-            <button
-              type="button"
-              onClick={() => setIsSurveyOpen(true)}
-              className="min-h-11 px-4 py-2 rounded-xl border border-inherit/30 hover:bg-hover-wash font-mono text-xs transition-colors cursor-pointer"
-            >
-              Rate this run
-            </button>
-          )}
           <button
             type="button"
             onClick={onBackToLibrary}
@@ -55,11 +38,6 @@ export function PlaythroughEndedBanner({
             Return to Library
           </button>
         </div>
-        <PostRunSurvey
-          playthroughId={playthroughId}
-          isOpen={isSurveyOpen}
-          onClose={() => setIsSurveyOpen(false)}
-        />
       </div>
     </div>
   );

@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
 import { server } from "@/test/msw/server";
+import { createQueryWrapper } from "@/test/queryWrapper";
 import { LeaderAvatarCreatorModal } from "../LeaderAvatarCreatorModal";
 
 vi.mock("@/shared/components/AnimatedPortrait/AnimatedPortrait", () => ({
@@ -16,6 +17,7 @@ const AVATAR_URL = "https://cdn.test/avatars/one.mavatar";
 function mockPortraitApi(portraits: string[] = [PORTRAIT_URL]) {
   const queue = [...portraits];
   server.use(
+    http.get("*/v1/studio/avatars/premade", () => HttpResponse.json({ avatars: [] })),
     http.get("https://cdn.test/leader-portraits/:name", () => new HttpResponse(new Blob(["image"], { type: "image/webp" }))),
     http.post("*/v1/studio/avatars/optimize-prompt", () =>
       HttpResponse.json({ optimized_prompt: "Front-facing bust of a stern queen" }),
@@ -38,7 +40,7 @@ function renderModal(overrides: Partial<React.ComponentProps<typeof LeaderAvatar
     onSavePortrait: vi.fn(),
     ...overrides,
   };
-  render(<LeaderAvatarCreatorModal {...props} />);
+  render(<LeaderAvatarCreatorModal {...props} />, { wrapper: createQueryWrapper() });
   return props;
 }
 

@@ -16,6 +16,7 @@ Error mapping keeps the caller interface identical to the Gemini path:
 
 from __future__ import annotations
 
+import asyncio
 import json
 from collections.abc import AsyncIterator, Iterator
 from contextlib import contextmanager
@@ -29,11 +30,13 @@ from app.exceptions.turn_exceptions import (
 )
 from app.models.token_usage import TokenUsage
 from google.genai import types
+from openai.types.chat import ChatCompletion, ChatCompletionChunk
 
 logger = structlog.get_logger()
 
 EVENT_OPENAI_STREAM_OPENED = "openai_stream_opened"
 EVENT_OPENAI_STREAM_ERROR = "openai_stream_error"
+EVENT_OPENAI_OPEN_RETRY = "openai_open_retry"
 
 _client: openai.AsyncOpenAI | None = None
 
@@ -54,6 +57,26 @@ def _get_client() -> openai.AsyncOpenAI:
             max_retries=0,
         )
     return _client
+
+
+async def _open_with_retry(
+    kwargs: dict[str, object],
+) -> ChatCompletion | openai.AsyncStream[ChatCompletionChunk]:
+    """Open one completion, retrying a transient 5xx or dropped connection.
+
+    Timeouts are not retried: a second full wait would double what the player sits through.
+    """
+    client = _get_client()
+    attempts = settings.openai_compatible_open_retries + 1
+    for attempt in range(1, attempts + 1):
+        try:
+            return await client.chat.completions.create(**kwargs)  # type: ignore[arg-type]
+        except (openai.InternalServerError, openai.APIConnectionError) as exc:
+            if isinstance(exc, openai.APITimeoutError) or attempt == attempts:
+                raise
+            logger.warning(EVENT_OPENAI_OPEN_RETRY, attempt=attempt)
+            await asyncio.sleep(settings.openai_compatible_open_retry_delay_seconds)
+    raise AssertionError("unreachable")
 
 
 @contextmanager
@@ -159,8 +182,7 @@ async def chat_completion(
     if response_format is not None:
         kwargs["response_format"] = response_format
     with _mapped_errors():
-        client = _get_client()
-        response = await client.chat.completions.create(**kwargs)  # type: ignore[arg-type]
+        response = await _open_with_retry(kwargs)
     choice = response.choices[0]
     return choice.message.content or ""
 
@@ -211,8 +233,7 @@ async def _stream_chat_completions(
     }
     if max_tokens is not None:
         kwargs["max_completion_tokens"] = max_tokens
-    client = _get_client()
-    stream = await client.chat.completions.create(**kwargs)  # type: ignore[arg-type]
+    stream = await _open_with_retry(kwargs)
     async for chunk in stream:
         _record_openai_usage(chunk, usage_sink)
         delta = chunk.choices[0].delta.content if chunk.choices else None

@@ -7,7 +7,9 @@ import respx
 from app.config import get_settings
 from app.integrations.core_api_client import (
     HEADER_INTERNAL_SERVICE_TOKEN,
+    OUTCOME_TEXT_MAX_CHARS,
     close_core_api_client,
+    sync_outcome_text,
     sync_turn_count,
 )
 
@@ -169,3 +171,28 @@ async def test_ended_sync_carries_the_outcome_and_a_running_sync_does_not() -> N
         "ended_outcome_title": "Victory Conquest",
     }
     assert running == {"turn_count": 4, "is_ended": False}
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_outcome_text_is_sent_and_capped_to_what_core_api_accepts() -> None:
+    settings = get_settings()
+    playthrough_id = uuid4()
+    url = f"{settings.core_api_url}/internal/v1/playthroughs/{playthrough_id}/outcome-text"
+    route = respx.patch(url).respond(status_code=200)
+
+    await sync_outcome_text(playthrough_id, "x" * (OUTCOME_TEXT_MAX_CHARS + 50))
+
+    sent = json.loads(route.calls.last.request.content)
+    assert sent == {"ended_outcome_text": "x" * OUTCOME_TEXT_MAX_CHARS}
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_a_failed_outcome_text_hand_off_never_raises() -> None:
+    settings = get_settings()
+    playthrough_id = uuid4()
+    url = f"{settings.core_api_url}/internal/v1/playthroughs/{playthrough_id}/outcome-text"
+    respx.patch(url).mock(side_effect=httpx.ConnectError("down"))
+
+    await sync_outcome_text(playthrough_id, "A quiet ending.")

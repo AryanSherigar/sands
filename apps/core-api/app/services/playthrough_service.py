@@ -13,15 +13,10 @@ from app.db.models.fact import Fact
 from app.db.models.map_pin import MapPin
 from app.db.models.participant import Participant
 from app.db.models.playthrough import Playthrough
-from app.db.models.scenario import PRIVATE_VISIBILITY, Scenario
+from app.db.models.scenario import Scenario
 from app.db.models.scenario_condition import ScenarioCondition
 from app.db.models.scenario_music import MOOD_SLOTS
 from app.db.models.turn_log import TurnLog
-from app.exceptions.alpha_exceptions import (
-    AlphaConsentRequiredError,
-    AlphaFeatureDisabledError,
-    AlphaScenarioOnlyError,
-)
 from app.exceptions.playthrough_exceptions import (
     InvalidSetupValuesError,
     InvalidShareTokenError,
@@ -57,6 +52,8 @@ from app.models.playthrough import (
     PlaythroughCharacterUpdate,
     PlaythroughCreate,
     PlaythroughResponse,
+    PlaythroughTurnSyncRequest,
+    PlaythroughTurnSyncResponse,
     RuleSheetItem,
 )
 from app.models.turn_log import (
@@ -87,9 +84,9 @@ from app.repositories.sheet_rule_repo import SheetRuleRepo
 from app.repositories.turn_log_repo import TurnLogRepo
 from app.repositories.user_repo import UserRepo
 from app.services import default_music, strategy_playthrough, tier_music
-from app.services.alpha_consent import is_alpha_consent_current
 from app.services.condition_state import list_active_condition_labels
 from app.services.display_hints import STATUS_HUD_TOOL_KEY, strip_display_hints
+from app.services.fantasy_setup import apply_fantasy_setup
 from app.services.initial_state import materialise_initial_state
 from app.services.narrator_rules import (
     SNAPSHOT_KEY_INTENT_MARKER_GROUP,
@@ -170,6 +167,23 @@ class _MapSnapshotData:
     start_entity_id: str | None = None
 
 
+def _strategy_state_dict(
+    faction_id: str, player_ruler: PlayerRulerCustomization | None
+) -> dict[str, object]:
+    state_dict: dict[str, object] = {strategy_playthrough.FACTION_STATE_KEY: faction_id}
+    if player_ruler is not None:
+        state_dict["player_ruler"] = player_ruler.model_dump(mode="json")
+    return state_dict
+
+
+def _pin_published_strategy_document(
+    snapshot: dict[str, object], scenario: Scenario, is_playtest: bool
+) -> None:
+    """A real run plays what was published; a playtest plays the live draft."""
+    if not is_playtest and scenario.published_strategy_document:
+        snapshot["strategy_document"] = scenario.published_strategy_document
+
+
 class PlaythroughService:
     """Service orchestrating playthrough creation and retrieval."""
 
@@ -227,6 +241,8 @@ class PlaythroughService:
         user_id: uuid.UUID,
         setup_values: dict[str, object],
         state_overrides: dict[str, object] | None = None,
+        faction_id: str | None = None,
+        player_ruler: PlayerRulerCustomization | None = None,
     ) -> PlaythroughResponse:
         """Start a playtest playthrough of the caller's own scenario.
 
@@ -244,27 +260,15 @@ class PlaythroughService:
 
         return await self.create_playthrough(
             user_id=user_id,
-            data=PlaythroughCreate(scenario_id=scenario_id, setup_values=setup_values),
+            data=PlaythroughCreate(
+                scenario_id=scenario_id,
+                setup_values=setup_values,
+                faction_id=faction_id,
+                player_ruler=player_ruler,
+            ),
             is_playtest=True,
             state_overrides=state_overrides,
         )
-
-    async def _assert_alpha_run_allowed(
-        self, user_id: uuid.UUID, scenario_id: uuid.UUID
-    ) -> None:
-        if not settings.is_alpha_mode:
-            return
-        if not await self._is_alpha_playable(scenario_id):
-            raise AlphaScenarioOnlyError()
-        user = await self.user_repo.get_by_id(user_id)
-        if user is None or not is_alpha_consent_current(user):
-            raise AlphaConsentRequiredError()
-
-    async def _is_alpha_playable(self, scenario_id: uuid.UUID) -> bool:
-        if scenario_id == settings.alpha_scenario_id:
-            return True
-        visibility = await self.scenario_repo.get_visibility(scenario_id)
-        return visibility == PRIVATE_VISIBILITY
 
     async def create_playthrough(
         self,
@@ -277,7 +281,6 @@ class PlaythroughService:
         registration. state_overrides presets tracked values and is playtest-only."""
         if state_overrides and not is_playtest:
             raise InvalidStateOverrideError("state_overrides", REASON_PLAYTEST_ONLY)
-        await self._assert_alpha_run_allowed(user_id, data.scenario_id)
         scenario = await self.scenario_repo.get_by_id(data.scenario_id)
         if not scenario or scenario.status == "archived":
             raise ScenarioNotFoundError()
@@ -285,7 +288,9 @@ class PlaythroughService:
         if not is_playtest and scenario.status != "published":
             raise ScenarioNotPublishedError()
         if scenario.mode == "strategy":
-            return await self._create_strategy_playthrough(scenario, user_id, data)
+            return await self._create_strategy_playthrough(
+                scenario, user_id, data, is_playtest
+            )
         if data.faction_id is not None:
             raise StrategyFactionRequiredError(
                 "faction_id only applies to strategy scenarios"
@@ -318,15 +323,19 @@ class PlaythroughService:
             playthrough_id=playthrough_id,
             scenario_id=scenario.scenario_id,
             created_by=user_id,
-            state=_with_state_overrides(
+            state=apply_fantasy_setup(
                 snapshot,
-                _build_initial_state(
-                    data.setup_values,
-                    map_data.start_entity_id if map_data else None,
-                    _materialise_snapshot_initials(snapshot, playthrough_id),
-                    opening_scene,
+                _with_state_overrides(
+                    snapshot,
+                    _build_initial_state(
+                        data.setup_values,
+                        map_data.start_entity_id if map_data else None,
+                        _materialise_snapshot_initials(snapshot, playthrough_id),
+                        opening_scene,
+                    ),
+                    state_overrides or {},
                 ),
-                state_overrides or {},
+                data.setup_values,
             ),
             scenario_version=scenario.current_version,
             memory_publish_revision=scenario.publish_revision,
@@ -361,7 +370,7 @@ class PlaythroughService:
             playthrough_id=str(playthrough_id),
             scenario_id=str(scenario.scenario_id),
         )
-        return _to_response(
+        return await self._to_response(
             created,
             scenario.title,
             created_participant.participant_id,
@@ -369,20 +378,28 @@ class PlaythroughService:
         )
 
     async def _create_strategy_playthrough(
-        self, scenario: Scenario, user_id: uuid.UUID, data: PlaythroughCreate
+        self,
+        scenario: Scenario,
+        user_id: uuid.UUID,
+        data: PlaythroughCreate,
+        is_playtest: bool = False,
     ) -> PlaythroughResponse:
         """Commit the playthrough row first, then ask Simulation for its world."""
         snapshot = await self._build_snapshot(scenario)
+        _pin_published_strategy_document(snapshot, scenario, is_playtest)
         document = StrategyScenario.model_validate(snapshot["strategy_document"])
         faction_id = strategy_playthrough.require_playable_faction(
             document, data.faction_id
         )
         strategy_playthrough.derive_ruler(document, faction_id, data.player_ruler)
-        state_dict: dict[str, object] = {
-            strategy_playthrough.FACTION_STATE_KEY: faction_id
-        }
-        if data.player_ruler is not None:
-            state_dict["player_ruler"] = data.player_ruler.model_dump(mode="json")
+        state_dict = _strategy_state_dict(faction_id, data.player_ruler)
+        resumable = await self._find_resumable_strategy_playthrough(
+            scenario.scenario_id, user_id, faction_id, is_playtest
+        )
+        if resumable is not None:
+            resumable.state = {strategy_playthrough.STATE_KEY: state_dict}
+            await self.playthrough_repo.commit()
+            return await self.initialize_playthrough(resumable.playthrough_id, user_id)
         playthrough = await self.playthrough_repo.create(
             Playthrough(
                 playthrough_id=uuid.uuid4(),
@@ -393,7 +410,7 @@ class PlaythroughService:
                 scenario_version=scenario.current_version,
                 memory_publish_revision=scenario.publish_revision,
                 scenario_snapshot=snapshot,
-                is_playtest=False,
+                is_playtest=is_playtest,
             )
         )
         participant = await self.participant_repo.create(
@@ -407,6 +424,29 @@ class PlaythroughService:
         await self.playthrough_repo.commit()
         return await self._initialize_strategy_world(
             playthrough, scenario.title, participant, player_ruler=data.player_ruler
+        )
+
+    async def _find_resumable_strategy_playthrough(
+        self,
+        scenario_id: uuid.UUID,
+        user_id: uuid.UUID,
+        faction_id: str,
+        is_playtest: bool,
+    ) -> Playthrough | None:
+        """A start that failed on Simulation is resumed, not duplicated."""
+        stuck = await self.playthrough_repo.find_initializing(
+            scenario_id, user_id, is_playtest
+        )
+        return next(
+            (
+                row
+                for row in stuck
+                if row.state[strategy_playthrough.STATE_KEY][
+                    strategy_playthrough.FACTION_STATE_KEY
+                ]
+                == faction_id
+            ),
+            None,
         )
 
     async def initialize_playthrough(
@@ -424,7 +464,7 @@ class PlaythroughService:
         scenario = await self.scenario_repo.get_by_id(playthrough.scenario_id)
         title = scenario.title if scenario else ""
         if playthrough.status != INITIALIZING_STATUS:
-            return _to_response(
+            return await self._to_response(
                 playthrough, title, participant.participant_id, [participant]
             )
         return await self._initialize_strategy_world(playthrough, title, participant)
@@ -468,8 +508,28 @@ class PlaythroughService:
             playthrough_id=str(updated.playthrough_id),
             scenario_id=str(updated.scenario_id),
         )
-        return _to_response(
+        return await self._to_response(
             updated, scenario_title, participant.participant_id, [participant]
+        )
+
+    async def _to_response(
+        self,
+        playthrough: Playthrough,
+        scenario_title: str,
+        participant_id: uuid.UUID,
+        participants: list[Participant],
+    ) -> PlaythroughResponse:
+        combat_count = 0
+        if isinstance(playthrough.state.get("_combat"), dict):
+            combat_count = await self.turn_log_repo.count_combat_events(
+                playthrough.playthrough_id, playthrough.turn_count
+            )
+        return _to_response(
+            playthrough,
+            scenario_title,
+            participant_id,
+            participants,
+            playthrough.turn_count - combat_count,
         )
 
     async def get_playthrough(
@@ -491,7 +551,7 @@ class PlaythroughService:
         all_participants = await self.participant_repo.list_by_playthrough(
             playthrough_id
         )
-        return _to_response(
+        return await self._to_response(
             playthrough, scenario_title, participant.participant_id, all_participants
         )
 
@@ -523,7 +583,7 @@ class PlaythroughService:
         all_participants = await self.participant_repo.list_by_playthrough(
             playthrough_id
         )
-        return _to_response(
+        return await self._to_response(
             updated,
             scenario.title if scenario else "",
             participant.participant_id,
@@ -549,19 +609,67 @@ class PlaythroughService:
         all_participants = await self.participant_repo.list_by_playthrough(
             playthrough_id
         )
-        return _to_response(
+        return await self._to_response(
             updated,
             scenario.title if scenario else "",
             participant.participant_id,
             all_participants,
         )
 
+    async def sync_turn_count(
+        self, playthrough_id: uuid.UUID, data: PlaythroughTurnSyncRequest
+    ) -> PlaythroughTurnSyncResponse:
+        playthrough = await self.playthrough_repo.get_by_id_for_update(playthrough_id)
+        if not playthrough:
+            raise PlaythroughNotFoundError()
+        old_count = playthrough.turn_count
+        if data.turn_count > old_count:
+            playthrough.turn_count = data.turn_count
+            await self._maybe_increment_play_count(
+                playthrough.scenario_id, old_count, data.turn_count
+            )
+        if data.is_ended and playthrough.status == "active":
+            playthrough.status = "completed"
+            playthrough.ended_outcome_tag = data.ended_outcome_tag
+            playthrough.ended_outcome_title = data.ended_outcome_title
+        updated = await self.playthrough_repo.update(playthrough)
+        return PlaythroughTurnSyncResponse(
+            playthrough_id=updated.playthrough_id,
+            turn_count=updated.turn_count,
+            status=updated.status,
+        )
+
+    async def set_outcome_text(
+        self, playthrough_id: uuid.UUID, text: str
+    ) -> PlaythroughTurnSyncResponse:
+        """Fill a finished run's ending text once; a later call never overwrites it."""
+        playthrough = await self.playthrough_repo.get_by_id_for_update(playthrough_id)
+        if not playthrough:
+            raise PlaythroughNotFoundError()
+        is_open = (
+            playthrough.status == "completed" and not playthrough.ended_outcome_text
+        )
+        if is_open:
+            playthrough.ended_outcome_text = text
+            playthrough = await self.playthrough_repo.update(playthrough)
+        return PlaythroughTurnSyncResponse(
+            playthrough_id=playthrough.playthrough_id,
+            turn_count=playthrough.turn_count,
+            status=playthrough.status,
+        )
+
+    async def _maybe_increment_play_count(
+        self, scenario_id: uuid.UUID, old_count: int, new_count: int
+    ) -> None:
+        threshold = settings.play_count_increment_turn_threshold
+        has_crossed = old_count < threshold and new_count >= threshold
+        if has_crossed:
+            await self.scenario_repo.increment_play_count(scenario_id)
+
     async def join_playthrough(
         self, share_token: str, user_id: uuid.UUID
     ) -> PlaythroughResponse:
         """Join a playthrough as a multiplayer participant via a join-mode token."""
-        if settings.is_alpha_mode:
-            raise AlphaFeatureDisabledError()
         share = await self.share_repo.get_by_token(share_token)
         if share is None or share.mode != "join":
             raise InvalidShareTokenError()
@@ -584,7 +692,7 @@ class PlaythroughService:
         all_participants = await self.participant_repo.list_by_playthrough(
             playthrough.playthrough_id
         )
-        return _to_response(
+        return await self._to_response(
             playthrough,
             scenario.title if scenario else "",
             joined_participant.participant_id,
@@ -752,25 +860,30 @@ class PlaythroughService:
         models/game_state.py needs no changes to validate them
         (docs/specs/master-mode-maps.spec.md).
         """
+        entities, avatar_assets = await self._snapshot_entities(
+            scenario.scenario_id, scenario.mode == MASTER_MODE
+        )
         snapshot: dict[str, object] = {
             "mode": scenario.mode,
+            "genre_tags": list(scenario.genre_tags or []),
             "visibility": scenario.visibility,
             "narrator_persona": scenario.narrator_persona,
             "world_data": scenario.world_data,
             "strategy_document": scenario.strategy_document,
             "setup_schema": scenario.setup_schema,
-            "state_schema": _state_schema_for_tools(scenario),
+            "state_schema": _state_schema_for_tools(scenario, avatar_assets),
             "checkpoints": scenario.checkpoints,
             "narration_font": scenario.narration_font,
             "narrator_voice_name": scenario.narrator_voice_name,
             "music_tracks": await self._snapshot_music_tracks(scenario.scenario_id),
             "action_chips": scenario.action_chips,
-            "entities": await self._snapshot_entities(
-                scenario.scenario_id, scenario.mode == MASTER_MODE
-            ),
+            "entities": entities,
+            "character_avatar_assets": avatar_assets,
+            **_portrait_schedule_snapshot(scenario, avatar_assets),
             "opening_scene": scenario.opening_scene,
             "mood_tags": list(scenario.mood_tags),
         }
+        snapshot.update(_fantasy_rules_snapshot(scenario))
         narration_limit = narration_limit_from_rules(scenario.rules or {})
         if narration_limit is not None:
             snapshot[SNAPSHOT_KEY_NARRATION_MAX_OUTPUT_TOKENS] = narration_limit
@@ -804,7 +917,7 @@ class PlaythroughService:
                 snapshot["map_pins"] = map_data.pins
                 snapshot["map_connections"] = map_data.connections
                 snapshot["state_schema"] = {
-                    **_state_schema_for_tools(scenario),
+                    **_state_schema_for_tools(scenario, avatar_assets),
                     _CURRENT_LOCATION_FIELD: {
                         "type": "entity_ref",
                         "entity_type": _LOCATION_ENTITY_TYPE,
@@ -846,9 +959,14 @@ class PlaythroughService:
 
     async def _snapshot_entities(
         self, scenario_id: uuid.UUID, has_card_values: bool
-    ) -> list[dict[str, object]]:
+    ) -> tuple[list[dict[str, object]], dict[str, str]]:
         entities = await self.entity_repo.list_by_scenario(scenario_id)
-        return [
+        avatar_assets = {
+            str(e.entity_id): e.avatar_url
+            for e in entities
+            if e.entity_type == "character" and e.avatar_url
+        }
+        snapshot = [
             {
                 "entity_id": str(e.entity_id),
                 "entity_type": e.entity_type,
@@ -862,6 +980,7 @@ class PlaythroughService:
             }
             for e in entities
         ]
+        return snapshot, avatar_assets
 
     async def _snapshot_facts(
         self, scenario_id: uuid.UUID, entities_snapshot: list[dict[str, object]]
@@ -1126,11 +1245,80 @@ def _intent_marker_group_for_mode(scenario: Scenario) -> str | None:
     )
 
 
-def _state_schema_for_tools(scenario: Scenario) -> dict[str, object]:
+def _fantasy_rules_snapshot(scenario: Scenario) -> dict[str, object]:
+    if scenario.mode != MASTER_MODE:
+        return {}
+    rules = scenario.rules or {}
+    return {
+        key: rules[key]
+        for key in ("fantasy_mechanics", "fantasy_combat")
+        if isinstance(rules.get(key), dict)
+    }
+
+
+def _portrait_schedule_snapshot(
+    scenario: Scenario, assets: dict[str, str]
+) -> dict[str, object]:
+    if (
+        scenario.mode != "newbie"
+        or not scenario.genre_tags
+        or scenario.genre_tags[0] != "Slice of Life"
+    ):
+        return {}
+    rules = scenario.rules if isinstance(scenario.rules, dict) else {}
+    raw = rules.get("portrait_schedule")
+    if not isinstance(raw, list):
+        return {}
+    result = []
+    for cue in raw:
+        if (
+            not isinstance(cue, dict)
+            or type(cue.get("turn")) is not int
+            or cue["turn"] < 1
+            or not isinstance(cue.get("character_ids"), list)
+        ):
+            continue
+        ids = list(
+            dict.fromkeys(
+                item
+                for item in cue["character_ids"]
+                if isinstance(item, str) and item in assets
+            )
+        )[:2]
+        result.append({"turn": cue["turn"], "character_ids": ids})
+    return {"portrait_schedule": result}
+
+
+def _state_schema_for_tools(
+    scenario: Scenario, avatar_assets: dict[str, str]
+) -> dict[str, object]:
     """Tool-owned field settings are inert while their tool is off: display
     hints (`status_hud`) and `initial_random` (`rule_checks`) stay in the
     scenario and are absent from the pinned schema."""
     if scenario.mode != MASTER_MODE:
+        if scenario.genre_tags and scenario.genre_tags[0] == "Slice of Life":
+            rules = scenario.rules if isinstance(scenario.rules, dict) else {}
+            opening = rules.get("portrait_opening_ids")
+            if not isinstance(opening, list) and isinstance(
+                rules.get("portrait_schedule"), list
+            ):
+                opening = []
+            if isinstance(opening, list):
+                selected = list(
+                    dict.fromkeys(
+                        item
+                        for item in opening
+                        if isinstance(item, str) and item in avatar_assets
+                    )
+                )[:2]
+                return {
+                    "scene_character_ids": {
+                        "type": "list",
+                        "item_type": "entity_ref",
+                        "entity_type": "character",
+                        "initial": selected,
+                    }
+                }
         return {}
     schema = scenario.state_schema
     if STATUS_HUD_TOOL_KEY not in scenario.enabled_tools:
@@ -1233,6 +1421,7 @@ def _to_response(
     scenario_title: str,
     participant_id: uuid.UUID,
     participants: list[Participant],
+    narrative_turn_count: int,
 ) -> PlaythroughResponse:
     """Map a Playthrough ORM entity to its response schema; the only place a
     snapshot or state leaves the service, so hidden fields are filtered here."""
@@ -1248,13 +1437,16 @@ def _to_response(
         ),
         checkpoint=playthrough.checkpoint,
         turn_count=playthrough.turn_count,
+        narrative_turn_count=narrative_turn_count,
         status=playthrough.status,
         ended_outcome_tag=playthrough.ended_outcome_tag,
         ended_outcome_title=playthrough.ended_outcome_title,
         ended_outcome_text=playthrough.ended_outcome_text,
         is_playtest=playthrough.is_playtest,
         scenario_version=playthrough.scenario_version,
-        scenario_snapshot=client_snapshot(snapshot),
+        scenario_snapshot=client_snapshot(
+            snapshot, playthrough.state, narrative_turn_count
+        ),
         server_time_ms=time.time_ns() // NANOSECONDS_PER_MILLISECOND,
         rule_sheet=_rule_sheet_items(snapshot, playthrough.state),
         created_at=playthrough.created_at,

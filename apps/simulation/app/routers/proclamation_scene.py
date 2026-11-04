@@ -3,6 +3,7 @@ from uuid import UUID
 
 from app.middleware.auth import get_current_user
 from app.models.auth import CurrentUser
+from app.models.battle_progress import OperationGuard
 from app.services.api_dependencies import get_proclamation_scene_service
 from app.services.proclamation_scene_service import ProclamationSceneService
 from fastapi import APIRouter, Depends
@@ -11,6 +12,7 @@ from strategy_contracts.proclamation import (
     ActiveProclamation,
     ProclamationDraft,
     ProclamationScenePackage,
+    ProclamationVerdict,
 )
 
 router = APIRouter(
@@ -27,8 +29,9 @@ class ProclamationConveneRequest(BaseModel):
 
 
 class ProclamationDecisionRequest(BaseModel):
+    guard: OperationGuard
     draft: ProclamationDraft
-    verdict: str = "fiat"
+    verdict: ProclamationVerdict = "fiat"
     is_rescinding_previous: bool = False
 
 
@@ -59,6 +62,7 @@ async def decide_proclamation_endpoint(
     return await service.decide_proclamation(
         playthrough_id=playthrough_id,
         user_id=user.user_id,
+        guard=request.guard,
         draft=request.draft,
         verdict=request.verdict,
         is_rescinding_previous=request.is_rescinding_previous,

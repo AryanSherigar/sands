@@ -6,12 +6,14 @@ import {
   PhantomWhispers,
 } from "./phantom-whispers";
 import { SfxFileLoader, SfxPlayer, fetchSfxFile } from "./sfx-player";
-import {
-  recordAudioBlocked,
-  recordPlayRejected,
-  recordSfxPlayed,
-} from "../alpha-audio-telemetry";
+import { logEvent } from "@/shared/lib/logger";
 import { synthesizeCue } from "./sfx-synth";
+
+const logPlayRejected = (error: unknown): void => {
+  logEvent("warning", "ambient_play_rejected", {
+    message: error instanceof Error ? error.message : String(error),
+  });
+};
 
 const CROSSFADE_DURATION_SECONDS = 4.0;
 const MIN_COOLDOWN_MS = 45000;
@@ -234,15 +236,7 @@ export class AmbientSoundtrackController {
     );
     this.ensureContextRunning();
     const context = this.audioContext;
-    if (!context || context.state !== "running") {
-      recordAudioBlocked("autoplay_policy");
-      return;
-    }
-    if (this.isMuted) {
-      recordAudioBlocked("muted");
-    } else {
-      recordSfxPlayed();
-    }
+    if (!context || context.state !== "running") return;
     await this.playBuffer(context, (await loading) ?? synthesizeCue(context, cueId));
   }
 
@@ -424,7 +418,7 @@ export class AmbientSoundtrackController {
       channel.trackUrl = fallbackUrl;
       this.currentTrackUrl = fallbackUrl;
       channel.element.src = fallbackUrl;
-      channel.element.play().catch(recordPlayRejected);
+      channel.element.play().catch(logPlayRejected);
     };
     channel.onLoadError = handleLoadError;
     channel.element.addEventListener("error", handleLoadError, { once: true });
@@ -480,7 +474,7 @@ export class AmbientSoundtrackController {
         })
         .catch((error: unknown) => {
           this.pendingChannel = channel;
-          recordPlayRejected(error);
+          logPlayRejected(error);
         });
     }
 

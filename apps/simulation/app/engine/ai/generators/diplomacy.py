@@ -3,6 +3,7 @@ from app.engine.ai.knowledge import build_knowledge
 from app.engine.ai.oaths import oath_penalty
 from app.engine.ai.situation import war_enemies
 from app.engine.ai.standing import is_bound, known_power_ratio
+from app.engine.coalitions.threat import hoard_threat
 from app.engine.diplomacy.grounds import current_strength, is_usable
 from app.engine.diplomacy.npc_peace import other_belligerent
 from app.engine.pressure.weariness import is_war_weary
@@ -76,6 +77,13 @@ def _ratio_points(ratio: int, divisor: int) -> int:
     return _clamp((ratio - FULL_PERCENT) // divisor, -RATIO_SWING_CAP, RATIO_SWING_CAP)
 
 
+def _hoard_points(
+    world: WorldState, scenario: StrategyScenario, target_id: FactionId
+) -> int:
+    hoard = hoard_threat(world, scenario.tuning.coalition, target_id)
+    return scenario.tuning.ai.hoard_war_bonus * min(hoard, FULL_PERCENT) // FULL_PERCENT
+
+
 def war_candidates(
     world: WorldState, scenario: StrategyScenario, faction_id: FactionId
 ) -> list[Candidate]:
@@ -96,6 +104,7 @@ def war_candidates(
             tuning.war_base_bonus
             + min(strength // tuning.ground_strength_divisor, STRENGTH_POINTS_CAP)
             + _ratio_points(ratio, tuning.ratio_divisor)
+            + _hoard_points(world, scenario, target_id)
             - front_cost
             - oath_cost
         )

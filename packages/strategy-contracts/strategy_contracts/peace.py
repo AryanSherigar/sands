@@ -27,6 +27,11 @@ DEFAULT_TIER_SCORE_COST: dict[PeaceTier, int] = {
 }
 DEFAULT_WHITE_PEACE_SCORE_CEILING = 25
 DEFAULT_WHITE_PEACE_MIN_STRAIN = 50
+DEFAULT_STALEMATE_WHITE_PEACE_TURNS = 8
+DEFAULT_DECISIVE_DEFEAT_SCORE_LEAD = 15
+DEFAULT_DECISIVE_DEFEAT_TROOP_PERCENT = 30
+DEFAULT_COLLAPSE_STABILITY_FLOOR = 5
+DEFAULT_COLLAPSE_EXHAUSTION_FLOOR = 80
 DEFAULT_RANSOM_GOLD_PER_TROOP = 2
 DEFAULT_RANSOM_GOLD_PER_CHARACTER = 200
 DEFAULT_RANSOM_SCORE_CHIP = 5
@@ -113,6 +118,21 @@ class PeaceTuning(StrictModel):
     )
     white_peace_min_strain: int = Field(
         default=DEFAULT_WHITE_PEACE_MIN_STRAIN, ge=0, le=PERCENT
+    )
+    stalemate_white_peace_turns: int = Field(
+        default=DEFAULT_STALEMATE_WHITE_PEACE_TURNS, ge=1
+    )
+    decisive_defeat_score_lead: int = Field(
+        default=DEFAULT_DECISIVE_DEFEAT_SCORE_LEAD, ge=1
+    )
+    decisive_defeat_troop_percent: int = Field(
+        default=DEFAULT_DECISIVE_DEFEAT_TROOP_PERCENT, ge=0, le=PERCENT
+    )
+    collapse_stability_floor: int = Field(
+        default=DEFAULT_COLLAPSE_STABILITY_FLOOR, ge=0, le=PERCENT
+    )
+    collapse_exhaustion_floor: int = Field(
+        default=DEFAULT_COLLAPSE_EXHAUSTION_FLOOR, ge=0, le=PERCENT
     )
     ransom_gold_per_troop: int = Field(default=DEFAULT_RANSOM_GOLD_PER_TROOP, ge=0)
     ransom_gold_per_character: int = Field(

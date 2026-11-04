@@ -10,7 +10,6 @@ SECONDS_PER_DAY = 86400
 WRITE_METHODS = frozenset({"POST", "PUT", "PATCH", "DELETE"})
 EXEMPT_METHODS = frozenset({"OPTIONS", "HEAD"})
 EXEMPT_PATHS = frozenset({"/health"})
-ALPHA_EVENTS_PATH = "/v1/alpha/events"
 # NOTE: Local-disk media fallback only; in production media is served from
 # GCS. Browsers fetch images without Authorization, so counting them would
 # exhaust the anonymous per-IP budget on any image-heavy page.
@@ -18,8 +17,9 @@ EXEMPT_PATH_PREFIXES = ("/uploads/",)
 
 _AI_GENERATION_PATTERNS = (
     re.compile(r"^/v1/uploads/generate-cover-image$"),
-    re.compile(r"^/v1/scenarios/[^/]+/music/generate$"),
+    re.compile(r"^/v1/scenarios/[^/]+/strategy-map/generate-(regions|art)$"),
     re.compile(r"^/v1/scenarios/[^/]+/publish$"),
+    re.compile(r"^/(api/)?v1/strategy/ruler-backstory$"),
 )
 _UPLOAD_PATTERNS = (
     re.compile(r"^/v1/uploads/"),
@@ -51,7 +51,7 @@ class QuotaPolicy:
 
 class QuotaFeature(str, Enum):
     COVER_IMAGE = "cover_image"
-    MUSIC_GENERATION = "music_generation"
+    RULER_BACKSTORY = "ruler_backstory"
     PUBLISH = "publish"
 
 
@@ -92,10 +92,6 @@ def match_burst_policy(method: str, path: str, is_authenticated: bool) -> BurstP
         return _burst("logs", settings.rate_limit_logs_per_window, KeyKind.USER_OR_IP)
     if not is_authenticated:
         return _burst("anonymous", settings.rate_limit_anonymous_per_window, KeyKind.IP)
-    if path == ALPHA_EVENTS_PATH:
-        return _burst(
-            "alpha_events", settings.rate_limit_alpha_events_per_window, KeyKind.USER
-        )
     return _authenticated_policy(method, path)
 
 
@@ -105,9 +101,9 @@ def quota_policy(feature: QuotaFeature) -> QuotaPolicy:
             settings.quota_cover_image_per_user,
             settings.quota_cover_image_global,
         ),
-        QuotaFeature.MUSIC_GENERATION: (
-            settings.quota_music_generation_per_user,
-            settings.quota_music_generation_global,
+        QuotaFeature.RULER_BACKSTORY: (
+            settings.quota_ruler_backstory_per_user,
+            settings.quota_ruler_backstory_global,
         ),
         QuotaFeature.PUBLISH: (
             settings.quota_publish_per_user,

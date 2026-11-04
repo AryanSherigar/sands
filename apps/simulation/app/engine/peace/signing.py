@@ -52,11 +52,15 @@ def is_white_peace_eligible(
     world: WorldState, scenario: StrategyScenario, war: WarState
 ) -> bool:
     tuning = scenario.tuning.peace
+    is_long_stalemate = (
+        world.pressure.stalemate_turns.get(war.id, 0)
+        >= tuning.stalemate_white_peace_turns
+    )
     for faction_id in (war.attacker_id, war.defender_id):
         if side_score(war, faction_id) > tuning.white_peace_score_ceiling:
             return False
         strain = compute_strain(world, scenario, faction_id).value
-        if strain < tuning.white_peace_min_strain:
+        if strain < tuning.white_peace_min_strain and not is_long_stalemate:
             return False
     return True
 
@@ -315,6 +319,8 @@ def sign_peace(
         raise CampaignProgressError("no war to end", "no_war", 422)
     parties = signing_parties(peace)
     check_parties(war, peace, parties)
+    if side_of(war, card.proposer_id) is None:
+        raise _reject("invalid_term")
     _validate(world, scenario, card, war)
     events = breach_separate_peace(world, scenario, war, parties)
     pairs = open_pairs(world, war, parties)

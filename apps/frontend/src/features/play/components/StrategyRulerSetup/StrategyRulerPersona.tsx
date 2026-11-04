@@ -33,10 +33,12 @@ function PersonaActions({
   onResetDefault,
   onBeginReign,
   isSubmitting,
+  startYear,
 }: {
   onResetDefault?: () => void;
   onBeginReign?: () => void;
   isSubmitting?: boolean;
+  startYear?: number;
 }) {
   if (!onBeginReign && !onResetDefault) return null;
 
@@ -59,7 +61,7 @@ function PersonaActions({
           disabled={isSubmitting}
           className="order-1 sm:order-2 w-full sm:w-auto px-6 py-2.5 rounded-lg bg-[#785a00] hover:bg-[#967000] text-white transition shadow-md hover:shadow-lg active:translate-y-px flex items-center justify-center gap-2 group font-serif text-base font-semibold disabled:opacity-50"
         >
-          <span>{isSubmitting ? "Inscribing Campaign..." : "Begin Reign Anno 1042"}</span>
+          <span>{isSubmitting ? "Inscribing Campaign..." : `Begin Reign${startYear ? ` Anno ${startYear}` : ""}`}</span>
           <IconArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
         </button>
       )}
@@ -107,6 +109,7 @@ export const StrategyRulerPersona: React.FC<StrategyRulerPersonaProps> = ({
   onResetDefault,
   onBeginReign,
   isSubmitting = false,
+  startYear,
 }) => {
   const [isTraitDrawerOpen, setIsTraitDrawerOpen] = useState(false);
   const [isAmbitionDrawerOpen, setIsAmbitionDrawerOpen] = useState(false);
@@ -138,6 +141,7 @@ export const StrategyRulerPersona: React.FC<StrategyRulerPersonaProps> = ({
         isRedrafting={isRedrafting}
         onChangeBackstory={(backstory) => onUpdateRuler({ backstory })}
         onRedraft={onRedraftBackstory}
+        chronicleYearLabel={startYear ? `Anno ${startYear} Chronicle Entry` : "Chronicle Entry"}
       />
       <SovereignTraitsModule
         activeTraits={activeTraits}
@@ -150,6 +154,7 @@ export const StrategyRulerPersona: React.FC<StrategyRulerPersonaProps> = ({
       <PersonaActions
         onResetDefault={onResetDefault}
         onBeginReign={onBeginReign}
+        startYear={startYear}
         isSubmitting={isSubmitting}
       />
       <TraitSelectionDrawer

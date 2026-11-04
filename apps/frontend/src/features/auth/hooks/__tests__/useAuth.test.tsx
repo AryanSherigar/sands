@@ -2,7 +2,6 @@ import { act, renderHook } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { server } from "@/test/msw/server";
-import { NON_ALPHA_CONFIG, alphaConfigHandler } from "@/test/alphaFixtures";
 import { useToastStore } from "@/shared/stores/toast.store";
 import { useAuthStore } from "../../stores/auth.store";
 import {
@@ -31,7 +30,6 @@ const mockFirebaseSuccess = (): void => {
 describe("useAuth.loginWithGoogle", () => {
   beforeEach(() => {
     signInWithPopup.mockReset();
-    server.use(alphaConfigHandler(NON_ALPHA_CONFIG));
     useAuthStore.setState({ user: null, accessToken: null, isAuthenticated: false });
   });
 

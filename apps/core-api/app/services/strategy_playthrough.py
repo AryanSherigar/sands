@@ -42,6 +42,7 @@ def derive_ruler(
             trait_ids=player_ruler.trait_ids[:MAX_RULER_TRAITS],
             ambition_ids=player_ruler.ambition_ids[:MAX_RULER_AMBITIONS],
             backstory=player_ruler.backstory,
+            chronicler_id=player_ruler.chronicler_id,
         )
     leader = _leader_of(document, faction_id)
     if len(leader.trait_ids) < MIN_RULER_TRAITS:

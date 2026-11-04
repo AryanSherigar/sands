@@ -56,7 +56,7 @@ async def test_external_wait_does_not_hold_connection(
         await wait_at("image")
         return "https://example.test/image.png", "a door"
 
-    async def audio(*args):
+    async def audio(*args, **kwargs):
         await wait_at("audio")
         return NarrationAudioResult("https://example.test/audio.wav")
 

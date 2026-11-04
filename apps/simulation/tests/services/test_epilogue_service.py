@@ -1,3 +1,4 @@
+from unittest.mock import AsyncMock
 from uuid import UUID, uuid4
 
 import pytest
@@ -11,6 +12,13 @@ from tests.services.test_campaign_service import guard, initialization
 from tests.services.test_campaign_service_endings import (
     _request_with_foreign_player_capital,
 )
+
+
+@pytest.fixture(autouse=True)
+def sent_outcome_texts(monkeypatch: pytest.MonkeyPatch) -> AsyncMock:
+    sender = AsyncMock()
+    monkeypatch.setattr("app.services.epilogue_service.sync_outcome_text", sender)
+    return sender
 
 
 async def _ended_playthrough(connection: AsyncConnection) -> UUID:
@@ -124,3 +132,44 @@ async def test_another_user_cannot_read_the_epilogue(
     with pytest.raises(SimulationServiceError) as error:
         await EpilogueService(db_connection).get(identity, uuid4())
     assert error.value.status_code == 404
+
+
+async def _completed(connection: AsyncConnection, narration: str):
+    identity = await _ended_playthrough(connection)
+    service = EpilogueService(connection)
+    claim = await service.claim(identity, OWNER_USER_ID, uuid4())
+    assert claim.lease_token is not None
+    request = EpilogueCompleteInput(
+        lease_token=claim.lease_token, input_hash=claim.input_hash, narration=narration
+    )
+    await service.complete(identity, OWNER_USER_ID, request)
+    return identity, service, request
+
+
+async def test_a_saved_epilogue_is_handed_to_core_api_once(
+    db_connection: AsyncConnection, sent_outcome_texts: AsyncMock
+) -> None:
+    identity, service, request = await _completed(db_connection, "A quiet ending.")
+
+    await service.complete(identity, OWNER_USER_ID, request)
+
+    sent_outcome_texts.assert_awaited_once_with(identity, "A quiet ending.")
+
+
+async def test_a_rejected_completion_sends_nothing(
+    db_connection: AsyncConnection, sent_outcome_texts: AsyncMock
+) -> None:
+    identity = await _ended_playthrough(db_connection)
+    service = EpilogueService(db_connection)
+    claim = await service.claim(identity, OWNER_USER_ID, uuid4())
+
+    with pytest.raises(SimulationServiceError):
+        await service.complete(
+            identity,
+            OWNER_USER_ID,
+            EpilogueCompleteInput(
+                lease_token=uuid4(), input_hash=claim.input_hash, narration="x"
+            ),
+        )
+
+    sent_outcome_texts.assert_not_awaited()

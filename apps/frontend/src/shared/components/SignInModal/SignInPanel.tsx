@@ -1,5 +1,4 @@
 import React from "react";
-import { AlphaConsent } from "@/features/auth/components/AlphaConsent/AlphaConsent";
 import { GoogleSignInButton } from "@/features/auth/components/GoogleSignInButton/GoogleSignInButton";
 import { LegalLine } from "@/features/auth/components/LegalLine/LegalLine";
 import { SignInError } from "@/features/auth/components/SignInError/SignInError";
@@ -20,7 +19,6 @@ export const SignInPanel: React.FC<SignInPanelProps> = ({
   return (
     <div className="flex flex-col gap-4">
       <p className="text-sm text-content-muted">{copy.benefit}</p>
-      <AlphaConsent />
       <GoogleSignInButton onClick={handleSignIn} isPending={isGoogleLoading} />
       {error && <SignInError message={error} onRetry={handleSignIn} />}
       <LegalLine />

@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchScenarios } from "@/features/play/api/discovery.api";
 import { ButtonLink } from "@/shared/components/ui/ButtonLink";
-import { useIsAlphaMode } from "@/shared/hooks/useIsAlphaMode";
 import { filterCreations, type CreationsFilter } from "../../lib/creations";
 import { SegmentedControl } from "../SegmentedControl/SegmentedControl";
 import { TabEmptyState } from "../states/TabEmptyState";
@@ -23,7 +22,6 @@ export const CreationsTab: React.FC<CreationsTabProps> = ({
   isOwner,
 }) => {
   const [filter, setFilter] = useState<CreationsFilter>("published");
-  const isAlphaMode = useIsAlphaMode();
   const { data, isLoading, isError } = useQuery({
     queryKey: ["profile-creations", userId, isOwner ? "mine" : "public"],
     queryFn: () =>
@@ -34,7 +32,7 @@ export const CreationsTab: React.FC<CreationsTabProps> = ({
   if (isError) return <TabErrorState message="Couldn't load creations." />;
 
   const items = filterCreations(data?.items ?? [], isOwner, filter);
-  const canCreate = isOwner && filter === "published" && !isAlphaMode;
+  const canCreate = isOwner && filter === "published";
 
   return (
     <div className="space-y-6">
@@ -46,11 +44,9 @@ export const CreationsTab: React.FC<CreationsTabProps> = ({
             value={filter}
             onChange={setFilter}
           />
-          {!isAlphaMode && (
-            <ButtonLink to="/studio" variant="secondary" size="sm">
-              Manage in Studio
-            </ButtonLink>
-          )}
+          <ButtonLink to="/studio" variant="secondary" size="sm">
+            Manage in Studio
+          </ButtonLink>
         </div>
       )}
       {items.length === 0 ? (

@@ -84,4 +84,23 @@ describe("event report items", () => {
     const report = mergeTurnReport(estimated, api, DEFAULT_PREVIEW_WORLD, REGION_NAMES);
     expect(report.items.some((item) => item.title === "Neglected: The realm stirs")).toBe(true);
   });
+
+  it("reports the ending with its title and no score", () => {
+    const line: ApiReportLine = {
+      text_key: "endings.default_defeat_capital_lost",
+      kind: "ending_reached",
+      subject_ids: ["default_defeat_capital_lost"],
+      cause: {
+        summary_key: "endings.default_defeat_capital_lost",
+        subject_ids: ["default_defeat_capital_lost"],
+        inputs: {},
+      },
+    };
+    expect(isEventLine(line)).toBe(true);
+    const item = toEventReportItem(line, 0, REGION_NAMES);
+    expect(item.title).toBe("The Capital Falls");
+    expect(item.description).toBe("The reign has ended.");
+    expect(item.badge).toEqual({ label: "Reign ended", tone: "neutral" });
+    expect(`${item.title}${item.description}`).not.toMatch(/\d/);
+  });
 });

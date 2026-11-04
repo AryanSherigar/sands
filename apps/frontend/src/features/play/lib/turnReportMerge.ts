@@ -78,6 +78,18 @@ const EVENT_PRESENTATION: Record<string, EventPresentation> = {
     description: "An army was stood down and its men sent home.",
     tone: "neutral",
   },
+  armies_merged: {
+    category: "military",
+    title: "Armies Merged",
+    description: "Hosts were combined into one army.",
+    tone: "neutral",
+  },
+  army_split: {
+    category: "military",
+    title: "Army Split",
+    description: "A detachment was drawn off into its own army.",
+    tone: "neutral",
+  },
   siege_started: {
     category: "military",
     title: "Siege Begun",
@@ -107,6 +119,18 @@ const EVENT_PRESENTATION: Record<string, EventPresentation> = {
     title: "Occupation Lifted",
     description: "The occupying force withdrew or peace was made.",
     tone: "positive",
+  },
+  sworn_promise_made: {
+    category: "diplomacy",
+    title: "Oath Sworn",
+    description: "A binding promise was sworn. See the Factions drawer for its terms.",
+    tone: "neutral",
+  },
+  sworn_promise_broken: {
+    category: "diplomacy",
+    title: "Oath Broken",
+    description: "A sworn promise was broken, and trust in the oathbreaker fell.",
+    tone: "danger",
   },
   loan_overdue: {
     category: "economy",

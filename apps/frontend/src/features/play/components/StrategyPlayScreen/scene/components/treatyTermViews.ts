@@ -1,3 +1,4 @@
+import { describeCondition } from "../../../../lib/conditionText";
 import type { ConditionClause, TreatyTerm } from "../../../../types/scene.types";
 import type { TreatyTermView } from "./TreatyTermCard.types";
 
@@ -10,20 +11,11 @@ const PROMISE_TEXT: Record<string, (promisor: string, other: string, subject: st
   never_attack_faction: (promisor, other) => `${promisor} swears never to attack ${other}`,
   never_ally_with: (promisor, _other, subject) => `${promisor} swears never to ally with ${subject}`,
   spare_prisoners: (promisor, other) => `${promisor} swears to spare the prisoners of ${other}`,
+  never_occupy_region: (promisor, _other, subject) => `${promisor} swears never to occupy ${subject}`,
 };
 
-const CONDITION_TEXT: Record<ConditionClause["template"], (faction: string, value: number) => string> = {
-  treasury_below: (faction, value) => `${faction}'s treasury falls below ${value}`,
-  treasury_above: (faction, value) => `${faction}'s treasury rises above ${value}`,
-  stability_below: (faction, value) => `${faction}'s stability falls below ${value}`,
-  war_exhaustion_above: (faction, value) => `${faction}'s war exhaustion rises above ${value}`,
-  region_count_below: (faction, value) => `${faction} holds fewer than ${value} regions`,
-  region_count_above: (faction, value) => `${faction} holds more than ${value} regions`,
-  turn_after: (_faction, value) => `turn ${value} has passed`,
-};
-
-const describeCondition = (when: ConditionClause): string =>
-  CONDITION_TEXT[when.template](when.faction_id, when.value);
+const describeClause = (when: ConditionClause): string =>
+  describeCondition(when.template, when.faction_id, when.value, when.region_id ?? undefined);
 
 const kindLabel = (kind: string): string =>
   kind
@@ -67,7 +59,7 @@ export const describeTreatyTerm = (term: TreatyTerm, currentTurn: number): Treat
         ...inner,
         title: `If: ${inner.title}`,
         badge: term.mode === "gate" ? "Gated" : "Pending",
-        detail: `${lead} ${describeCondition(term.when)}: ${inner.detail} Lapses after ${term.expires_in_turns} turns.`,
+        detail: `${lead} ${describeClause(term.when)}: ${inner.detail} Lapses after ${term.expires_in_turns} turns.`,
       };
     }
     case "alliance":

@@ -1,6 +1,5 @@
 """Turn Resolution Service Configuration module."""
 
-import uuid
 from typing import Literal
 
 from pydantic import AliasChoices, Field, model_validator
@@ -50,6 +49,8 @@ class Settings(BaseSettings):
     narration_max_output_tokens_ceiling: int = 4096
     narration_timeout_seconds: int = 30
     narration_max_retries: int = 2
+    openai_compatible_open_retries: int = 1
+    openai_compatible_open_retry_delay_seconds: float = 0.5
     narration_provider: Literal["openai", "anthropic"] = "openai"
     anthropic_model_name: str = "claude-haiku-5-5"
     anthropic_max_output_tokens: int = 1024
@@ -104,11 +105,6 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
     log_format: str = "json"
     sse_ping_interval_seconds: int = 15
-    is_alpha_mode: bool = False
-    alpha_scenario_id: uuid.UUID | None = None
-    is_turns_suspended: bool = False
-    alpha_consent_version: str = "alpha-1"
-    alpha_server_event_session_id: str = "server"
     turn_metrics_stat_snapshot_max_keys: int = 32
 
     is_rate_limit_enabled: bool = True
@@ -139,6 +135,12 @@ class Settings(BaseSettings):
     quota_scene_image_global: int = 300
     quota_strategy_art_per_user: int = 20
     quota_strategy_art_global: int = 300
+    quota_strategy_dispatch_per_user: int = 60
+    quota_strategy_dispatch_global: int = 900
+    quota_strategy_proclamation_per_user: int = 60
+    quota_strategy_proclamation_global: int = 900
+    quota_strategy_event_per_user: int = 60
+    quota_strategy_event_global: int = 900
     quota_tts_narration_per_user: int = 100
     quota_tts_narration_global: int = 1500
     quota_speech_to_text_per_user: int = 50
@@ -237,15 +239,6 @@ class Settings(BaseSettings):
                 "FATAL: R2 object storage must be configured in production "
                 "(R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, "
                 "R2_BUCKET_NAME, R2_PUBLIC_BASE_URL)"
-            )
-        return self
-
-    @model_validator(mode="after")
-    def validate_alpha_scenario(self) -> "Settings":
-        """Refuse to boot in alpha mode without the playable scenario id."""
-        if self.is_alpha_mode and self.alpha_scenario_id is None:
-            raise ValueError(
-                "FATAL: ALPHA_SCENARIO_ID is required when IS_ALPHA_MODE is on"
             )
         return self
 

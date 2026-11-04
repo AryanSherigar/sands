@@ -1,5 +1,6 @@
 export const SCENE_MESSAGE_MAX_CHARS = 600;
 export const NEGOTIATION_SCENE_TYPE = "negotiation";
+export const REVOLT_TALK_SCENE_TYPE = "revolt_talk";
 export const AI_INITIATOR = "ai";
 export const SCENE_STREAM_FAILURE_MESSAGE =
   "The scene could not continue. Your message was not recorded.";

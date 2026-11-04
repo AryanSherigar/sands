@@ -1,6 +1,7 @@
 from app.engine.diplomacy.counters import next_counter
 from app.engine.diplomacy.events import diplomacy_event
 from app.engine.diplomacy.grounds import grant_ground
+from app.engine.diplomacy.npc_treaties import sign_talks_treaty
 from app.engine.diplomacy.transfers import cede_region, pay_gold
 from app.engine.diplomacy.validation import is_at_war
 from app.engine.diplomacy.war_declaration import declare_war
@@ -153,7 +154,10 @@ def _resolve_talks(
     is_accepted = warmth >= scenario.tuning.diplomacy.talks_refusal_warmth
     record_talks_memory(leader, subject, world.clock.turn, is_accepted)
     kind = "talks_accepted" if is_accepted else "talks_refused"
-    return [diplomacy_event(kind, [play.id, play.defender_id])]
+    events = [diplomacy_event(kind, [play.id, play.defender_id])]
+    if is_accepted:
+        events += sign_talks_treaty(world, scenario, play, warmth)
+    return events
 
 
 def _is_resolvable(world: WorldState, play: DiplomaticPlayState) -> bool:

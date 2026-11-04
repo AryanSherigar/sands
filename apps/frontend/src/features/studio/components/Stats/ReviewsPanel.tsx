@@ -14,7 +14,7 @@ export const ReviewsPanel: React.FC<ReviewsPanelProps> = ({
   isSampleSufficient,
 }) => {
   const data = reviews.histogram.map((bucket) => ({
-    label: `${bucket.rating}★`,
+    label: `${bucket.rating} stars`,
     value: bucket.count,
   }));
   const summary = `${formatCount(reviews.review_count)} reviews averaging ${formatDecimal(reviews.average_rating)} stars.`;

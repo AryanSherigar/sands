@@ -153,3 +153,61 @@ async def test_a_letter_kind_on_a_negotiation_is_a_422_kind_mismatch(
     response = await async_client.post(PATH, json={"kind": "open"}, headers=_headers())
     assert response.status_code == 422
     assert response.json()["code"] == "scene_kind_mismatch"
+
+
+async def test_a_judgment_open_then_pronounce_streams_and_submits(
+    async_client: AsyncClient, monkeypatch
+) -> None:
+    from tests.services import judgment_fixtures
+
+    stored: list[str] = []
+    submitted = []
+
+    async def fake_stream_chat(system_instruction, contents, **_):
+        last = contents[-1].parts[0].text
+        yield "The sentence lands." if "pronounced" in last else "The hall is silent."
+
+    async def fake_store(scene_id, user_id, text):
+        stored.append(text)
+        return SceneExchangeResult(
+            status=SubmissionStatus.ACCEPTED,
+            scene_status=SceneStatus.OPENED,
+            exchanges_remaining=5,
+        )
+
+    async def fake_submit(scene_id, user_id, submission):
+        submitted.append(submission)
+        return SceneExchangeResult(
+            status=SubmissionStatus.ACCEPTED,
+            scene_status=SceneStatus.RESOLVED,
+            exchanges_remaining=0,
+        )
+
+    monkeypatch.setattr(openai_compatible_client, "stream_chat", fake_stream_chat)
+    monkeypatch.setattr(simulation_client, "store_opening_text", fake_store)
+    monkeypatch.setattr(simulation_client, "submit_exchange", fake_submit)
+    _serve(monkeypatch, judgment_fixtures.fetched())
+
+    opened = await async_client.post(PATH, json={"kind": "open"}, headers=_headers())
+    assert "The hall is silent." in opened.text and "event: done" in opened.text
+    assert stored == ["The hall is silent."]
+
+    _serve(monkeypatch, judgment_fixtures.fetched([judgment_fixtures.stored_opening()]))
+    sealed = await async_client.post(
+        PATH,
+        json={"kind": "pronounce", "verdict": "exile", "nuance": "beyond_border"},
+        headers=_headers(),
+    )
+    assert "event: scene_ended" in sealed.text
+    assert submitted[0].decision.option_id == "exile"
+
+
+async def test_a_pronouncement_with_a_bad_nuance_is_a_validation_error(
+    async_client: AsyncClient,
+) -> None:
+    response = await async_client.post(
+        PATH,
+        json={"kind": "pronounce", "verdict": "execute", "nuance": "for_life"},
+        headers=_headers(),
+    )
+    assert response.status_code == 422

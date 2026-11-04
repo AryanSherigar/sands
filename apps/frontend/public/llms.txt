@@ -1,0 +1,13 @@
+# sands
+
+> Weave your own worlds and stories. Author a world, publish it, and let an AI narrator bring it to life turn by turn.
+
+sands is a place to play and create text-based stories narrated by an AI that respects the world's rules. A world is authored in one of two modes: Simple (a premise and lore) or Advanced (entities, tracked values, rules and endings). In Advanced worlds the narrator proposes state changes and the author's rules decide whether they apply. A persistent memory keeps the story consistent across long playthroughs. Anyone can start a story without an account; an account is needed only to keep it.
+
+Status: the site is not indexed and robots.txt disallows crawling.
+
+## Pages
+
+- [Home](/): featured worlds and the stories you have in progress.
+- [Discover](/discover): browse and filter published scenarios by genre and mode.
+- [Studio](/studio): author, illustrate, score and publish a world (sign-in required).

@@ -97,7 +97,7 @@ def test_four_waves_resume_without_repeating_damage_or_economy() -> None:
     assert completed.world_hash == world_hash(completed.world)
 
 
-def test_command_reserves_once_and_unchanged_plan_is_free() -> None:
+def test_plan_command_is_free_and_idempotent() -> None:
     world, scenario = opened()
     current = world.battles[0].contingents[ATTACKER].plan
     unchanged = accept(
@@ -116,7 +116,7 @@ def test_command_reserves_once_and_unchanged_plan_is_free() -> None:
     assert duplicate.world == first.world
     assert (
         first.world.factions[ATTACKER].orders_remaining
-        == world.factions[ATTACKER].orders_remaining - 1
+        == world.factions[ATTACKER].orders_remaining
     )
     with pytest.raises(SimulationServiceError):
         accept(first.world, scenario, payload, identity="different")
@@ -137,20 +137,20 @@ def test_invalid_tactic_and_foreign_surrender_are_free() -> None:
     assert world_hash(world) == before
 
 
-def test_empire_and_battle_share_last_point_and_deferred_timing() -> None:
+def test_surrender_stays_free_when_empire_orders_are_spent() -> None:
     world, scenario = opened()
     world.factions[ATTACKER].orders_remaining = 1
     tax = SetTaxRateOrder(faction_id=ATTACKER, tax_rate=TaxRate.HIGH)
     accepted = accept(world, scenario, tax)
     assert accepted.command.execution_turn == 1
     assert accepted.world.factions[ATTACKER].orders_remaining == 0
-    with pytest.raises(SimulationServiceError):
-        accept(
-            accepted.world,
-            scenario,
-            SurrenderCommand(faction_id=ATTACKER, battle_id=BATTLE_ID),
-            identity="battle",
-        )
+    surrendered = accept(
+        accepted.world,
+        scenario,
+        SurrenderCommand(faction_id=ATTACKER, battle_id=BATTLE_ID),
+        identity="battle",
+    )
+    assert surrendered.world.factions[ATTACKER].orders_remaining == 0
     pay = SetPayOrder(faction_id=ATTACKER, army_id="army_a", pay_level=PayLevel.FULL)
     world.factions[ATTACKER].orders_remaining = 6
     urgent = accept(world, scenario, pay)
@@ -183,7 +183,10 @@ def test_second_campaign_retains_plans_applies_deferred_once_and_resets_debt() -
         world = advance_wave(world, scenario, expected_turn=0, expected_wave=wave).world
     completed = resume_campaign(world, scenario, {})
     assert completed.world.factions[ATTACKER].tax_rate != TaxRate.HIGH
-    assert completed.world.factions[ATTACKER].orders_remaining == 4
+    assert (
+        completed.world.factions[ATTACKER].orders_remaining
+        == scenario.tuning.orders_per_turn - 2
+    )
     assert completed.world.factions[ATTACKER].orders_debt == 0
     second = begin_campaign(completed.world, scenario)
     assert second.world.battles[0].exchanges_used == 0
@@ -195,7 +198,10 @@ def test_second_campaign_retains_plans_applies_deferred_once_and_resets_debt() -
     done = resume_campaign(second.world, scenario, {})
     assert done.world.factions[ATTACKER].tax_rate == TaxRate.HIGH
     assert done.world.accepted_commands[0].status == CommandStatus.APPLIED
-    assert done.world.factions[ATTACKER].orders_remaining == 6
+    assert (
+        done.world.factions[ATTACKER].orders_remaining
+        == scenario.tuning.orders_per_turn
+    )
     assert sum(event.kind == "income_collected" for event in done.events) == 2
 
 

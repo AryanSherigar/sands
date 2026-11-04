@@ -1,7 +1,8 @@
 export const SETTINGS_SECTIONS = [
+  { id: "appearance", label: "Appearance" },
   { id: "account", label: "Account" },
-  { id: "reading", label: "Reading" },
-  { id: "content", label: "Content" },
+  { id: "reading", label: "Reading defaults" },
+  { id: "content", label: "Content preferences" },
   { id: "notifications", label: "Notifications" },
   { id: "danger", label: "Danger zone" },
 ] as const;

@@ -66,7 +66,7 @@ def test_bad_color_is_rejected() -> None:
 
 def test_default_cost_table_covers_every_order_kind() -> None:
     assert set(Tuning().order_costs) == set(OrderKind)
-    assert Tuning().orders_per_turn == 6
+    assert Tuning().orders_per_turn == 3
 
 
 def test_default_scenario_has_visibility_tuning() -> None:

@@ -20,6 +20,8 @@ from app.models.assistant import (
     AssistantMasterContext,
     AssistantScopedContext,
     AssistantStoryCard,
+    AssistantStrategyContext,
+    AssistantStrategyFaction,
 )
 from app.models.memory import (
     ActiveEntity,
@@ -270,7 +272,22 @@ def assistant_requests() -> dict[
             "tab_text": "The lamp must stay lit.",
         }
     )
+    strategy = AssistantStrategyContext(
+        title="Two Crowns",
+        factions=[AssistantStrategyFaction(faction_id="north", name="North")],
+    )
+    strategy_edited = strategy.model_copy(update={"active_panel": "relations"})
     return {
+        "strategy": (
+            AssistantChatRequest(
+                messages=first_message, mode="strategy", strategy_context=strategy
+            ),
+            AssistantChatRequest(
+                messages=second_message,
+                mode="strategy",
+                strategy_context=strategy_edited,
+            ),
+        ),
         "scoped": (
             AssistantChatRequest(
                 messages=first_message, mode="scoped", scoped_context=scoped

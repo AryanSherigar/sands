@@ -1,5 +1,4 @@
 import { KeyboardEvent, useEffect, useRef, useState } from "react";
-import { useIsAlphaMode } from "@/shared/hooks/useIsAlphaMode";
 import { usePlayStore } from "../../../stores/play.store";
 import { useVoiceInput, VoiceInputStatus } from "../../../hooks/useVoiceInput";
 import { useInputTakeover } from "../../../hooks/useInputTakeover";
@@ -100,7 +99,6 @@ export function EBookActionDrawer({
   const closeActionDrawer = usePlayStore((s) => s.closeActionDrawer);
   const theme = usePlayStore((s) => s.ebook_theme);
   const isSepia = theme === "antique-sepia";
-  const isAlphaMode = useIsAlphaMode();
 
   const activeKey = getActiveModeKey(isContinueSelected, storedMode);
   const currentMode = MODES.find((m) => m.key === activeKey) ?? MODES[0];
@@ -228,7 +226,7 @@ export function EBookActionDrawer({
             <div className="flex items-center justify-between gap-2 pt-1">
               <span className="text-[#A89885] font-serif text-[13px]">{isContinueSelected ? currentMode.hint : `Prefix: ${currentMode.prefix}`}</span>
               <div className="flex items-center gap-2">
-                {isVoiceSupported && !isAlphaMode && !isContinueSelected && <button type="button" disabled={isNarrating || voiceStatus === "transcribing"} onClick={handleMicClick} title={voiceStatus === "recording" ? "Stop recording" : "Speak your action"} aria-label={voiceStatus === "recording" ? "Stop recording" : "Speak your action"} className="w-11 h-11 rounded-md border border-[#3E3224] text-[#C5A059]">{getMicButtonLabel(voiceStatus)}</button>}
+                {isVoiceSupported && !isContinueSelected && <button type="button" disabled={isNarrating || voiceStatus === "transcribing"} onClick={handleMicClick} title={voiceStatus === "recording" ? "Stop recording" : "Speak your action"} aria-label={voiceStatus === "recording" ? "Stop recording" : "Speak your action"} className="w-11 h-11 rounded-md border border-[#3E3224] text-[#C5A059]">{getMicButtonLabel(voiceStatus)}</button>}
                 <button type="button" disabled={(!isContinueSelected && !text.trim()) || isNarrating || isLocked} onClick={handleSubmit} className="fantasy-submit flex items-center gap-2 px-5 h-11 rounded-md bg-[#C5A059] text-[#14110E] font-serif font-bold disabled:opacity-40">{isContinueSelected ? "Continue" : "Seal & Inscribe"}</button>
               </div>
             </div>
@@ -319,7 +317,7 @@ export function EBookActionDrawer({
             }`}
           />
 
-          {isVoiceSupported && !isAlphaMode && !isContinueSelected && (
+          {isVoiceSupported && !isContinueSelected && (
             <button
               type="button"
               disabled={isNarrating || voiceStatus === "transcribing"}

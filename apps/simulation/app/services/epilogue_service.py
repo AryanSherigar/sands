@@ -7,6 +7,7 @@ from app.engine.endings import find_ending_definition
 from app.engine.world_document import world_from_document
 from app.exceptions.access_exceptions import PlaythroughNotFoundError
 from app.exceptions.base import SimulationServiceError
+from app.integrations.core_api_client import sync_outcome_text
 from app.models.epilogue_delivery import EpilogueDelivery
 from app.models.world_state import WorldState
 from app.repositories import epilogue_delivery_repo as repository
@@ -132,12 +133,7 @@ class EpilogueService:
             if request.input_hash != row.input_hash:
                 raise _error("idempotency_conflict")
             if row.status == "completed":
-                if (
-                    row.lease_token != request.lease_token
-                    or row.completion_hash != digest
-                ):
-                    raise _error("idempotency_conflict")
-                return project_epilogue(row)
+                return self._replayed_completion(row, request, digest)
             if not await repository.complete(
                 self.connection,
                 identity,
@@ -146,7 +142,17 @@ class EpilogueService:
                 digest,
             ):
                 raise _error("stale_epilogue_lease")
-            return await self._reload(identity)
+            view = await self._reload(identity)
+        await sync_outcome_text(identity, request.narration)
+        return view
+
+    @staticmethod
+    def _replayed_completion(
+        row: EpilogueDelivery, request: EpilogueCompleteInput, digest: str
+    ) -> EpilogueView:
+        if row.lease_token != request.lease_token or row.completion_hash != digest:
+            raise _error("idempotency_conflict")
+        return project_epilogue(row)
 
     async def fail(
         self, identity: UUID, user: UUID, request: EpilogueFailInput

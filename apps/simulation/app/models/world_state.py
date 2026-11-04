@@ -73,6 +73,7 @@ LEGACY_VISIBILITY_RULESET = 0
 CURRENT_VISIBILITY_RULESET = 1
 CURRENT_BATTLE_CONTROL_RULESET = 1
 CURRENT_BATTLE_SPEECH_RULESET = 1
+CURRENT_DEFEAT_RULESET = 1
 CURRENT_INTERNAL_RULESET = 2
 UPRISING_LIFECYCLE_RULESET = 2
 CURRENT_LOGISTICS_RULESET = 1
@@ -99,6 +100,7 @@ CURRENT_SIEGE_RULESET = 1
 LEGACY_OMISSIONS: tuple[tuple[str, int, tuple[str, ...]], ...] = (
     ("battle_control_ruleset", 1, ("battle_control_ruleset",)),
     ("battle_speech_ruleset", 1, ("battle_speech_ruleset",)),
+    ("defeat_ruleset", 1, ("defeat_ruleset",)),
     (
         "internal_ruleset",
         1,
@@ -168,6 +170,7 @@ class WorldState(WorldModel):
     visibility_ruleset: int = LEGACY_VISIBILITY_RULESET
     battle_control_ruleset: int = Field(default=0, ge=0, le=1)
     battle_speech_ruleset: int = Field(default=0, ge=0, le=1)
+    defeat_ruleset: int = Field(default=0, ge=0, le=1)
     internal_ruleset: int = Field(default=0, ge=0, le=2)
     logistics_ruleset: int = Field(default=0, ge=0, le=1)
     summary_ruleset: int = Field(default=0, ge=0, le=2)

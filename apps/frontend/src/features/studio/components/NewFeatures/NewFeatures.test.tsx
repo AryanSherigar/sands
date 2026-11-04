@@ -96,7 +96,7 @@ describe("New features", () => {
     await waitFor(() => expect(api.scenarioUpdates).toHaveLength(1), WAIT);
     expect(api.scenarioUpdates[0].guide_seen_features).toEqual(["links"]);
     const region = getFeaturesRegion();
-    expect(within(region).getByText(String(NEW_FEATURES.length - 1))).toBeInTheDocument();
+    await waitFor(() => expect(within(region).getByText(String(NEW_FEATURES.length - 1))).toBeInTheDocument(), WAIT);
     expect(within(region).getByText("Seen (1)")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Got it" })).toBeNull();
   });
@@ -173,8 +173,10 @@ describe("New features", () => {
     });
     renderStudio({ path: EDIT_PATH });
 
-    expect(await screen.findByRole("heading", { name: "What's your story in one sentence?" })).toBeInTheDocument();
-    expect(screen.getByLabelText("One line idea")).toHaveValue("Old idea");
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { name: "What's your story in one sentence?" })).toBeInTheDocument();
+      expect(screen.getByLabelText("One line idea")).toHaveValue("Old idea");
+    }, WAIT);
   });
 });
 

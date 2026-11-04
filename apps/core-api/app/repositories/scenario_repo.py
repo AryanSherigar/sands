@@ -10,7 +10,7 @@ from app.db.models.review import ScenarioReview
 from app.db.models.scenario import PUBLIC_VISIBILITY, Scenario
 from app.db.models.scenario_access import ScenarioAccess
 from app.db.models.user import User
-from sqlalchemy import ColumnElement, exists, func, or_, select
+from sqlalchemy import ColumnElement, exists, func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 LIKE_ESCAPE_CHAR = "\\"
@@ -37,7 +37,6 @@ class ScenarioListFilters:
     saved_by_user_id: uuid.UUID | None = None
     played_by_user_id: uuid.UUID | None = None
     sort_by: str = "created_at"
-    only_scenario_id: uuid.UUID | None = None
     viewer_id: uuid.UUID | None = None
     include_private_for_viewer: bool = False
 
@@ -96,6 +95,14 @@ class ScenarioRepo:
         """Permanently delete a scenario entity from DB."""
         await self.session.delete(scenario)
         await self.session.flush()
+
+    async def increment_play_count(self, scenario_id: uuid.UUID) -> None:
+        stmt = (
+            update(Scenario)
+            .where(Scenario.scenario_id == scenario_id)
+            .values(play_count=Scenario.play_count + 1)
+        )
+        await self.session.execute(stmt)
 
     async def list_published_for_memory_rebuild(self) -> list[Scenario]:
         """Scenarios that have been published at least once (a failed republish
@@ -159,8 +166,6 @@ class ScenarioRepo:
         self, stmt: select, filters: ScenarioListFilters
     ) -> select:
         stmt = self._apply_visibility(stmt, filters)
-        if filters.only_scenario_id is not None:
-            stmt = stmt.where(Scenario.scenario_id == filters.only_scenario_id)
         if filters.creator_id is not None:
             stmt = stmt.where(Scenario.creator_id == filters.creator_id)
         if filters.statuses is not None:

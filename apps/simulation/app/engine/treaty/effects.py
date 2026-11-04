@@ -2,6 +2,8 @@ from app.engine.diplomacy.events import diplomacy_event
 from app.engine.economy.income import faction_income
 from app.engine.economy.ledger import available_cash, change_treasury
 from app.engine.economy.state import EconomyRun
+from app.engine.proclamations.constants import MODIFIER_TRADE_EFFICIENCY
+from app.engine.proclamations.modifiers import active_modifier
 from app.engine.treaty.standing import is_in_force
 from app.engine.vassals.tribute import TRIBUTE_PAID
 from app.models.world_diplomacy import CommitmentState
@@ -34,6 +36,10 @@ def _collect_trade(run: EconomyRun) -> None:
         for faction_id in (term.faction_a, term.faction_b):
             income = faction_income(world, run.tuning, faction_id).total
             gain = income * percent // FULL_SHARE_PERCENT
+            efficiency = active_modifier(world, faction_id, MODIFIER_TRADE_EFFICIENCY)
+            gain = max(
+                0, gain * (FULL_SHARE_PERCENT + efficiency) // FULL_SHARE_PERCENT
+            )
             changes.append(change_treasury(world.factions[faction_id], gain))
         run.events.append(
             diplomacy_event(

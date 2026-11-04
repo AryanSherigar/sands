@@ -1,8 +1,14 @@
 from app.engine.movement.map_index import build_map_index
 from app.models.api_world_view import SiegeView
+from app.models.battle_command import AcceptedCommand, ResolveUprisingCommand
 from app.models.world_character import CommanderState
+from app.models.world_internal import UprisingResponse
 from app.models.world_region import RegionIntel
-from app.services.world_projection import own_armies, project_region
+from app.services.world_projection import (
+    own_armies,
+    project_region,
+    queued_order_views,
+)
 from strategy_contracts.enums import PayLevel, Terrain
 from tests.engine.movement.builders import (
     FACTION_A,
@@ -109,3 +115,27 @@ def test_fogged_region_hides_siege_and_occupation() -> None:
 
     assert view.occupation is None
     assert view.siege is None
+
+
+def test_a_queued_uprising_response_does_not_break_the_queued_order_list() -> None:
+    world = make_world_for({"home": FACTION_A}, turn=3)
+    world.accepted_commands.append(
+        AcceptedCommand(
+            id="command_1",
+            operation_id="operation_1",
+            actor_id="actor",
+            faction_id=FACTION_A,
+            accepted_turn=3,
+            accepted_wave=0,
+            execution_turn=3,
+            execution_wave=0,
+            reserved_cost=1,
+            command=ResolveUprisingCommand(
+                faction_id=FACTION_A,
+                uprising_id="uprising_home_0",
+                response=UprisingResponse.CONCESSIONS,
+            ),
+        )
+    )
+
+    assert queued_order_views(world, FACTION_A) == []

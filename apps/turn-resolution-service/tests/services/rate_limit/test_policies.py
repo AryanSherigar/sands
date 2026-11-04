@@ -39,3 +39,11 @@ def test_strategy_art_quota_uses_its_own_limits() -> None:
     assert policy.feature == "strategy_art"
     assert policy.per_user_limit == settings.quota_strategy_art_per_user
     assert policy.global_limit == settings.quota_strategy_art_global
+
+
+def test_strategy_dispatch_quota_is_separate_from_turns() -> None:
+    policy = quota_policy(QuotaFeature.STRATEGY_DISPATCH)
+    assert policy.feature == "strategy_dispatch"
+    assert policy.per_user_limit == settings.quota_strategy_dispatch_per_user
+    assert policy.global_limit == settings.quota_strategy_dispatch_global
+    assert policy.feature != quota_policy(QuotaFeature.TURN).feature

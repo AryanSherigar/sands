@@ -66,20 +66,32 @@ class ArtService:
             raise _not_found()
         return row
 
-    async def _briefing(
+    async def _live_briefing(
         self, identity: UUID, user: UUID, kind: ArtKind, item_id: str
-    ) -> ArtBriefing:
+    ) -> ArtBriefing | None:
         if kind == "chronicle":
             return await self._chronicle(identity, item_id)
         world = await WorldViewService(self.connection).load_world(identity, user)
         if kind == "event":
             event = next((e for e in world.pending_events if e.id == item_id), None)
-            if event is not None:
-                return event_briefing(event)
-        else:
-            uprising = next((u for u in world.uprisings if u.id == item_id), None)
-            if uprising is not None:
-                return uprising_briefing(uprising)
+            return event_briefing(event) if event is not None else None
+        uprising = next((u for u in world.uprisings if u.id == item_id), None)
+        return uprising_briefing(uprising) if uprising is not None else None
+
+    async def _briefing(
+        self,
+        identity: UUID,
+        user: UUID,
+        kind: ArtKind,
+        item_id: str,
+        row: ArtDelivery | None,
+    ) -> ArtBriefing:
+        """The live item when it still exists, else what was kept at first claim."""
+        live = await self._live_briefing(identity, user, kind, item_id)
+        if live is not None:
+            return live
+        if row is not None and row.briefing is not None:
+            return row.briefing
         raise _not_found()
 
     async def _chronicle(self, identity: UUID, item_id: str) -> ArtBriefing:
@@ -100,12 +112,13 @@ class ArtService:
             row = await repository.get(self.connection, identity, kind, item_id, True)
             if row is not None and row.status == "completed":
                 return ArtClaim(art=project_art(row))
-            briefing = await self._briefing(identity, user, kind, item_id)
+            briefing = await self._briefing(identity, user, kind, item_id, row)
             if row is None:
                 await repository.ensure_row(self.connection, identity, kind, item_id)
-                row = await repository.get(
-                    self.connection, identity, kind, item_id, True
-                )
+            await repository.save_briefing(
+                self.connection, identity, kind, item_id, briefing
+            )
+            row = await repository.get(self.connection, identity, kind, item_id, True)
             assert row is not None
             if _is_same_active_claim(row, claim_id):
                 return ArtClaim(

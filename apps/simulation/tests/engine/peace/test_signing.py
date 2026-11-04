@@ -337,3 +337,18 @@ def test_card_proposed_by_a_faction_outside_the_war_is_rejected() -> None:
 
     assert error.value.code == "invalid_term"
     assert len(world.wars) == 1
+
+
+def test_long_stalemate_allows_white_peace_without_strain() -> None:
+    world = make_world()
+    war = set_score(add_war(world), attacker=10, defender=10)
+    scenario = SCENARIO.model_copy(deep=True)
+    scenario.tuning.peace = scenario.tuning.peace.model_copy(
+        update={"stalemate_white_peace_turns": 5}
+    )
+    world.pressure.stalemate_turns[war.id] = 4
+    assert not is_white_peace_eligible(world, scenario, war)
+
+    world.pressure.stalemate_turns[war.id] = 5
+
+    assert is_white_peace_eligible(world, scenario, war)

@@ -502,4 +502,52 @@ describe("StrategySceneDialog Full Stage", () => {
     fireEvent.click(escapeButton);
     expect(handleDecide).toHaveBeenCalledWith({ isConfirmed: false });
   });
+  describe("revolt talk", () => {
+    const revoltScene = {
+      ...baseScene,
+      scene_id: "scene-revolt",
+      scene_type: "revolt_talk",
+      situation: { summary: "The Guild Elder of Home speaks for the people.", facts: [] },
+      participants: [
+        { participant_id: "spokesperson_home", kind: "leader", name: "The Guild Elder", trait_ids: [] },
+      ],
+      pending_proposal: null,
+    };
+
+    function mockRevolt(overrides: Record<string, unknown> = {}, isFinished = false) {
+      mockUseSceneDialog.mockReturnValue({
+        scene: { ...revoltScene, ...overrides },
+        isFinished,
+        isBusy: false,
+        stream: {
+          reply: "",
+          pendingPlayerText: null,
+          isStreaming: false,
+          failureMessage: null,
+          sendMessage: vi.fn(),
+        },
+        decision: { decide: vi.fn(), isDeciding: false, errorMessage: null },
+      });
+    }
+
+    it("opens as talks with the people and hides the treaty controls", () => {
+      mockRevolt();
+
+      render(<StrategySceneDialog playthroughId="pt-1" sceneId="scene-revolt" onClose={vi.fn()} />);
+
+      expect(screen.getByRole("dialog", { name: "Talks with The Guild Elder" })).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: /toggle treaty drawer/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: /draft a clause/i })).not.toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /break talks/i })).toBeInTheDocument();
+    });
+
+    it("tells the player what the people were given when the talk ends", () => {
+      mockRevolt({ status: "resolved", outcome: { kind: "choice", option_id: "charter" } }, true);
+
+      render(<StrategySceneDialog playthroughId="pt-1" sceneId="scene-revolt" onClose={vi.fn()} />);
+
+      expect(screen.getByText("The People Are Answered")).toBeInTheDocument();
+      expect(screen.getByText(/A charter was granted/)).toBeInTheDocument();
+    });
+  });
 });

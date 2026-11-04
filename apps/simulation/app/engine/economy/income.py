@@ -5,6 +5,8 @@ from app.engine.economy.arithmetic import PERCENT
 from app.engine.economy.ledger import change_treasury
 from app.engine.economy.state import EconomyRun
 from app.engine.outrage.status import is_mobilized
+from app.engine.proclamations.constants import MODIFIER_TAX_POINTS
+from app.engine.proclamations.modifiers import active_modifier
 from app.models.world_internal import uprising_for_region
 from app.models.world_region import RegionState
 from app.models.world_state import WorldState
@@ -45,6 +47,9 @@ def faction_income(
     tax_percent = tuning.tax_rate_percent[world.factions[faction_id].tax_rate]
     if is_mobilized(world, faction_id):
         tax_percent += tuning.mobilization_tax_bonus_percent
+    tax_percent = max(
+        0, tax_percent + active_modifier(world, faction_id, MODIFIER_TAX_POINTS)
+    )
     regions = owned_regions(world, faction_id)
     return IncomeReport(
         tax_percent=tax_percent,

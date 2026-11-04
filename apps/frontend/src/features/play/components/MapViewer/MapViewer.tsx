@@ -1,4 +1,3 @@
-import { recordUiUsed } from "@/shared/lib/alpha-session-stats";
 import React, { useState } from "react";
 import { MapConnection, MapPin, ScenarioMap } from "@/shared/types/map.types";
 import { DiscoveredLocationList } from "./DiscoveredLocationList";
@@ -55,7 +54,6 @@ export const MapViewer: React.FC<MapViewerProps> = ({
   );
 
   const handleToggleCollapsed = (): void => {
-    if (isCollapsed) recordUiUsed("map");
     setIsCollapsed((collapsed) => !collapsed);
   };
 

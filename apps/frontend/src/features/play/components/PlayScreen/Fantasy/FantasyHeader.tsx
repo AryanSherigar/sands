@@ -11,7 +11,6 @@ import { usePlayStore } from "../../../stores/play.store";
 import { EBookAudioControl } from "../EBook/EBookAudioControl";
 import { EBookNarrationVoiceControl } from "../EBook/EBookNarrationVoiceControl";
 import { ReaderTypographyMenu } from "../EBook/ReaderTypographyMenu";
-import { FeedbackButton } from "../FeedbackButton/FeedbackButton";
 import { StatusHudContainer } from "../../StatusHud/StatusHudContainer";
 import type { FantasyHeaderProps } from "./FantasyHeader.types";
 
@@ -78,7 +77,7 @@ function HeaderTopTier({
         <details className="relative fantasy-settings">
           <summary aria-label="Reader controls" className="w-11 h-11 flex items-center justify-center cursor-pointer text-[#C5A059]"><IconSettings size={18} /></summary>
           <div className="absolute right-0 top-full w-64 p-3 flex flex-wrap gap-2 bg-[#171310] border border-[#382E25] shadow-xl z-50">
-            <StatusHudContainer /><FeedbackButton /><EBookAudioControl /><EBookNarrationVoiceControl /><ReaderTypographyMenu isSepia={isSepia} fallbackFont="eb-garamond" />
+            <StatusHudContainer /><EBookAudioControl /><EBookNarrationVoiceControl /><ReaderTypographyMenu isSepia={isSepia} fallbackFont="eb-garamond" />
             <button type="button" onClick={toggleTheme} className="min-h-11 px-2 text-[#EDE0CA]" aria-label={`Switch to ${isSepia ? "dark" : "sepia"} theme`}>{isSepia ? <IconMoon size={17} /> : <IconSun size={17} />}</button>
             <button type="button" onClick={onOpenChronicle} className="min-h-11 px-2 text-[#EDE0CA]">End Journey</button>
           </div>

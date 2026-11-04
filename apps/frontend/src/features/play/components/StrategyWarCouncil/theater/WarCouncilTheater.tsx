@@ -1,3 +1,5 @@
+import { useState } from "react";
+import { IconChevronDown, IconChevronRight } from "@tabler/icons-react";
 import type {
   FormationType,
   MissionTarget,
@@ -7,6 +9,7 @@ import type {
   WardConfig,
   WardIdentifier,
 } from "../StrategyWarCouncil.types";
+import { DeploymentSummary } from "./DeploymentSummary";
 import { EnemyCrestIntel } from "./EnemyCrestIntel";
 import { PlayerWardRanks } from "./PlayerWardRanks";
 import { ReservesDeck } from "./ReservesDeck";
@@ -21,6 +24,8 @@ export interface WarCouncilTheaterProps {
   onReorderRank: (ward: WardIdentifier, fromRank: RankTier, toRank: RankTier) => void;
   onSelectAnchor?: (ward: WardIdentifier) => void;
   troops?: Record<string, number>;
+  activeTroops?: Record<string, number>;
+  reserveTroops?: Record<string, number>;
   morale?: number;
   reservePolicy: ReservePolicyType;
   onChangeReservePolicy: (policy: ReservePolicyType) => void;
@@ -42,6 +47,8 @@ function describeScouting(opponent: OpponentView): string {
 export function WarCouncilTheater({
   opponent,
   onSelectSlot,
+  activeTroops,
+  reserveTroops,
   wards,
   onUpdateCohortCount,
   onReorderRank,
@@ -57,6 +64,8 @@ export function WarCouncilTheater({
   frontageSubtext,
 }: WarCouncilTheaterProps) {
   const handleSelectAnchor = onSelectAnchor ?? onSelectSlot;
+  const [isArrayOpen, setIsArrayOpen] = useState(true);
+  const ArrayChevron = isArrayOpen ? IconChevronDown : IconChevronRight;
 
   return (
     <section className="w-full lg:w-[52%] lg:h-full relative lg:overflow-y-auto overflow-x-hidden flex flex-col justify-between bg-[#F3EAD3] p-3 gap-3">
@@ -80,9 +89,15 @@ export function WarCouncilTheater({
           </span>
         </div>
         <div className="flex items-center justify-between px-1">
-          <span className="text-[12px] font-sans font-bold text-[#46606E] uppercase tracking-wider">
+          <button
+            type="button"
+            aria-expanded={isArrayOpen}
+            onClick={() => setIsArrayOpen(!isArrayOpen)}
+            className="flex cursor-pointer items-center gap-1 text-left text-[12px] font-sans font-bold text-[#46606E] uppercase tracking-wider"
+          >
+            <ArrayChevron size={14} aria-hidden="true" />
             Our Battle Array (Planning Sketch — Not Sent to the Field)
-          </span>
+          </button>
           {frontageSubtext ? (
             <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold font-sans bg-[#E8F0E8] text-[#5E8A5A] border border-[#5E8A5A]/50">
               {frontageSubtext}
@@ -93,12 +108,15 @@ export function WarCouncilTheater({
 
       {/* Bottom: Player Ward Ranks and Reserves Deck */}
       <div className="relative z-10 flex flex-col items-center gap-3">
-        <PlayerWardRanks
-          wards={wards}
-          onUpdateCohortCount={onUpdateCohortCount}
-          onReorderRank={onReorderRank}
-          onSelectAnchor={handleSelectAnchor}
-        />
+        <DeploymentSummary active={activeTroops} reserve={reserveTroops} />
+        {isArrayOpen ? (
+          <PlayerWardRanks
+            wards={wards}
+            onUpdateCohortCount={onUpdateCohortCount}
+            onReorderRank={onReorderRank}
+            onSelectAnchor={handleSelectAnchor}
+          />
+        ) : null}
         <ReservesDeck
           reservePolicy={reservePolicy}
           onChangePolicy={onChangeReservePolicy}

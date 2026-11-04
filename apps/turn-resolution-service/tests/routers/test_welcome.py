@@ -59,13 +59,12 @@ async def test_welcome_requires_auth(async_client: httpx.AsyncClient) -> None:
 
 
 @respx.mock
-async def test_welcome_uses_persisted_name_in_alpha(
+async def test_welcome_uses_persisted_name(
     async_client, db_session, monkeypatch
 ) -> None:
     owner = uuid.uuid4()
     run = await seed_run(db_session, owner)
     monkeypatch.setattr(settings, "fish_api_key", "test-key")
-    monkeypatch.setattr(settings, "is_alpha_mode", True)
     route = respx.post(FISH_URL).mock(
         return_value=httpx.Response(200, content=speech_wave())
     )

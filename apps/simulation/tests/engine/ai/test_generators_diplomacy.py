@@ -361,3 +361,14 @@ def test_war_candidate_score_lowered_for_a_dishonorable_oath_holder() -> None:
 
     assert len(sworn) == 1
     assert sworn[0].base_score == baseline - TUNING.oath_break_penalty
+
+
+def test_a_hoarding_target_is_a_juicier_war_target() -> None:
+    plain = _world()
+    _ground(plain, WRATHFUL_RIVAL)
+    rich = _world()
+    _ground(rich, WRATHFUL_RIVAL)
+    for faction_id, faction in rich.factions.items():
+        faction.treasury = 5000 if faction_id == WRATHFUL_RIVAL else 0
+
+    assert _wars(rich)[0].base_score > _wars(plain)[0].base_score

@@ -19,6 +19,7 @@ export interface PlayerRulerPayload {
   trait_ids: string[];
   ambition_ids: string[];
   backstory?: string;
+  chronicler_id?: string;
 }
 
 export interface CreatePlaythroughPayload {
@@ -83,10 +84,16 @@ export async function getPlaythrough(
   return response.data;
 }
 
+export interface StrategyPlaytestChoice {
+  factionId?: string;
+  playerRuler?: PlayerRulerPayload;
+}
+
 export async function startPlaytest(
   scenarioId: string,
   setupValues: Record<string, unknown> = {},
   stateOverrides: Record<string, unknown> = {},
+  strategyChoice: StrategyPlaytestChoice = {},
 ): Promise<PlaythroughResponse> {
   const hasOverrides = Object.keys(stateOverrides).length > 0;
   const response = await apiClient.post<PlaythroughResponse>(
@@ -94,6 +101,8 @@ export async function startPlaytest(
     {
       setup_values: setupValues,
       ...(hasOverrides ? { state_overrides: stateOverrides } : {}),
+      ...(strategyChoice.factionId ? { faction_id: strategyChoice.factionId } : {}),
+      ...(strategyChoice.playerRuler ? { player_ruler: strategyChoice.playerRuler } : {}),
     },
   );
   return response.data;

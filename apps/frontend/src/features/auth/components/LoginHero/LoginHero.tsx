@@ -2,14 +2,12 @@ import React from "react";
 import { ChromaticImage } from "@/shared/components/ui/aceternity/chromatic-image";
 
 const LOGIN_HERO_SRC = "/images/login-hero.webp";
-const SURFACE_SUNKEN_HEX = "#07080b";
 
 export const LoginHero: React.FC = () => {
   return (
     <ChromaticImage
       src={LOGIN_HERO_SRC}
-      alt="A person standing beneath a red light"
-      backgroundColor={SURFACE_SUNKEN_HEX}
+      alt="A lone traveler standing before a colossal moss-draped ancient stone gateway with glowing runes"
       tilt={0}
       zoom={0.12}
       displacement={0.03}
@@ -18,7 +16,7 @@ export const LoginHero: React.FC = () => {
     >
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,rgba(17,17,19,0)_60%,rgba(17,17,19,1)_100%)] lg:bg-[linear-gradient(to_right,rgba(17,17,19,1)_0%,rgba(17,17,19,0)_38%)]"
+        className="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-surface lg:bg-gradient-to-r lg:from-surface lg:via-surface/40 lg:to-transparent lg:w-2/5"
       />
     </ChromaticImage>
   );

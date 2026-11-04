@@ -1,6 +1,7 @@
 import React from "react";
 import type { TreatyTerm } from "../../../../types/scene.types";
 import type { NegotiationTreatyDrawerProps } from "./NegotiationTreatyDrawer.types";
+import { ClauseWeightChip } from "./ClauseWeightChip";
 import { TreatyTermCard } from "./TreatyTermCard";
 import { describeTreatyTerm } from "./treatyTermViews";
 import { VerdictNote } from "./VerdictNote";
@@ -233,6 +234,7 @@ export const NegotiationTreatyDrawer: React.FC<NegotiationTreatyDrawerProps> = (
   counterpartName,
   isBusy = false,
   verdict = null,
+  clauseBands = [],
   onClose,
   onSign,
   onDecline,
@@ -270,7 +272,12 @@ export const NegotiationTreatyDrawer: React.FC<NegotiationTreatyDrawerProps> = (
 
         {proposal && proposal.terms.length > 0 ? (
           <div className="space-y-3">
-            {proposal.terms.map((term, idx) => renderTermCard(term, idx, currentTurn))}
+            {proposal.terms.map((term, idx) => (
+              <div key={idx}>
+                {renderTermCard(term, idx, currentTurn)}
+                {clauseBands[idx] ? <ClauseWeightChip band={clauseBands[idx]} /> : null}
+              </div>
+            ))}
           </div>
         ) : (
           <div className="p-6 text-center text-outline font-sans text-sm italic bg-surface-container/40 rounded-xl border border-outline-variant/20">

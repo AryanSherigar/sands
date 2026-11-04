@@ -3,9 +3,14 @@ import { createPostSSEConnection } from "@/shared/lib/sse-client";
 import { logEvent } from "@/shared/lib/logger";
 import { isRateLimitError } from "@/shared/lib/rate-limit-error";
 import { useAuthStore } from "@/features/auth/stores/auth.store";
+import { usePersistedAppliedKeys } from "./usePersistedAppliedKeys";
 import { SCOPED_CHAT_WELCOME } from "../constants/scopedChat";
 import { EMPTY_SCOPED_CONTEXT, toScopedRequestContext } from "../lib/scopedChat";
-import { AssistantMessage, BlockValidation } from "../types/assistant.types";
+import {
+  AssistantMessage,
+  AssistantStrategyContextPayload,
+  BlockValidation,
+} from "../types/assistant.types";
 import type { ScopedChatContext } from "../types/scopedChat.types";
 import { useEntities } from "./useEntities";
 import { useFacts } from "./useFacts";
@@ -14,7 +19,7 @@ import { useConditions } from "./useConditions";
 import { useInvariants } from "./useInvariants";
 import { useEndConditions } from "./useEndConditions";
 
-export type AssistantChatMode = "master" | "scoped";
+export type AssistantChatMode = "master" | "scoped" | "strategy";
 
 const TRS_BASE_URL = import.meta.env.VITE_TRS_URL || "http://localhost:8001";
 
@@ -37,6 +42,8 @@ const WELCOME_BY_MODE: Record<AssistantChatMode, string> = {
   master:
     "Greetings, creator. I am your systems co-designer. Tell me about the people, places, facts, or tracked values you want in this scenario, and I'll propose ready-to-apply pieces.",
   scoped: SCOPED_CHAT_WELCOME,
+  strategy:
+    "Greetings, creator. I am your strategy co-designer. Tell me about the factions, rulers, rivalries, borders and starting armies you want, and I'll propose changes you can apply with one click.",
 };
 
 const buildWelcome = (mode: AssistantChatMode): AssistantMessage => ({
@@ -72,10 +79,12 @@ export const useAssistantChat = (
   mode: AssistantChatMode = "master",
   scenarioId: string | null = null,
   scopedContext: ScopedChatContext | null = null,
+  strategyContext: AssistantStrategyContextPayload | null = null,
 ) => {
   const accessToken = useAuthStore((s) => s.accessToken);
   const userId = useAuthStore((s) => s.user?.user_id ?? null);
   const storageKey = buildStorageKey(mode, userId, scenarioId);
+  const { appliedKeys, markApplied, resetApplied } = usePersistedAppliedKeys(storageKey);
   const [messages, setMessages] = useState<AssistantMessage[]>(() =>
     loadInitialMessages(storageKey, mode),
   );
@@ -124,8 +133,9 @@ export const useAssistantChat = (
     }
     setMessages([buildWelcome(mode)]);
     setIsStreaming(false);
+    resetApplied();
     if (storageKey) localStorage.removeItem(storageKey);
-  }, [mode, storageKey]);
+  }, [mode, storageKey, resetApplied]);
 
   const reportApplyError = useCallback((errorMessage: string) => {
     setMessages((prev) => [
@@ -133,7 +143,7 @@ export const useAssistantChat = (
       {
         id: `assistant-error-${Date.now()}`,
         role: "assistant",
-        content: `⚠️ ${errorMessage}`,
+        content: `Error: ${errorMessage}`,
         timestamp: Date.now(),
       },
     ]);
@@ -209,9 +219,12 @@ export const useAssistantChat = (
           scoped_context: toScopedRequestContext(scopedContext ?? EMPTY_SCOPED_CONTEXT),
         };
       }
+      if (mode === "strategy") {
+        return { ...base, strategy_context: strategyContext };
+      }
       return { ...base, master_context: buildMasterContext() };
     },
-    [mode, buildMasterContext, scopedContext],
+    [mode, buildMasterContext, scopedContext, strategyContext],
   );
 
   const sendMessage = useCallback(
@@ -284,7 +297,7 @@ export const useAssistantChat = (
             setMessages((prev) =>
               prev.map((msg) =>
                 msg.id === assistantId
-                  ? { ...msg, content: `⚠️ ${errorText}` }
+                  ? { ...msg, content: `Error: ${errorText}` }
                   : msg,
               ),
             );
@@ -298,7 +311,7 @@ export const useAssistantChat = (
           setMessages((prev) =>
             prev.map((msg) =>
               msg.id === assistantId && msg.content === ""
-                ? { ...msg, content: `⚠️ ${errorText}` }
+                ? { ...msg, content: `Error: ${errorText}` }
                 : msg,
             ),
           );
@@ -321,5 +334,7 @@ export const useAssistantChat = (
     stopGeneration,
     reportApplyError,
     blockValidationByMessage,
+    appliedKeys,
+    markApplied,
   };
 };

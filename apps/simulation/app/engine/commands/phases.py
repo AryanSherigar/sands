@@ -11,6 +11,8 @@ from app.engine.movement.state import MovementRun
 from app.engine.phases import PhaseContext, PhaseResult
 from app.engine.sieges.orders import apply_besiege
 from app.engine.sieges.phase import SiegePhase
+from app.engine.treaty.effects import collect_trade_and_tribute
+from app.engine.vassals.tribute import collect_vassal_tribute
 from app.engine.visibility.scouting import resolve_map_scout
 from app.exceptions.base import SimulationServiceError
 from app.models.battle_command import AcceptedCommand, CommandStatus
@@ -74,6 +76,8 @@ class CampaignEconomyPhase:
             pause = settle_faction(run, faction_id, context)
             if pause is not None:
                 return PhaseResult(world, pause=pause)
+        collect_vassal_tribute(run)
+        collect_trade_and_tribute(run)
         return PhaseResult(world, run.events)
 
 

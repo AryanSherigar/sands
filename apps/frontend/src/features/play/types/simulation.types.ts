@@ -3,7 +3,8 @@ import type {
   MissionTarget,
   StandingPlan,
 } from "../components/StrategyWarCouncil/StrategyWarCouncil.types";
-import type { PactView } from "./scene.types";
+import type { ConditionTemplate, PactView } from "./scene.types";
+import type { ActiveProclamation } from "../api/proclamation.api";
 
 export interface IntRange {
   low: number;
@@ -72,6 +73,8 @@ export interface ArmyView {
   pay_level?: PayLevel;
   commander_name?: string | null;
   march_route?: string[] | null;
+  withdrawal_policy?: WithdrawalPolicyType | null;
+  reserve_policy?: ReservePolicyType | null;
   size_estimate?: IntRange | null;
   troops?: Partial<Record<TroopType, number>> | null;
 }
@@ -118,6 +121,7 @@ export interface RulerView {
   ambition_ids?: string[];
   backstory?: string;
   stress?: number;
+  chronicler_id?: string;
 }
 
 export interface MoveArmyOrder {
@@ -161,6 +165,31 @@ export interface DisbandArmyOrder {
   kind: "disband_army";
   faction_id: string;
   army_id: string;
+}
+
+export type WithdrawalPolicyType = "preserve" | "balanced" | "hold_at_cost";
+export type ReservePolicyType = "conserve" | "reinforce_on_pressure";
+
+export interface SetArmyPolicyOrder {
+  kind: "set_army_policy";
+  faction_id: string;
+  army_id: string;
+  withdrawal_policy?: WithdrawalPolicyType;
+  reserve_policy?: ReservePolicyType;
+}
+
+export interface MergeArmiesOrder {
+  kind: "merge_armies";
+  faction_id: string;
+  army_ids: string[];
+  into_army_id: string;
+}
+
+export interface SplitArmyOrder {
+  kind: "split_army";
+  faction_id: string;
+  army_id: string;
+  troops: Partial<Record<TroopType, number>>;
 }
 
 export interface SetTaxRateOrder {
@@ -225,6 +254,16 @@ export interface DenounceAllianceOrder {
   kind: "denounce_alliance";
   faction_id: string;
   alliance_id: string;
+}
+
+export type ConsentActionKind = "declare_war" | "demand" | "pact";
+
+export interface GrantConsentOrder {
+  kind: "grant_consent";
+  faction_id: string;
+  vassalage_id: string;
+  action: ConsentActionKind;
+  target_faction_id: string;
 }
 
 export interface ReleaseVassalOrder {
@@ -363,6 +402,9 @@ export type StrategyOrder =
   | BesiegeOrder
   | RaiseArmyOrder
   | DisbandArmyOrder
+  | MergeArmiesOrder
+  | SplitArmyOrder
+  | SetArmyPolicyOrder
   | MapScoutOrder
   | FabricateClaimOrder
   | HandlePrisonerOrder
@@ -370,6 +412,7 @@ export type StrategyOrder =
   | CutSubsidyOrder
   | DenounceAllianceOrder
   | ReleaseVassalOrder
+  | GrantConsentOrder
   | AnnexVassalOrder
   | MobilizeOrder
   | SubsidizeOrder
@@ -466,6 +509,13 @@ export interface StrategySummaryView {
   region_ids: string[];
 }
 
+export interface StrategyEpilogueView {
+  status: SummaryStatus;
+  narration?: string | null;
+  error_code?: string | null;
+  is_retryable: boolean;
+}
+
 export interface StrategySummaryPage {
   items: StrategySummaryView[];
   next_after_id?: string | null;
@@ -558,12 +608,16 @@ export interface EndingState {
   kind: string;
   turn: number;
   grade?: EndingGrade;
-  inputs?: Record<string, number>;
+  name?: string;
 }
 
 export type EndingView = EndingState;
 
-export type PromiseKind = "never_attack_faction" | "never_ally_with" | "spare_prisoners";
+export type PromiseKind =
+  | "never_attack_faction"
+  | "never_ally_with"
+  | "spare_prisoners"
+  | "never_occupy_region";
 
 export interface SwornPromiseView {
   commitment_id: string;
@@ -571,6 +625,33 @@ export interface SwornPromiseView {
   beneficiary_id: string;
   promise: PromiseKind;
   subject_id?: string | null;
+  end_turn?: number | null;
+}
+
+export type CovenantKind =
+  | "tax_relief"
+  | "garrison_out"
+  | "relief_small"
+  | "relief_large"
+  | "amnesty";
+
+export interface CovenantView {
+  covenant_id: string;
+  region_id: string;
+  covenant: CovenantKind;
+  end_turn: number;
+}
+
+export interface ConditionalClauseView {
+  commitment_id: string;
+  mode: "trigger" | "gate";
+  template: ConditionTemplate;
+  condition_faction_id: string;
+  condition_value: number;
+  condition_region_id?: string | null;
+  inner_kind: string;
+  party_ids: string[];
+  state: "pending" | "gate_open" | "gate_closed";
   end_turn?: number | null;
 }
 
@@ -809,13 +890,25 @@ export interface CampaignWorldView {
   mobilization?: MobilizationView | null;
   alliances?: AllianceView[];
   sworn_promises?: SwornPromiseView[];
+  covenants?: CovenantView[];
   sworn_promise_history?: SwornPromiseHistoryView[];
+  conditional_clauses?: ConditionalClauseView[];
   pending_calls?: CallView[];
   vassalages?: VassalageView[];
   coalitions?: CoalitionView[];
   pending_demands?: PendingDemandView[];
-  own_pressure?: Record<string, unknown> | null;
+  own_pressure?: OwnPressureView | null;
   own_threat?: OwnThreatView | null;
+  active_proclamation?: ActiveProclamation | null;
+}
+
+export type PressureBand = "very_low" | "low" | "medium" | "high" | "very_high";
+
+export interface OwnPressureView {
+  will_band: PressureBand;
+  strain_band: PressureBand;
+  will_factors: Record<string, number>;
+  strain_factors: Record<string, number>;
 }
 
 export type OrderFlag = "over_budget" | "impossible" | "not_your_army";
@@ -831,17 +924,6 @@ export interface OperationGuard {
   expected_world_version: number;
   expected_turn: number;
   expected_wave: number;
-}
-
-export type SpeechReception = "stirred" | "steady" | "cold";
-
-export interface SpeechReactionPayload {
-  line: string;
-}
-
-export interface BattleSpeechResponse {
-  mutation: MutationResponse;
-  reception: SpeechReception;
 }
 
 export interface MutationResponse {

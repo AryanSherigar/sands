@@ -14,6 +14,7 @@ EVENT_SCENE_TERM_DROPPED = "scene_term_dropped"
 CITED_KEY = "cited_grudge_ids"
 TERMS_KEY = "terms"
 TIER_KEY = "peace_tier"
+PROMISE_BY_RULER_KEY = "is_promise_by_ruler"
 _TERM_ADAPTER: TypeAdapter[Term] = TypeAdapter(Term)
 _VALID_TIERS = {tier.value for tier in PeaceTier}
 _DECODER = json.JSONDecoder()
@@ -53,6 +54,8 @@ def _repair(raw: dict[str, object]) -> dict[str, object]:
         raw[TERMS_KEY] = [term for term in terms if _is_valid_term(term)][
             :MAX_TERMS_PER_CARD
         ]
+    if raw.get(PROMISE_BY_RULER_KEY) is None:
+        raw.pop(PROMISE_BY_RULER_KEY, None)
     if raw.get(TIER_KEY) not in _VALID_TIERS:
         raw[TIER_KEY] = None
     return raw

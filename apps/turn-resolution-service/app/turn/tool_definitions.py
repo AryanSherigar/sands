@@ -130,7 +130,8 @@ def build_master_mode_tools(snapshot: dict[str, object]) -> types.Tool:
     """The static tool set, plus `flag_rule_violation` when the rule sheet is on
     and at least one rule is flaggable."""
     rule_keys = flaggable_rule_keys(snapshot)
-    declarations = list(MASTER_MODE_TOOLS.function_declarations or [])
+    base_declarations = MASTER_MODE_TOOLS.function_declarations or []
+    declarations = list(base_declarations)
     if rule_keys:
         declarations.append(_flag_rule_violation_tool(rule_keys))
     config = snapshot.get("fantasy_mechanics")
@@ -156,4 +157,6 @@ def build_master_mode_tools(snapshot: dict[str, object]) -> types.Tool:
                 ),
             )
         )
+    if len(declarations) == len(base_declarations):
+        return MASTER_MODE_TOOLS
     return types.Tool(function_declarations=declarations)
